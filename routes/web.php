@@ -3,6 +3,7 @@
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\ActivityLogController;
 
 
 Route::get('/', function () {
@@ -31,15 +32,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware(['role:admin'])->prefix('admin')->name('admin.')->group(function () {
         Route::resource('branches', \App\Http\Controllers\Admin\BranchController::class);
         Route::resource('users', \App\Http\Controllers\Admin\UserController::class);
+
+        // Add Activity Logs here
+        Route::get('activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
     });
 
     // Branch Manager Routes
     Route::middleware(['role:branch_manager', 'branch.access'])->prefix('branch')->name('branch.')->group(function () {
         // Branch-specific routes will go here
     });
-
-    
-
 });
 
 require __DIR__.'/auth.php';

@@ -73,7 +73,8 @@ class UserController extends Controller
 
         $user = User::create($validated);
 
-        ActivityLog::log('created_user', $user, ['name' => $user->name, 'role' => $user->role]);
+        // Fixed: Pass model type, model ID, then changes array
+        ActivityLog::log('created_user', User::class, $user->id, ['name' => $user->name, 'role' => $user->role]);
 
         return redirect()
             ->route('admin.users.index')
@@ -118,7 +119,8 @@ class UserController extends Controller
 
         $user->update($validated);
 
-        ActivityLog::log('updated_user', $user, ['name' => $user->name]);
+        // Fixed: Pass model type, model ID, then changes array
+        ActivityLog::log('updated_user', User::class, $user->id, ['name' => $user->name]);
 
         return redirect()
             ->route('admin.users.index')
@@ -138,9 +140,11 @@ class UserController extends Controller
         }
 
         $userName = $user->name;
+        $userId = $user->id;
         $user->delete();
 
-        ActivityLog::log('deleted_user', null, ['name' => $userName]);
+        // Fixed: Pass model type, model ID, then changes array
+        ActivityLog::log('deleted_user', User::class, $userId, ['name' => $userName]);
 
         return redirect()
             ->route('admin.users.index')

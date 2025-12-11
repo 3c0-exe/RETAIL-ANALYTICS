@@ -55,7 +55,8 @@ class BranchController extends Controller
             ]);
         }
 
-        ActivityLog::log('created_branch', $branch, ['name' => $branch->name]);
+        // Fixed: Pass Branch::class, $branch->id, then changes array
+        ActivityLog::log('created_branch', Branch::class, $branch->id, ['name' => $branch->name]);
 
         return redirect()
             ->route('admin.branches.index')
@@ -105,7 +106,8 @@ class BranchController extends Controller
 
         $branch->update($validated);
 
-        ActivityLog::log('updated_branch', $branch, ['name' => $branch->name]);
+        // Fixed: Pass Branch::class, $branch->id, then changes array
+        ActivityLog::log('updated_branch', Branch::class, $branch->id, ['name' => $branch->name]);
 
         return redirect()
             ->route('admin.branches.index')
@@ -120,9 +122,11 @@ class BranchController extends Controller
         }
 
         $branchName = $branch->name;
+        $branchId = $branch->id;
         $branch->delete();
 
-        ActivityLog::log('deleted_branch', null, ['name' => $branchName]);
+        // Fixed: Pass Branch::class, $branchId, then changes array
+        ActivityLog::log('deleted_branch', Branch::class, $branchId, ['name' => $branchName]);
 
         return redirect()
             ->route('admin.branches.index')
