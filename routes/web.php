@@ -38,6 +38,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Branch-specific routes will go here
     });
 
+    
+
 });
 
 require __DIR__.'/auth.php';
