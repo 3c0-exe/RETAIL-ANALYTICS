@@ -33,6 +33,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('branches', \App\Http\Controllers\Admin\BranchController::class);
         Route::resource('users', \App\Http\Controllers\Admin\UserController::class);
 
+        Route::get('imports', [\App\Http\Controllers\Admin\ImportController::class, 'index'])->name('imports.index');
+    Route::get('imports/create', [\App\Http\Controllers\Admin\ImportController::class, 'create'])->name('imports.create');
+    Route::post('imports/upload', [\App\Http\Controllers\Admin\ImportController::class, 'upload'])->name('imports.upload');
+    Route::post('imports/{import}/process', [\App\Http\Controllers\Admin\ImportController::class, 'process'])->name('imports.process');
+    Route::get('imports/{import}', [\App\Http\Controllers\Admin\ImportController::class, 'show'])->name('imports.show');
+    Route::delete('imports/{import}', [\App\Http\Controllers\Admin\ImportController::class, 'destroy'])->name('imports.destroy');
+
         // Add Activity Logs here
         Route::get('activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
 
