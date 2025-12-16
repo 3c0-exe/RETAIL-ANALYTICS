@@ -12,12 +12,15 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('code')->unique();
-            $table->string('timezone')->default('Asia/Manila');
-            $table->decimal('tax_rate', 5, 2)->default(12.00); // Philippine VAT
-            $table->string('currency', 3)->default('PHP');
-            $table->enum('status', ['active', 'inactive'])->default('active');
+            $table->string('address')->nullable();
+            $table->string('city')->nullable();
+            $table->string('phone')->nullable();
+            $table->string('email')->nullable();
             $table->foreignId('manager_id')->nullable()->constrained('users')->nullOnDelete();
-            $table->json('settings')->nullable();
+            $table->string('timezone')->default('Asia/Manila');
+            $table->decimal('tax_rate', 5, 2)->default(0);
+            $table->string('currency')->default('PHP');
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
     }

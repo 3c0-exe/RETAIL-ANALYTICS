@@ -35,6 +35,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Add Activity Logs here
         Route::get('activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
+
+          // Add these new routes:
+    Route::resource('categories', \App\Http\Controllers\Admin\CategoryController::class);
+    Route::resource('products', \App\Http\Controllers\Admin\ProductController::class);
     });
 
     // Branch Manager Routes
