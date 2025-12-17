@@ -7,10 +7,12 @@ use Illuminate\Database\Seeder;
 class DatabaseSeeder extends Seeder
 {
     public function run(): void
-    {
-        $this->call([
-            BranchSeeder::class,
-            UserSeeder::class,
-        ]);
-    }
+{
+    $this->call([
+        BranchSeeder::class,
+        UserSeeder::class,
+        ProductSeeder::class,
+        TransactionSeeder::class, // Add this line
+    ]);
+}
 }
