@@ -28,6 +28,12 @@ class Product extends Model
         'is_active' => 'boolean',
     ];
 
+    // ADD THIS SCOPE METHOD
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
     // Relationships
     public function category()
     {

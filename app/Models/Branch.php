@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 class Branch extends Model
 {
     use HasFactory;
-    use LogsActivity; // ← Add this trait
+    use LogsActivity;
 
     protected $fillable = [
         'name',
@@ -39,6 +39,24 @@ class Branch extends Model
     public function users()
     {
         return $this->hasMany(User::class);
+    }
+
+    public function transactions()
+    {
+        return $this->hasMany(Transaction::class);
+    }
+
+    // ADD THIS - Branch to Products (many-to-many via branch_products pivot)
+    public function products()
+    {
+        return $this->belongsToMany(Product::class, 'branch_products')
+            ->withPivot('quantity', 'low_stock_threshold', 'branch_price', 'is_available')
+            ->withTimestamps();
+    }
+
+    public function branchProducts()
+    {
+        return $this->hasMany(BranchProduct::class);
     }
 
     // Helper methods
