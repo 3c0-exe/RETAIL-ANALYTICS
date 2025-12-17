@@ -3,7 +3,7 @@
         <!-- Page Header -->
         <div class="mb-8">
             <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">
-                Welcome back, {{ auth()->user()->name }}! 👋
+                Welcome back!, {{ auth()->user()->name }}! 👋
             </h1>
             <p class="mt-2 text-gray-600 dark:text-gray-400">
                 Here's what's happening with your retail analytics today.
