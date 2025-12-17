@@ -49,7 +49,7 @@ class DashboardController extends Controller
             ->count();
 
         // Product count
-        $productCount = Product::active()->count();
+       $productCount = Product::where('is_active', 1)->count();
 
         // Customer count
         $customerCount = Customer::count();

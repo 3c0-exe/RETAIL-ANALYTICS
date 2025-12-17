@@ -15,6 +15,7 @@ class Product extends Model
         'sku',
         'description',
         'category_id',
+        'category',    // Remove this later (old column)
         'price',
         'cost',
         'barcode',
@@ -30,12 +31,12 @@ class Product extends Model
 
     // ADD THIS SCOPE METHOD
     public function scopeActive($query)
-    {
-        return $query->where('is_active', true);
-    }
+        {
+            return $query->where('is_active', 1);
+        }
 
     // Relationships
-    public function category()
+      public function category()
     {
         return $this->belongsTo(Category::class);
     }

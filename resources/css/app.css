@@ -1,3 +1,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Add after your existing styles */
+.grid-cols-25 {
+    display: grid;
+    grid-template-columns: 60px repeat(24, minmax(0, 1fr));
+}

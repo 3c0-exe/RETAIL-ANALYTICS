@@ -14,6 +14,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Main Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+    // Analytics route
+    Route::get('/analytics/sales', [\App\Http\Controllers\Analytics\SalesAnalyticsController::class, 'index'])
+        ->name('analytics.sales');
+    Route::post('/analytics/sales/export', [\App\Http\Controllers\Analytics\SalesAnalyticsController::class, 'export'])
+        ->name('analytics.sales.export');
+
     // Profile Management
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
