@@ -153,6 +153,277 @@
         </div>
         @endif
 
+<!-- Charts Section -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <!-- Sales Trend Chart -->
+    <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-6">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+            Sales Trend (Last 30 Days)
+        </h3>
+        <div class="relative" style="height: 300px;">
+            <canvas id="salesTrendChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Top Products Chart -->
+    <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-6">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+            Top 5 Products
+        </h3>
+        <div class="relative" style="height: 300px;">
+            <canvas id="topProductsChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <!-- Payment Methods Chart -->
+    <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-6">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+            Payment Methods (This Month)
+        </h3>
+        <div class="relative" style="height: 300px;">
+            <canvas id="paymentMethodsChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Quick Stats Table -->
+    <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-6">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+            Top Products by Sales
+        </h3>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+                <thead>
+                    <tr>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            Product
+                        </th>
+                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            Qty
+                        </th>
+                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            Sales
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
+                    @forelse($topProducts as $product)
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                        <td class="px-3 py-3 text-sm text-gray-900 dark:text-gray-100">
+                            {{ Str::limit($product->product_name, 25) }}
+                        </td>
+                        <td class="px-3 py-3 text-sm text-gray-600 dark:text-gray-400 text-right">
+                            {{ number_format($product->total_quantity) }}
+                        </td>
+                        <td class="px-3 py-3 text-sm text-gray-900 dark:text-gray-100 font-medium text-right">
+                            ₱{{ number_format($product->total_sales, 2) }}
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="3" class="px-3 py-8 text-center text-gray-500 dark:text-gray-400">
+                            No sales data yet. Import transactions to see insights.
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
+<script>
+    // Detect dark mode
+    const isDarkMode = document.documentElement.classList.contains('dark');
+
+    // Color palette for dark/light mode
+    const colors = {
+        text: isDarkMode ? '#fafafa' : '#111827',
+        textSecondary: isDarkMode ? '#a3a3a3' : '#6b7280',
+        grid: isDarkMode ? '#262626' : '#e5e7eb',
+        accent: isDarkMode ? '#a78bfa' : '#8b5cf6',
+        success: isDarkMode ? '#34d399' : '#10b981',
+        warning: isDarkMode ? '#fbbf24' : '#f59e0b',
+        danger: isDarkMode ? '#f87171' : '#ef4444',
+        info: isDarkMode ? '#60a5fa' : '#3b82f6',
+    };
+
+    // Chart defaults
+    Chart.defaults.color = colors.text;
+    Chart.defaults.borderColor = colors.grid;
+    Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
+
+    // 1. Sales Trend Chart
+    const salesTrendCtx = document.getElementById('salesTrendChart');
+    if (salesTrendCtx) {
+        const salesData = @json($salesTrend);
+
+        new Chart(salesTrendCtx, {
+            type: 'line',
+            data: {
+                labels: salesData.map(d => new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })),
+                datasets: [{
+                    label: 'Daily Sales',
+                    data: salesData.map(d => d.total),
+                    borderColor: colors.accent,
+                    backgroundColor: `${colors.accent}20`,
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    pointBackgroundColor: colors.accent,
+                    pointBorderColor: isDarkMode ? '#171717' : '#ffffff',
+                    pointBorderWidth: 2,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: isDarkMode ? '#262626' : '#ffffff',
+                        titleColor: colors.text,
+                        bodyColor: colors.text,
+                        borderColor: colors.grid,
+                        borderWidth: 1,
+                        padding: 12,
+                        displayColors: false,
+                        callbacks: {
+                            label: (context) => `₱${context.parsed.y.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: colors.grid, drawBorder: false },
+                        ticks: {
+                            callback: (value) => '₱' + value.toLocaleString('en-US', { maximumFractionDigits: 0 })
+                        }
+                    },
+                    x: {
+                        grid: { display: false, drawBorder: false },
+                    }
+                }
+            }
+        });
+    }
+
+    // 2. Top Products Chart
+    const topProductsCtx = document.getElementById('topProductsChart');
+    if (topProductsCtx) {
+        const productsData = @json($topProducts);
+
+        new Chart(topProductsCtx, {
+            type: 'bar',
+            data: {
+                labels: productsData.map(p => p.product_name.substring(0, 20)),
+                datasets: [{
+                    label: 'Sales',
+                    data: productsData.map(p => p.total_sales),
+                    backgroundColor: [
+                        colors.accent,
+                        colors.success,
+                        colors.info,
+                        colors.warning,
+                        colors.danger,
+                    ],
+                    borderRadius: 6,
+                    borderSkipped: false,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: isDarkMode ? '#262626' : '#ffffff',
+                        titleColor: colors.text,
+                        bodyColor: colors.text,
+                        borderColor: colors.grid,
+                        borderWidth: 1,
+                        padding: 12,
+                        displayColors: false,
+                        callbacks: {
+                            label: (context) => `₱${context.parsed.y.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: colors.grid, drawBorder: false },
+                        ticks: {
+                            callback: (value) => '₱' + value.toLocaleString('en-US', { maximumFractionDigits: 0 })
+                        }
+                    },
+                    x: {
+                        grid: { display: false, drawBorder: false },
+                    }
+                }
+            }
+        });
+    }
+
+    // 3. Payment Methods Chart
+    const paymentMethodsCtx = document.getElementById('paymentMethodsChart');
+    if (paymentMethodsCtx) {
+        const paymentData = @json($paymentMethods);
+
+        new Chart(paymentMethodsCtx, {
+            type: 'doughnut',
+            data: {
+                labels: paymentData.map(p => p.payment_method.replace('_', ' ').toUpperCase()),
+                datasets: [{
+                    data: paymentData.map(p => p.total),
+                    backgroundColor: [
+                        colors.accent,
+                        colors.success,
+                        colors.info,
+                        colors.warning,
+                    ],
+                    borderWidth: 0,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 15,
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: isDarkMode ? '#262626' : '#ffffff',
+                        titleColor: colors.text,
+                        bodyColor: colors.text,
+                        borderColor: colors.grid,
+                        borderWidth: 1,
+                        padding: 12,
+                        callbacks: {
+                            label: (context) => {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                return `${context.label}: ₱${context.parsed.toLocaleString('en-US', { minimumFractionDigits: 2 })} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+</script>
+
         <!-- Phase Status -->
         <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-6">
             <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Development Progress</h2>
