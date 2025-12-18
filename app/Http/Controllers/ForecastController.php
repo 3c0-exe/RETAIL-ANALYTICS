@@ -10,6 +10,7 @@ use App\Services\ForecastService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ForecastController extends Controller
 {
@@ -25,8 +26,12 @@ class ForecastController extends Controller
         $selectedBranchId = $request->get('branch_id', $branches->first()?->id);
         $selectedBranch = Branch::find($selectedBranchId);
 
+        if (!$selectedBranch) {
+            return back()->with('error', 'Branch not found');
+        }
+
         // Period filter
-        $period = $request->get('period', 7); // 7, 30, or 90 days
+        $period = (int) $request->get('period', 7); // 7, 30, or 90 days
 
         // Get forecasts
         $forecasts = Forecast::where('branch_id', $selectedBranchId)
@@ -38,6 +43,33 @@ class ForecastController extends Controller
             ])
             ->orderBy('forecast_date')
             ->get();
+
+        // DEBUG: Log forecast count
+        Log::info("Forecasts found: " . $forecasts->count() . " for branch " . $selectedBranchId);
+
+        // If no forecasts exist, generate them
+        if ($forecasts->isEmpty()) {
+            try {
+                Log::info("No forecasts found, generating...");
+                $forecastService->generateForecasts($selectedBranch, 30);
+
+                // Refetch forecasts
+                $forecasts = Forecast::where('branch_id', $selectedBranchId)
+                    ->whereNull('product_id')
+                    ->whereNull('category')
+                    ->whereBetween('forecast_date', [
+                        Carbon::today(),
+                        Carbon::today()->addDays($period)
+                    ])
+                    ->orderBy('forecast_date')
+                    ->get();
+
+                Log::info("Generated forecasts: " . $forecasts->count());
+            } catch (\Exception $e) {
+                Log::error("Forecast generation error: " . $e->getMessage());
+                return back()->with('error', 'Unable to generate forecasts: ' . $e->getMessage());
+            }
+        }
 
         // Get accuracy metrics
         $accuracy = $forecastService->getAccuracyMetrics($selectedBranch, 7);
@@ -65,6 +97,11 @@ class ForecastController extends Controller
         // Get actual vs forecast for past 7 days (for comparison chart)
         $comparison = $this->getComparisonData($selectedBranchId, 7);
 
+        // DEBUG: Check comparison data
+        Log::info("Comparison dates: " . json_encode($comparison['dates']));
+        Log::info("Comparison actuals: " . json_encode($comparison['actuals']));
+        Log::info("Comparison forecasts: " . json_encode($comparison['forecasts']));
+
         return view('forecasts.index', compact(
             'branches',
             'selectedBranch',
@@ -80,22 +117,24 @@ class ForecastController extends Controller
     {
         $startDate = Carbon::now()->subDays($days);
 
-    $actuals = Transaction::where('branch_id', $branchId)
-        ->where('timestamp', '>=', $startDate)
-        ->where('timestamp', '<', Carbon::today())
-        ->where('status', 'completed')
-        ->selectRaw('DATE(timestamp) as date, SUM(total) as total') // Changed from total_amount
-        ->groupBy('date')
-        ->orderBy('date')
-        ->get()
-        ->pluck('total', 'date');
+        // Get actual sales
+        $actuals = Transaction::where('branch_id', $branchId)
+            ->where('timestamp', '>=', $startDate)
+            ->where('timestamp', '<', Carbon::today())
+            ->where('status', 'completed')
+            ->selectRaw('DATE(timestamp) as date, SUM(total) as total')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get()
+            ->pluck('total', 'date');
 
+        // Get forecasts (for past dates)
         $forecasts = Forecast::where('branch_id', $branchId)
             ->whereNull('product_id')
             ->whereNull('category')
             ->whereBetween('forecast_date', [
-                $startDate,
-                Carbon::yesterday()
+                $startDate->format('Y-m-d'),
+                Carbon::yesterday()->format('Y-m-d')
             ])
             ->orderBy('forecast_date')
             ->get()
@@ -105,11 +144,12 @@ class ForecastController extends Controller
         $actualValues = [];
         $forecastValues = [];
 
+        // Build arrays for chart
         for ($i = 0; $i < $days; $i++) {
             $date = Carbon::now()->subDays($days - $i)->format('Y-m-d');
             $dates[] = Carbon::parse($date)->format('M d');
-            $actualValues[] = $actuals[$date] ?? 0;
-            $forecastValues[] = $forecasts[$date] ?? null;
+            $actualValues[] = (float) ($actuals[$date] ?? 0);
+            $forecastValues[] = isset($forecasts[$date]) ? (float) $forecasts[$date] : null;
         }
 
         return [
@@ -134,6 +174,7 @@ class ForecastController extends Controller
             $forecastService->generateForecasts($branch, 30);
             return back()->with('success', 'Forecasts regenerated successfully!');
         } catch (\Exception $e) {
+            Log::error("Regenerate error: " . $e->getMessage());
             return back()->with('error', 'Error: ' . $e->getMessage());
         }
     }
