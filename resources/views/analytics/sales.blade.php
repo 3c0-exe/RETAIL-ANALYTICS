@@ -86,6 +86,50 @@
             </form>
         </div>
 
+        <!-- Export Dropdown -->
+        <div class="flex justify-end mb-4">
+            <div x-data="{ open: false }" class="relative">
+                <button @click="open = !open" type="button" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md font-medium text-sm flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    Export
+                </button>
+
+                <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-48 bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-md shadow-lg py-1 z-10">
+                    <form method="POST" action="{{ route('export.sales.csv') }}">
+                        @csrf
+                        <input type="hidden" name="start_date" value="{{ request('start_date') }}">
+                        <input type="hidden" name="end_date" value="{{ request('end_date') }}">
+                        <input type="hidden" name="branch_id" value="{{ request('branch_id') }}">
+                        <button type="submit" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
+                            Export as CSV
+                        </button>
+                    </form>
+
+                    <form method="POST" action="{{ route('export.sales.excel') }}">
+                        @csrf
+                        <input type="hidden" name="start_date" value="{{ request('start_date') }}">
+                        <input type="hidden" name="end_date" value="{{ request('end_date') }}">
+                        <input type="hidden" name="branch_id" value="{{ request('branch_id') }}">
+                        <button type="submit" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
+                            Export as Excel
+                        </button>
+                    </form>
+
+                    <form method="POST" action="{{ route('export.sales.pdf') }}">
+                        @csrf
+                        <input type="hidden" name="start_date" value="{{ request('start_date') }}">
+                        <input type="hidden" name="end_date" value="{{ request('end_date') }}">
+                        <input type="hidden" name="branch_id" value="{{ request('branch_id') }}">
+                        <button type="submit" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
+                            Export as PDF
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         <!-- 1. SALES BY BRANCH -->
         @if(auth()->user()->isAdmin())
         <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-6 mb-6">

@@ -21,11 +21,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('analytics.sales.export');
 
 
-    // Customer Analytics Routes (ADD THESE)
+    // Customer Analytics Routes 
     Route::get('/analytics/customers', [\App\Http\Controllers\Analytics\CustomerAnalyticsController::class, 'index'])
         ->name('analytics.customers');
     Route::get('/analytics/customers/{customer}', [\App\Http\Controllers\Analytics\CustomerAnalyticsController::class, 'show'])
         ->name('analytics.customers.show');
+
+    // Export Routes
+        Route::post('/export/sales/csv', [\App\Http\Controllers\ExportController::class, 'salesCsv'])
+            ->name('export.sales.csv');
+        Route::post('/export/sales/excel', [\App\Http\Controllers\ExportController::class, 'salesExcel'])
+            ->name('export.sales.excel');
+        Route::post('/export/sales/pdf', [\App\Http\Controllers\ExportController::class, 'salesPdf'])
+            ->name('export.sales.pdf');
+        Route::post('/export/customers/csv', [\App\Http\Controllers\ExportController::class, 'customersCsv'])
+            ->name('export.customers.csv');
 
     // Profile Management
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
