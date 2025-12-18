@@ -12,21 +12,16 @@ return new class extends Migration
             $table->id();
             $table->string('transaction_code')->unique();
             $table->foreignId('branch_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('customer_id')->nullable()->constrained()->nullOnDelete();
-            $table->foreignId('cashier_id')->nullable()->constrained('users')->nullOnDelete();
-            $table->dateTime('transaction_date');
-            $table->decimal('subtotal', 12, 2)->default(0);
-            $table->decimal('tax', 12, 2)->default(0);
-            $table->decimal('discount', 12, 2)->default(0);
-            $table->decimal('total', 12, 2)->default(0);
-            $table->string('payment_method')->nullable(); // cash, card, gcash, etc.
-            $table->string('status')->default('completed'); // completed, refunded, voided
-            $table->text('notes')->nullable();
+            $table->timestamp('timestamp');
+            $table->foreignId('cashier_id')->nullable()->constrained('users');
+            $table->decimal('subtotal', 12, 2);
+            $table->decimal('tax_amount', 12, 2)->default(0);
+            $table->decimal('discount_amount', 12, 2)->default(0);
+            $table->decimal('total_amount', 12, 2); // This should exist
+            $table->string('payment_method');
+            $table->foreignId('customer_id')->nullable()->constrained();
+            $table->enum('status', ['completed', 'refunded', 'void'])->default('completed');
             $table->timestamps();
-
-            $table->index('transaction_date');
-            $table->index('branch_id');
-            $table->index('customer_id');
         });
     }
 
