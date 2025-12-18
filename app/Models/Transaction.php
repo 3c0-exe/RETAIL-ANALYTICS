@@ -26,12 +26,17 @@ class Transaction extends Model
     ];
 
     protected $casts = [
+        // 'transaction_date' => 'datetime',
+        // 'timestamp' => 'datetime',
+        // 'subtotal' => 'decimal:2',
+        // 'tax' => 'decimal:2',
+        // 'discount' => 'decimal:2',
+        // 'total' => 'decimal:2'
         'transaction_date' => 'datetime',
-        'timestamp' => 'datetime',
         'subtotal' => 'decimal:2',
-        'tax' => 'decimal:2',
-        'discount' => 'decimal:2',
-        'total' => 'decimal:2'
+        'tax_amount' => 'decimal:2',
+        'discount_amount' => 'decimal:2',
+        'total' => 'decimal:2',
     ];
 
     // Relationships
@@ -54,4 +59,6 @@ class Transaction extends Model
     {
         return $this->hasMany(TransactionItem::class);
     }
+
+
 }

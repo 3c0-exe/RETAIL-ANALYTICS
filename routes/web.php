@@ -22,10 +22,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('analytics.sales.export');
 
     // Customer Analytics Routes
-    // Route::get('/analytics/customers', [\App\Http\Controllers\Analytics\CustomerAnalyticsController::class, 'index'])
-    //     ->name('analytics.customers');
-    // Route::get('/analytics/customers/{customer}', [\App\Http\Controllers\Analytics\CustomerAnalyticsController::class, 'show'])
-    //     ->name('analytics.customers.show');
+    Route::get('/analytics/customers', [\App\Http\Controllers\Analytics\CustomerAnalyticsController::class, 'index'])
+        ->name('analytics.customers');
+    Route::get('/analytics/customers/{customer}', [\App\Http\Controllers\Analytics\CustomerAnalyticsController::class, 'show'])
+        ->name('analytics.customers.show');
 
     // Export Routes
     Route::post('/export/sales/csv', [\App\Http\Controllers\ExportController::class, 'salesCsv'])
