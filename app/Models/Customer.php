@@ -2,10 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class Customer extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'customer_code',
         'name',
@@ -17,12 +21,13 @@ class Customer extends Model
         'visit_count',
         'last_visit_date',
         'segment',
+        'rfm_score'
     ];
 
     protected $casts = [
         'total_spent' => 'decimal:2',
-        'visit_count' => 'integer',
         'last_visit_date' => 'date',
+        'rfm_score' => 'array'
     ];
 
     // Relationships
@@ -31,43 +36,37 @@ class Customer extends Model
         return $this->hasMany(Transaction::class);
     }
 
-    // Helper methods
-    public function updateStats()
+    // Scopes
+    public function scopeSegment($query, $segment)
     {
-        $this->total_spent = $this->transactions()->sum('total');
-        $this->visit_count = $this->transactions()->count();
-        $this->last_visit_date = $this->transactions()->latest('transaction_date')->first()?->transaction_date;
-        $this->save();
+        return $query->where('segment', $segment);
     }
 
-    public function isVIP()
+    // RFM Getters
+    public function getRecencyScore()
     {
-        return $this->segment === 'vip';
+        return $this->rfm_score['recency'] ?? 0;
     }
 
-    public function isAtRisk()
+    public function getFrequencyScore()
     {
-        return $this->segment === 'at_risk';
+        return $this->rfm_score['frequency'] ?? 0;
     }
 
-    // Auto-generate customer code
-    public static function generateCustomerCode()
+    public function getMonetaryScore()
     {
-        do {
-            $code = 'CUST-' . str_pad(rand(1, 999999), 6, '0', STR_PAD_LEFT);
-        } while (self::where('customer_code', $code)->exists());
-
-        return $code;
+        return $this->rfm_score['monetary'] ?? 0;
     }
 
-    protected static function boot()
+    public function getTotalRfmScore()
     {
-        parent::boot();
+        return $this->getRecencyScore() + $this->getFrequencyScore() + $this->getMonetaryScore();
+    }
 
-        static::creating(function ($customer) {
-            if (empty($customer->customer_code)) {
-                $customer->customer_code = self::generateCustomerCode();
-            }
-        });
+    // Calculate days since last purchase
+    public function getDaysSinceLastPurchase()
+    {
+        if (!$this->last_visit_date) return null;
+        return Carbon::parse($this->last_visit_date)->diffInDays(now());
     }
 }

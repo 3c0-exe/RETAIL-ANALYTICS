@@ -20,6 +20,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/analytics/sales/export', [\App\Http\Controllers\Analytics\SalesAnalyticsController::class, 'export'])
         ->name('analytics.sales.export');
 
+
+    // Customer Analytics Routes (ADD THESE)
+    Route::get('/analytics/customers', [\App\Http\Controllers\Analytics\CustomerAnalyticsController::class, 'index'])
+        ->name('analytics.customers');
+    Route::get('/analytics/customers/{customer}', [\App\Http\Controllers\Analytics\CustomerAnalyticsController::class, 'show'])
+        ->name('analytics.customers.show');
+
     // Profile Management
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
