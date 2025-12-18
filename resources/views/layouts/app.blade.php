@@ -124,7 +124,9 @@ use Illuminate\Support\Facades\Storage;
                                 </svg>
                                 Customer Analytics
                             </a>
-                            <a href="#" class="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 rounded-md dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
+                             <!-- FIXED: Forecasting Link -->
+                            <a href="{{ route('forecasts.index') }}"
+                            class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md {{ request()->routeIs('forecasts.*') ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800' }}">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
                                 </svg>

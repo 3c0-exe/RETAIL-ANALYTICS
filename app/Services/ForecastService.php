@@ -4,211 +4,196 @@ namespace App\Services;
 
 use App\Models\Branch;
 use App\Models\Forecast;
-use App\Models\Product;
 use App\Models\Transaction;
+use App\Models\Product;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class ForecastService
 {
     /**
-     * Generate forecasts for a branch (uses simple moving average)
+     * Generate forecasts using Exponential Smoothing (Simple implementation)
+     * This replaces Prophet as a Windows-friendly alternative
      */
-    public function generateForecasts(Branch $branch, int $days = 30): void
+    public function generateForecasts(Branch $branch, int $days = 30)
     {
-        // Get historical sales data (last 60 days)
-        $historicalData = $this->getHistoricalSales($branch, 60);
-
-        if (count($historicalData) < 7) {
-            throw new \Exception("Insufficient historical data. Need at least 7 days of sales.");
-        }
-
-        // Delete old forecasts for this branch
+        // Clear existing future forecasts for this branch
         Forecast::where('branch_id', $branch->id)
             ->where('forecast_date', '>=', Carbon::today())
             ->delete();
 
+        // Get historical sales data (last 90 days)
+        $historicalData = $this->getHistoricalSales($branch->id, 90);
+
+        if ($historicalData->isEmpty()) {
+            throw new \Exception('Not enough historical data to generate forecasts. Need at least 7 days of sales data.');
+        }
+
         // Generate overall branch forecasts
         $this->generateBranchForecasts($branch, $historicalData, $days);
 
-        // Generate top products forecasts
+        // Generate product-level forecasts for top products
         $this->generateProductForecasts($branch, $days);
+
+        return true;
     }
 
     /**
-     * Get historical daily sales for a branch
+     * Get historical sales data
      */
-    private function getHistoricalSales(Branch $branch, int $days): array
+    private function getHistoricalSales($branchId, $days)
     {
-        $startDate = Carbon::now()->subDays($days);
-
-        $sales = Transaction::where('branch_id', $branch->id)
-            ->where('timestamp', '>=', $startDate)
-            ->where('timestamp', '<', Carbon::today())
+        return Transaction::where('branch_id', $branchId)
             ->where('status', 'completed')
-            ->selectRaw('DATE(timestamp) as date, SUM(total) as total')
+            ->where('timestamp', '>=', Carbon::now()->subDays($days))
+            ->where('timestamp', '<', Carbon::today())
+            ->selectRaw('DATE(timestamp) as date, SUM(total) as sales')
             ->groupBy('date')
             ->orderBy('date')
-            ->get()
-            ->pluck('total', 'date')
-            ->toArray();
-
-        return $sales;
+            ->get();
     }
 
     /**
-     * Generate branch-level forecasts using moving average
+     * Generate branch-level forecasts using Exponential Smoothing
      */
-    private function generateBranchForecasts(Branch $branch, array $historicalData, int $days): void
+    private function generateBranchForecasts(Branch $branch, $historicalData, $days)
     {
-        // Calculate 7-day moving average
-        $values = array_values($historicalData);
-        $recentValues = array_slice($values, -7);
-        $average = array_sum($recentValues) / count($recentValues);
+        $salesValues = $historicalData->pluck('sales')->toArray();
 
-        // Calculate standard deviation for confidence intervals
-        $variance = 0;
-        foreach ($recentValues as $value) {
-            $variance += pow($value - $average, 2);
-        }
-        $stdDev = sqrt($variance / count($recentValues));
+        // Calculate exponential smoothing forecast
+        $alpha = 0.3; // Smoothing factor (0-1, lower = more smoothing)
+        $forecasts = $this->exponentialSmoothing($salesValues, $days, $alpha);
 
-        // Generate forecasts
-        for ($i = 0; $i < $days; $i++) {
-            $forecastDate = Carbon::today()->addDays($i);
-
-            // Add slight trend and day-of-week variation
-            $dayOfWeek = $forecastDate->dayOfWeek;
-            $weekendMultiplier = in_array($dayOfWeek, [0, 6]) ? 1.3 : 1.0; // 30% higher on weekends
-
-            $predicted = $average * $weekendMultiplier;
-            $confidenceLower = $predicted - (1.96 * $stdDev); // 95% confidence
-            $confidenceUpper = $predicted + (1.96 * $stdDev);
+        // Calculate confidence intervals (±20% as a simple estimate)
+        foreach ($forecasts as $i => $forecast) {
+            $forecastDate = Carbon::today()->addDays($i + 1);
+            $margin = $forecast * 0.20; // 20% confidence margin
 
             Forecast::create([
                 'branch_id' => $branch->id,
                 'product_id' => null,
                 'category' => null,
                 'forecast_date' => $forecastDate,
-                'predicted_sales' => round($predicted, 2),
-                'confidence_lower' => round(max(0, $confidenceLower), 2),
-                'confidence_upper' => round($confidenceUpper, 2),
-                'model_version' => 'moving_average_v1',
+                'predicted_sales' => round($forecast, 2),
+                'confidence_lower' => round(max(0, $forecast - $margin), 2),
+                'confidence_upper' => round($forecast + $margin, 2),
+                'model_version' => 'exponential_smoothing_v1',
+                'metadata' => json_encode(['alpha' => $alpha]),
             ]);
         }
     }
 
     /**
-     * Generate product-level forecasts for top products
+     * Generate product-level forecasts for top 10 products
      */
-    private function generateProductForecasts(Branch $branch, int $days): void
+    private function generateProductForecasts(Branch $branch, $days)
     {
-        // Get top 10 products by sales volume (last 30 days)
+        // Get top 10 products by sales volume
         $topProducts = DB::table('transaction_items')
             ->join('transactions', 'transaction_items.transaction_id', '=', 'transactions.id')
             ->where('transactions.branch_id', $branch->id)
             ->where('transactions.status', 'completed')
-            ->where('transactions.timestamp', '>=', Carbon::now()->subDays(30))
-            ->select('transaction_items.product_id', DB::raw('SUM(transaction_items.quantity) as total_quantity'))
+            ->where('transactions.timestamp', '>=', Carbon::now()->subDays(90))
+            ->select('transaction_items.product_id', DB::raw('SUM(transaction_items.subtotal) as total_sales'))
+            ->whereNotNull('transaction_items.product_id')
             ->groupBy('transaction_items.product_id')
-            ->orderByDesc('total_quantity')
+            ->orderByDesc('total_sales')
             ->limit(10)
             ->get();
 
         foreach ($topProducts as $productData) {
-            $product = Product::find($productData->product_id);
-            if (!$product) continue;
+            $productId = $productData->product_id;
 
-            // Get historical sales for this product (last 30 days)
+            // Get product historical sales
             $productSales = DB::table('transaction_items')
                 ->join('transactions', 'transaction_items.transaction_id', '=', 'transactions.id')
                 ->where('transactions.branch_id', $branch->id)
-                ->where('transaction_items.product_id', $product->id)
+                ->where('transaction_items.product_id', $productId)
                 ->where('transactions.status', 'completed')
-                ->where('transactions.timestamp', '>=', Carbon::now()->subDays(30))
-                ->selectRaw('DATE(transactions.timestamp) as date, SUM(transaction_items.subtotal) as total')
+                ->where('transactions.timestamp', '>=', Carbon::now()->subDays(90))
+                ->where('transactions.timestamp', '<', Carbon::today())
+                ->selectRaw('DATE(transactions.timestamp) as date, SUM(transaction_items.subtotal) as sales')
                 ->groupBy('date')
                 ->orderBy('date')
-                ->get()
-                ->pluck('total', 'date')
-                ->toArray();
+                ->get();
 
-            if (count($productSales) < 7) continue;
+            if ($productSales->count() < 7) {
+                continue; // Skip products without enough data
+            }
 
-            $values = array_values($productSales);
-            $average = array_sum($values) / count($values);
+            $salesValues = $productSales->pluck('sales')->toArray();
+            $forecasts = $this->exponentialSmoothing($salesValues, $days, 0.3);
 
-            // Generate forecasts for this product
-            for ($i = 0; $i < $days; $i++) {
-                $forecastDate = Carbon::today()->addDays($i);
-
-                $dayOfWeek = $forecastDate->dayOfWeek;
-                $weekendMultiplier = in_array($dayOfWeek, [0, 6]) ? 1.2 : 1.0;
-
-                $predicted = $average * $weekendMultiplier;
+            foreach ($forecasts as $i => $forecast) {
+                $forecastDate = Carbon::today()->addDays($i + 1);
+                $margin = $forecast * 0.25;
 
                 Forecast::create([
                     'branch_id' => $branch->id,
-                    'product_id' => $product->id,
+                    'product_id' => $productId,
                     'category' => null,
                     'forecast_date' => $forecastDate,
-                    'predicted_sales' => round($predicted, 2),
-                    'confidence_lower' => round($predicted * 0.8, 2),
-                    'confidence_upper' => round($predicted * 1.2, 2),
-                    'model_version' => 'moving_average_v1',
+                    'predicted_sales' => round($forecast, 2),
+                    'confidence_lower' => round(max(0, $forecast - $margin), 2),
+                    'confidence_upper' => round($forecast + $margin, 2),
+                    'model_version' => 'exponential_smoothing_v1',
+                    'metadata' => null,
                 ]);
             }
         }
     }
 
     /**
-     * Get accuracy metrics by comparing past forecasts with actuals
+     * Exponential Smoothing Algorithm
+     * Simple implementation suitable for daily sales forecasting
      */
-    public function getAccuracyMetrics(Branch $branch, int $days = 7): array
+    private function exponentialSmoothing(array $data, int $forecastPeriods, float $alpha = 0.3)
+    {
+        if (empty($data)) {
+            return array_fill(0, $forecastPeriods, 0);
+        }
+
+        $forecasts = [];
+        $smoothed = $data[0]; // Initialize with first value
+
+        // Smooth historical data
+        foreach ($data as $value) {
+            $smoothed = $alpha * $value + (1 - $alpha) * $smoothed;
+        }
+
+        // Generate future forecasts (flat forecast from last smoothed value)
+        for ($i = 0; $i < $forecastPeriods; $i++) {
+            $forecasts[] = $smoothed;
+        }
+
+        return $forecasts;
+    }
+
+    /**
+     * Get accuracy metrics for recent forecasts
+     */
+    public function getAccuracyMetrics(Branch $branch, int $days = 7)
     {
         $startDate = Carbon::now()->subDays($days);
 
-        // Get past forecasts
         $forecasts = Forecast::where('branch_id', $branch->id)
             ->whereNull('product_id')
             ->whereBetween('forecast_date', [$startDate, Carbon::yesterday()])
-            ->get()
-            ->keyBy('forecast_date');
+            ->get();
 
-        // Get actual sales
-        $actuals = Transaction::where('branch_id', $branch->id)
-            ->where('timestamp', '>=', $startDate)
-            ->where('timestamp', '<', Carbon::today())
-            ->where('status', 'completed')
-            ->selectRaw('DATE(timestamp) as date, SUM(total) as total')
-            ->groupBy('date')
-            ->get()
-            ->pluck('total', 'date');
+        $accuracies = [];
 
-        $errors = [];
-        foreach ($forecasts as $date => $forecast) {
-            $actual = $actuals[$date] ?? 0;
-            if ($actual > 0) {
-                $error = abs($forecast->predicted_sales - $actual) / $actual * 100;
-                $errors[] = $error;
+        foreach ($forecasts as $forecast) {
+            $accuracy = $forecast->getAccuracy();
+            if ($accuracy !== null) {
+                $accuracies[] = $accuracy;
             }
         }
 
-        if (empty($errors)) {
-            return [
-                'mape' => 0, // Mean Absolute Percentage Error
-                'accuracy' => 0,
-                'sample_size' => 0,
-            ];
-        }
-
-        $mape = array_sum($errors) / count($errors);
-        $accuracy = max(0, 100 - $mape);
-
         return [
-            'mape' => round($mape, 2),
-            'accuracy' => round($accuracy, 2),
-            'sample_size' => count($errors),
+            'average_accuracy' => count($accuracies) > 0 ? round(array_sum($accuracies) / count($accuracies), 2) : null,
+            'forecasts_evaluated' => count($accuracies),
+            'total_forecasts' => $forecasts->count(),
         ];
     }
 }

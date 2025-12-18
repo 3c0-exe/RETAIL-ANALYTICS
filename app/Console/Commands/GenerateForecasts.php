@@ -8,37 +8,47 @@ use Illuminate\Console\Command;
 
 class GenerateForecasts extends Command
 {
-    protected $signature = 'forecast:generate {--branch= : Branch ID to forecast} {--days=30 : Number of days to forecast}';
-    protected $description = 'Generate sales forecasts for branches';
+    protected $signature = 'forecast:generate {--branch_id=}';
+    protected $description = 'Generate sales forecasts for all active branches';
 
-    public function handle(ForecastService $forecastService): int
+    public function handle(ForecastService $forecastService)
     {
-        $branchId = $this->option('branch');
-        $days = (int) $this->option('days');
+        $this->info('Starting forecast generation...');
 
-        $branches = $branchId
-            ? Branch::where('id', $branchId)->get()
+        // Get branches to process
+        $branches = $this->option('branch_id')
+            ? Branch::where('id', $this->option('branch_id'))->where('status', 'active')->get()
             : Branch::where('status', 'active')->get();
 
         if ($branches->isEmpty()) {
-            $this->error('No branches found.');
-            return self::FAILURE;
+            $this->error('No active branches found!');
+            return 1;
         }
 
-        $this->info("Generating {$days}-day forecasts for " . $branches->count() . " branch(es)...");
+        $successCount = 0;
+        $errorCount = 0;
 
         foreach ($branches as $branch) {
-            $this->line("Processing: {$branch->name}");
+            $this->info("Processing {$branch->name}...");
 
             try {
-                $forecastService->generateForecasts($branch, $days);
-                $this->info("✓ {$branch->name} - Forecasts generated");
+                $forecastService->generateForecasts($branch, 30);
+                $this->info("✓ Forecasts generated for {$branch->name}");
+                $successCount++;
             } catch (\Exception $e) {
-                $this->error("✗ {$branch->name} - Error: " . $e->getMessage());
+                $this->error("✗ Error for {$branch->name}: " . $e->getMessage());
+                $errorCount++;
             }
         }
 
-        $this->info('Forecast generation complete!');
-        return self::SUCCESS;
+        $this->newLine();
+        $this->info("Forecast generation complete!");
+        $this->info("Success: {$successCount} branches");
+
+        if ($errorCount > 0) {
+            $this->warn("Errors: {$errorCount} branches");
+        }
+
+        return 0;
     }
 }
