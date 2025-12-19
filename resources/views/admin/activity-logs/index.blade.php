@@ -55,9 +55,11 @@
                 </div>
             </div>
 
+            
             {{-- Activity Logs Table --}}
             <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-                <div class="overflow-x-auto">
+                <!-- Desktop Table View -->
+                <div class="hidden lg:block overflow-x-auto">
                     <table class="w-full">
                         <thead class="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
                             <tr>
@@ -116,6 +118,62 @@
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Mobile Card View -->
+                <div class="lg:hidden divide-y divide-gray-200 dark:divide-gray-700">
+                    @forelse($logs as $log)
+                        <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-900/50">
+                            <!-- Time & Action -->
+                            <div class="flex items-start justify-between mb-3">
+                                <div class="flex-1">
+                                    <div class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ $log->created_at->format('M d, Y H:i') }}</div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400">{{ $log->created_at->diffForHumans() }}</div>
+                                </div>
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap
+                                    @if(str_contains($log->action, 'created')) bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300
+                                    @elseif(str_contains($log->action, 'updated')) bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300
+                                    @elseif(str_contains($log->action, 'deleted')) bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300
+                                    @else bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300
+                                    @endif">
+                                    {{ ucfirst(str_replace('_', ' ', $log->action)) }}
+                                </span>
+                            </div>
+
+                            <!-- User Info -->
+                            <div class="flex items-center mb-3">
+                                <div class="w-10 h-10 rounded-full bg-primary-600 flex items-center justify-center text-white text-sm font-medium mr-3">
+                                    {{ substr($log->user->name ?? 'U', 0, 1) }}
+                                </div>
+                                <div>
+                                    <div class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ $log->user->name ?? 'Unknown' }}</div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400">{{ $log->user->email ?? 'N/A' }}</div>
+                                </div>
+                            </div>
+
+                            <!-- Model & IP -->
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Model</div>
+                                    <div class="text-sm text-gray-900 dark:text-gray-100">
+                                        {{ $log->model_type ? class_basename($log->model_type) : '-' }}
+                                        @if($log->model_id)
+                                            <span class="text-xs text-gray-500 dark:text-gray-400">#{{ $log->model_id }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">IP Address</div>
+                                    <div class="text-sm text-gray-900 dark:text-gray-100">{{ $log->ip_address }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="px-4 py-12 text-center text-gray-500 dark:text-gray-400">
+                            No activity logs found.
+                        </div>
+                    @endforelse
+                </div>
+            </div>
 
                 {{-- Pagination --}}
                 @if($logs->hasPages())
