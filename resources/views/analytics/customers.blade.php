@@ -10,11 +10,15 @@
                     RFM analysis, segmentation, and lifetime value insights
                 </p>
             </div>
-            <button onclick="window.print()" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md font-medium text-sm flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button onclick="window.print()"
+                    class="inline-flex items-center justify-center text-white font-medium transition-all duration-200
+                        bg-primary-600 hover:bg-primary-700
+                        md:px-4 md:py-2 md:rounded-md
+                        px-3 py-3 rounded-full">
+                <svg class="w-4 h-4 md:mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
                 </svg>
-                Print Report
+                <span class="hidden md:inline text-sm">Print Report</span>
             </button>
         </div>
 

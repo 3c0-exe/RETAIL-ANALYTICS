@@ -6,8 +6,16 @@
                 <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Branches</h1>
                 <p class="mt-2 text-gray-600 dark:text-gray-400">Manage your retail branches</p>
             </div>
-            <a href="{{ route('admin.branches.create') }}" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md font-medium transition-colors">
-                + Add Branch
+
+            <a href="{{ route('admin.branches.create') }}"
+            class="inline-flex items-center justify-center text-white font-medium transition-all duration-200
+                    bg-primary-600 hover:bg-primary-700
+                    md:px-4 md:py-2 md:rounded-md
+                    px-3 py-3 rounded-full">
+                <svg class="w-4 h-4 md:mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                <span class="hidden md:inline text-sm">Add Branch</span>
             </a>
         </div>
 

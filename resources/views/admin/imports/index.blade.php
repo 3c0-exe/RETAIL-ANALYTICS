@@ -3,13 +3,13 @@
     <div class="flex items-center justify-between lg:px-8 max-w-7xl mx-auto">
             <div>
                 <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">
-                    Forecasting
+                    Imports
                 </h1>
                 <p class="mt-2 text-gray-600 dark:text-gray-400">
-                    RFM analysis, segmentation, and lifetime value insights
+                    Drag your csv or excel files here
                 </p>
             </div>
-            
+
         </div>
     <x-slot name="header">
         <div class="flex items-center justify-between">
