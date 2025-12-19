@@ -1,4 +1,16 @@
 <x-app-layout>
+
+    <div class="flex items-center justify-between lg:px-8 max-w-7xl mx-auto">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                    Forecasting
+                </h1>
+                <p class="mt-2 text-gray-600 dark:text-gray-400">
+                    RFM analysis, segmentation, and lifetime value insights
+                </p>
+            </div>
+            
+        </div>
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">

@@ -10,6 +10,30 @@
             </p>
         </div>
 
+         <!-- Role Info -->
+        <div class="mt-6 mb-6 bg-purple-50 dark:bg-purple-900/10 border border-purple-200 dark:border-purple-800 rounded-lg p-6">
+            <div class="flex items-start gap-3">
+                <svg class="w-5 h-5 text-purple-600 dark:text-purple-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <div>
+                    <h3 class="text-sm font-semibold text-purple-900 dark:text-purple-100">Your Role: {{ ucfirst(str_replace('_', ' ', auth()->user()->role)) }}</h3>
+                    <p class="mt-1 text-sm text-purple-700 dark:text-purple-300">
+                        @if(auth()->user()->isAdmin())
+                            You have full access to all features including branch and user management.
+                        @elseif(auth()->user()->isBranchManager())
+                            You can manage your branch ({{ auth()->user()->branch->name }}) and view branch-specific reports.
+                        @elseif(auth()->user()->isAnalyst())
+                            You can view analytics and reports across all branches.
+                        @else
+                            You can view reports for {{ auth()->user()->branch->name }}.
+                        @endif
+                    </p>
+                </div>
+            </div>
+            </div>
+
+
         <!-- Quick Stats Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <!-- Card 1: Total Sales Today -->
@@ -135,7 +159,7 @@
             </div>
         </div>
 
-        <!-- Top Branch (Admin Only) -->
+ <!-- Top Branch (Admin Only) -->
         @if(auth()->user()->isAdmin() && $topBranch)
         <div class="bg-gradient-to-r from-purple-500 to-purple-600 dark:from-purple-600 dark:to-purple-700 rounded-lg p-6 mb-8">
             <div class="flex items-center justify-between text-white">
@@ -424,7 +448,7 @@
     }
 </script>
 
-        <!-- Phase Status -->
+        {{-- <!-- Phase Status -->
         <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-6">
             <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Development Progress</h2>
             <div class="space-y-3">
@@ -453,29 +477,9 @@
                     <span class="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-medium rounded-full">Pending</span>
                 </div>
             </div>
-        </div>
+        </div> --}}
 
-        <!-- Role Info -->
-        <div class="mt-6 bg-purple-50 dark:bg-purple-900/10 border border-purple-200 dark:border-purple-800 rounded-lg p-6">
-            <div class="flex items-start gap-3">
-                <svg class="w-5 h-5 text-purple-600 dark:text-purple-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-                <div>
-                    <h3 class="text-sm font-semibold text-purple-900 dark:text-purple-100">Your Role: {{ ucfirst(str_replace('_', ' ', auth()->user()->role)) }}</h3>
-                    <p class="mt-1 text-sm text-purple-700 dark:text-purple-300">
-                        @if(auth()->user()->isAdmin())
-                            You have full access to all features including branch and user management.
-                        @elseif(auth()->user()->isBranchManager())
-                            You can manage your branch ({{ auth()->user()->branch->name }}) and view branch-specific reports.
-                        @elseif(auth()->user()->isAnalyst())
-                            You can view analytics and reports across all branches.
-                        @else
-                            You can view reports for {{ auth()->user()->branch->name }}.
-                        @endif
-                    </p>
-                </div>
-            </div>
-        </div>
+
+
     </div>
 </x-app-layout>

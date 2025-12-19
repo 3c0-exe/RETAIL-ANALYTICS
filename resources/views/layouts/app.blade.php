@@ -2,9 +2,11 @@
 use Illuminate\Support\Facades\Storage;
 @endphp
 
-
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" x-data="{ darkMode: localStorage.getItem('theme') === 'dark' || (localStorage.getItem('theme') === null && '{{ auth()->user()->theme ?? 'light' }}' === 'dark') }" x-init="$watch('darkMode', val => { localStorage.setItem('theme', val ? 'dark' : 'light'); document.documentElement.classList.toggle('dark', val); })" :class="{ 'dark': darkMode }">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" x-data="{
+    darkMode: localStorage.getItem('theme') === 'dark' || (localStorage.getItem('theme') === null && '{{ auth()->user()->theme ?? 'light' }}' === 'dark'),
+    sidebarOpen: false
+}" x-init="$watch('darkMode', val => { localStorage.setItem('theme', val ? 'dark' : 'light'); document.documentElement.classList.toggle('dark', val); })" :class="{ 'dark': darkMode }">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -20,15 +22,35 @@ use Illuminate\Support\Facades\Storage;
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="font-sans antialiased bg-white dark:bg-[#0a0a0a] text-gray-900 dark:text-gray-100">
-        <div class="flex min-h-screen">
+        <div class="flex h-screen overflow-hidden">
+            <!-- Mobile Sidebar Overlay -->
+            <div x-show="sidebarOpen"
+                 @click="sidebarOpen = false"
+                 x-transition:enter="transition-opacity ease-linear duration-300"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 x-transition:leave="transition-opacity ease-linear duration-300"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0"
+                 class="fixed inset-0 z-40 bg-gray-900 bg-opacity-50 lg:hidden"
+                 style="display: none;"></div>
+
             <!-- Sidebar -->
-            <aside class="hidden lg:flex lg:flex-col w-64 border-r border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#171717]">
-                <!-- Logo -->
-                <div class="flex items-center h-16 px-6 border-b border-gray-200 dark:border-gray-800">
+            <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+                   class="fixed inset-y-0 left-0 z-50 flex flex-col w-64 transition-transform duration-300 ease-in-out transform border-r border-gray-200 lg:translate-x-0 lg:static lg:inset-auto dark:border-gray-800 bg-gray-50 dark:bg-[#171717]">
+
+                <!-- Logo - Fixed at top -->
+                <div class="flex items-center justify-between flex-shrink-0 h-16 px-6 border-b border-gray-200 dark:border-gray-800">
                     <h1 class="text-xl font-bold text-primary-600 dark:text-primary-400">RetailAnalytics</h1>
+                    <!-- Close button for mobile -->
+                    <button @click="sidebarOpen = false" class="p-2 text-gray-500 rounded-md lg:hidden hover:bg-gray-100 dark:hover:bg-gray-800">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
                 </div>
 
-                <!-- Navigation -->
+                <!-- Navigation - Scrollable -->
                 <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
                     <!-- Dashboard -->
                     <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md {{ request()->routeIs('dashboard') ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800' }}">
@@ -105,11 +127,9 @@ use Illuminate\Support\Facades\Storage;
 @endif
 
                     <!-- Analytics Section -->
-
                     <div class="pt-4">
                         <p class="px-3 text-xs font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-500">Analytics</p>
                         <div class="mt-2 space-y-1">
-                            <!-- REPLACE THIS LINK -->
                             <a href="{{ route('analytics.sales') }}"
                             class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md {{ request()->routeIs('analytics.sales') ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800' }}">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -124,7 +144,6 @@ use Illuminate\Support\Facades\Storage;
                                 </svg>
                                 Customer Analytics
                             </a>
-                             <!-- FIXED: Forecasting Link -->
                             <a href="{{ route('forecasts.index') }}"
                             class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md {{ request()->routeIs('forecasts.*') ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800' }}">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -136,18 +155,18 @@ use Illuminate\Support\Facades\Storage;
                     </div>
                 </nav>
 
-<!-- User Section -->
-<div class="p-4 border-t border-gray-200 dark:border-gray-800">
-    <div class="flex items-center gap-3">
-        @if(auth()->user()->avatar)
-            <img src="{{ Storage::url(auth()->user()->avatar) }}"
-                 alt="Avatar"
-                 class="object-cover w-8 h-8 border-2 rounded-full border-primary-600 dark:border-primary-500">
-        @else
-            <div class="flex items-center justify-center w-8 h-8 text-sm font-medium text-white rounded-full bg-primary-600 dark:bg-primary-500">
-                {{ substr(auth()->user()->name, 0, 1) }}
-            </div>
-        @endif
+                <!-- User Section - Fixed at bottom -->
+                <div class="flex-shrink-0 p-4 border-t border-gray-200 dark:border-gray-800">
+                    <div class="flex items-center gap-3">
+                        @if(auth()->user()->avatar)
+                            <img src="{{ Storage::url(auth()->user()->avatar) }}"
+                                 alt="Avatar"
+                                 class="object-cover w-8 h-8 border-2 rounded-full border-primary-600 dark:border-primary-500">
+                        @else
+                            <div class="flex items-center justify-center w-8 h-8 text-sm font-medium text-white rounded-full bg-primary-600 dark:bg-primary-500">
+                                {{ substr(auth()->user()->name, 0, 1) }}
+                            </div>
+                        @endif
                         <div class="flex-1 min-w-0">
                             <p class="text-sm font-medium text-gray-900 truncate dark:text-gray-100">
                                 {{ auth()->user()->name }}
@@ -160,13 +179,13 @@ use Illuminate\Support\Facades\Storage;
                 </div>
             </aside>
 
-            <!-- Main Content -->
+            <!-- Main Content Area -->
             <div class="flex flex-col flex-1 overflow-hidden">
-                <!-- Top Bar -->
-                <header class="h-16 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-[#171717] flex items-center justify-between px-6">
+                <!-- Top Bar - Sticky -->
+                <header class="sticky top-0 z-30 flex-shrink-0 h-16 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-[#171717] flex items-center justify-between px-4 sm:px-6">
                     <div class="flex items-center gap-4">
                         <!-- Mobile menu button -->
-                        <button class="p-2 text-gray-500 rounded-md lg:hidden hover:bg-gray-100 dark:hover:bg-gray-800">
+                        <button @click="sidebarOpen = true" class="p-2 text-gray-500 rounded-md lg:hidden hover:bg-gray-100 dark:hover:bg-gray-800">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                             </svg>
@@ -183,7 +202,7 @@ use Illuminate\Support\Facades\Storage;
                         @endif
                     </div>
 
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-2 sm:gap-3">
                         <!-- Dark Mode Toggle -->
                         <button @click="darkMode = !darkMode" class="p-2 text-gray-500 transition-colors rounded-md hover:bg-gray-100 dark:hover:bg-gray-800">
                             <svg x-show="!darkMode" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -194,19 +213,19 @@ use Illuminate\Support\Facades\Storage;
                             </svg>
                         </button>
 
-<!-- Profile Dropdown -->
-<div x-data="{ open: false }" class="relative">
-    <button @click="open = !open" class="flex items-center gap-2 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800">
-        @if(auth()->user()->avatar)
-            <img src="{{ Storage::url(auth()->user()->avatar) }}"
-                 alt="Avatar"
-                 class="object-cover w-8 h-8 border-2 border-gray-200 rounded-full dark:border-gray-700">
-        @else
-            <div class="flex items-center justify-center w-8 h-8 text-sm font-medium text-white rounded-full bg-primary-600 dark:bg-primary-500">
-                {{ substr(auth()->user()->name, 0, 1) }}
-            </div>
-        @endif
-    </button>
+                        <!-- Profile Dropdown -->
+                        <div x-data="{ open: false }" class="relative">
+                            <button @click="open = !open" class="flex items-center gap-2 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800">
+                                @if(auth()->user()->avatar)
+                                    <img src="{{ Storage::url(auth()->user()->avatar) }}"
+                                         alt="Avatar"
+                                         class="object-cover w-8 h-8 border-2 border-gray-200 rounded-full dark:border-gray-700">
+                                @else
+                                    <div class="flex items-center justify-center w-8 h-8 text-sm font-medium text-white rounded-full bg-primary-600 dark:bg-primary-500">
+                                        {{ substr(auth()->user()->name, 0, 1) }}
+                                    </div>
+                                @endif
+                            </button>
 
                             <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-48 bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-md shadow-lg py-1 z-10">
                                 <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">Profile Settings</a>
@@ -221,8 +240,8 @@ use Illuminate\Support\Facades\Storage;
                     </div>
                 </header>
 
-                <!-- Page Content -->
-                <main class="flex-1 overflow-y-auto bg-gray-50 dark:bg-[#0a0a0a] p-6">
+                <!-- Page Content - Scrollable -->
+                <main class="flex-1 overflow-y-auto bg-gray-50 dark:bg-[#0a0a0a] p-4 sm:p-6">
                     @if (session('success'))
                         <div class="p-4 mb-6 border border-green-200 rounded-md bg-green-50 dark:bg-green-900/20 dark:border-green-800">
                             <p class="text-sm text-green-800 dark:text-green-200">{{ session('success') }}</p>
