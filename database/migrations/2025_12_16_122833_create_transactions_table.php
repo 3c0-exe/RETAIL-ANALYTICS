@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('transaction_code')->unique();
             $table->foreignId('branch_id')->constrained()->cascadeOnDelete();
-            $table->timestamp('timestamp');
+            // $table->timestamp('timestamp');
             $table->foreignId('cashier_id')->nullable()->constrained('users');
             $table->decimal('subtotal', 12, 2);
             $table->decimal('tax_amount', 12, 2)->default(0);

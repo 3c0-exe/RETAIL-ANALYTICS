@@ -11,7 +11,7 @@ return new class extends Migration
     Schema::table('transactions', function (Blueprint $table) {
         // $table->decimal('total_amount', 12, 2)->after('discount_amount');
         // ✅ CORRECT (Just add the column without forcing a specific position)
-        $table->decimal('total_amount', 12, 2);
+        // $table->decimal('total_amount', 12, 2);
     });
 }
 

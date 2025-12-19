@@ -40,6 +40,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Forecast Routes
     Route::get('/forecasts', [ForecastController::class, 'index'])->name('forecasts.index');
     Route::post('/forecasts/regenerate', [ForecastController::class, 'regenerate'])->name('forecasts.regenerate');
+    Route::post('/forecasts/regenerate', function() {
+    \Artisan::call('forecast:generate');
+    return back()->with('success', 'Forecasts regenerated successfully!');
+})->name('forecasts.regenerate')->middleware(['auth']);
 
     // Alerts Routes
     Route::get('/alerts', [AlertController::class, 'index'])->name('alerts.index');

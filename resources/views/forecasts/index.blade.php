@@ -1,37 +1,26 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
-            Sales Forecasting
+        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
+            {{ __('Sales Forecasting') }}
         </h2>
     </x-slot>
 
     <div class="py-12">
-        <div class="mx-auto max-w-7xl space-y-6 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
-            {{-- Debug Info (Remove in production) --}}
-            @if(config('app.debug'))
-            <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-                <p class="text-sm text-yellow-800 dark:text-yellow-200">
-                    <strong>Debug Info:</strong>
-                    Forecasts: {{ $forecasts->count() }} |
-                    Comparison Dates: {{ count($comparison['dates']) }} |
-                    Comparison Actuals: {{ count(array_filter($comparison['actuals'])) }} |
-                    Top Products: {{ $topProductsForecasts->count() }}
-                </p>
-            </div>
-            @endif
-
-            {{-- Filters --}}
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mb-6">
                 <div class="p-6">
-                    <form method="GET" action="{{ route('forecasts.index') }}" class="flex flex-wrap gap-4 items-end">
-                        {{-- Branch Filter --}}
+                    <form method="GET" action="{{ route('forecasts.index') }}" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
                         @if(auth()->user()->role === 'admin')
-                        <div class="flex-1 min-w-[200px]">
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Branch</label>
-                            <select name="branch_id" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                        <div>
+                            <label for="branch_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Branch
+                            </label>
+                            <select name="branch_id" id="branch_id"
+                                    class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
                                 @foreach($branches as $branch)
-                                    <option value="{{ $branch->id }}" {{ $selectedBranch->id == $branch->id ? 'selected' : '' }}>
+                                    <option value="{{ $branch->id }}" {{ $selectedBranchId == $branch->id ? 'selected' : '' }}>
                                         {{ $branch->name }}
                                     </option>
                                 @endforeach
@@ -39,292 +28,238 @@
                         </div>
                         @endif
 
-                        {{-- Period Filter --}}
-                        <div class="flex-1 min-w-[200px]">
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Forecast Period</label>
-                            <select name="period" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300">
-                                <option value="7" {{ $period == 7 ? 'selected' : '' }}>7 Days</option>
-                                <option value="30" {{ $period == 30 ? 'selected' : '' }}>30 Days</option>
-                                <option value="90" {{ $period == 90 ? 'selected' : '' }}>90 Days</option>
+                        <div>
+                            <label for="forecast_period" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Forecast Period
+                            </label>
+                            <select name="forecast_period" id="forecast_period"
+                                    class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
+                                <option value="7" {{ $forecastPeriod == '7' ? 'selected' : '' }}>7 Days</option>
+                                <option value="30" {{ $forecastPeriod == '30' ? 'selected' : '' }}>30 Days</option>
+                                <option value="90" {{ $forecastPeriod == '90' ? 'selected' : '' }}>90 Days</option>
                             </select>
                         </div>
 
-                        <button type="submit" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md">
-                            Apply Filters
-                        </button>
+                        <div class="flex items-end">
+                            <button type="submit"
+                                    class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-md transition">
+                                Apply Filters
+                            </button>
+                        </div>
                     </form>
                 </div>
             </div>
 
-            {{-- Accuracy Metrics --}}
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Forecast Accuracy</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                            <div class="text-sm text-gray-600 dark:text-gray-400">Average Accuracy (Last 7 Days)</div>
-                            <div class="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-                                {{ $accuracy['average_accuracy'] ? number_format($accuracy['average_accuracy'], 1) . '%' : 'N/A' }}
-                            </div>
-                            @if(!$accuracy['average_accuracy'])
-                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Need 7 days of historical data</p>
-                            @endif
-                        </div>
-                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                            <div class="text-sm text-gray-600 dark:text-gray-400">Forecasts Evaluated</div>
-                            <div class="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-                                {{ $accuracy['forecasts_evaluated'] }}
-                            </div>
-                        </div>
-                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                            <div class="text-sm text-gray-600 dark:text-gray-400">Model Version</div>
-                            <div class="text-sm font-mono text-gray-900 dark:text-white mt-1">
-                                Exponential Smoothing v1
-                            </div>
-                        </div>
-                    </div>
-
-                    @if(auth()->user()->role === 'admin')
-                    <div class="mt-4">
-                        <form method="POST" action="{{ route('forecasts.regenerate') }}">
-                            @csrf
-                            <input type="hidden" name="branch_id" value="{{ $selectedBranch->id }}">
-                            <button type="submit" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-sm">
-                                🔄 Regenerate Forecasts
-                            </button>
-                        </form>
-                    </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
+                    <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Average Accuracy (Last {{ $forecastPeriod }} Days)</h3>
+                    <p class="text-3xl font-bold text-gray-900 dark:text-white">
+                        {{ $accuracy !== null ? number_format($accuracy, 1) . '%' : 'N/A' }}
+                    </p>
+                    @if($accuracy === null)
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                        Need {{ $forecastPeriod }} days of historical data
+                    </p>
                     @endif
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
+                    <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Forecasts Evaluated</h3>
+                    <p class="text-3xl font-bold text-gray-900 dark:text-white">
+                        {{ count($comparisonForecasts ?? []) }}
+                    </p>
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
+                    <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Model Version</h3>
+                    <p class="text-lg font-semibold text-gray-900 dark:text-white">
+                        Holt-Winters (Seasonality)
+                    </p>
                 </div>
             </div>
 
-            {{-- Forecast vs Actual Comparison --}}
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Forecast vs Actual (Last 7 Days)</h3>
-                    @if(array_sum($comparison['actuals']) > 0 || count(array_filter($comparison['forecasts'])) > 0)
-                        <canvas id="comparisonChart" height="80"></canvas>
-                    @else
-                        <div class="text-center py-12 text-gray-500 dark:text-gray-400">
-                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                            </svg>
-                            <p class="mt-4">No historical data available for comparison yet.</p>
-                            <p class="text-sm mt-2">Forecasts need at least 7 days of past sales data to show accuracy.</p>
-                        </div>
-                    @endif
-                </div>
+            <div class="mb-6">
+                <form method="POST" action="{{ route('forecasts.regenerate') }}" class="inline">
+                    @csrf
+                    <button type="submit"
+                            class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition inline-flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        Regenerate Forecasts
+                    </button>
+                </form>
             </div>
 
-            {{-- Sales Forecast Chart --}}
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+            @if(count($forecastDates ?? []) > 0)
+            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mb-6">
                 <div class="p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
-                        {{ $period }}-Day Sales Forecast
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                        📈 Sales Forecast (Next {{ $forecastPeriod }} Days)
                     </h3>
-                    @if($forecasts->isNotEmpty())
-                        <canvas id="forecastChart" height="80"></canvas>
+                    <div class="relative w-full" style="height: 400px;">
+                        <canvas id="futureForecastChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            @else
+            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mb-6">
+                <div class="p-6">
+                    <div class="text-center py-12">
+                        <p class="mt-4 text-gray-500 dark:text-gray-400">No forecasts available yet.</p>
+                        <p class="text-sm text-gray-400 dark:text-gray-500 mb-4">Click "Regenerate Forecasts" to generate predictions.</p>
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            @if(count($comparisonDates ?? []) > 0)
+            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mb-6">
+                <div class="p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                        🎯 Forecast vs Actual (Last {{ $forecastPeriod }} Days)
+                    </h3>
+                    @if(count($comparisonActuals ?? []) > 0 && count($comparisonForecasts ?? []) > 0)
+                        <div class="relative w-full" style="height: 400px;">
+                            <canvas id="forecastChart"></canvas>
+                        </div>
                     @else
-                        <div class="text-center py-12 text-gray-500 dark:text-gray-400">
-                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-                            </svg>
-                            <p class="mt-4">No forecast data available.</p>
-                            <p class="text-sm mt-2">Need at least 7 days of sales history to generate forecasts.</p>
+                        <div class="text-center py-12">
+                            <p class="mt-4 text-gray-500 dark:text-gray-400">Accuracy data not yet available</p>
+                            <p class="text-sm text-gray-400 dark:text-gray-500 mt-2">Check back tomorrow!</p>
                         </div>
                     @endif
                 </div>
             </div>
+            @endif
 
-            {{-- Top Products Forecast --}}
+            @if($topProductsForecasts->count() > 0)
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
-                        Top 10 Products - {{ $period }}-Day Forecast
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                        Top 10 Products by Forecasted Sales
                     </h3>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-sm text-left">
-                            <thead class="text-xs uppercase bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead class="bg-gray-50 dark:bg-gray-900">
                                 <tr>
-                                    <th class="px-4 py-3">Product</th>
-                                    <th class="px-4 py-3">SKU</th>
-                                    <th class="px-4 py-3 text-right">Predicted Sales</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Product</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">SKU</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Forecasted Sales</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                @forelse($topProductsForecasts as $item)
-                                <tr class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
-                                    <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">
-                                        {{ $item['product']->name ?? 'Unknown Product' }}
-                                    </td>
-                                    <td class="px-4 py-3 text-gray-600 dark:text-gray-400">
-                                        {{ $item['product']->sku ?? 'N/A' }}
-                                    </td>
-                                    <td class="px-4 py-3 text-right font-semibold text-gray-900 dark:text-white">
-                                        {{ $selectedBranch->currency }} {{ number_format($item['total_forecast'], 2) }}
-                                    </td>
-                                </tr>
-                                @empty
+                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                @foreach($topProductsForecasts as $forecast)
                                 <tr>
-                                    <td colspan="3" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                                        No product forecasts available yet.
-                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{{ $forecast->product->name ?? 'N/A' }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ $forecast->product->sku ?? 'N/A' }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-right">₱{{ number_format($forecast->total_forecast, 2) }}</td>
                                 </tr>
-                                @endforelse
+                                @endforeach
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
+            @endif
 
         </div>
     </div>
 
-    @push('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        // Only render charts if data exists
-        @if(array_sum($comparison['actuals']) > 0 || count(array_filter($comparison['forecasts'])) > 0)
-        // Comparison Chart
-        const comparisonCtx = document.getElementById('comparisonChart').getContext('2d');
-        new Chart(comparisonCtx, {
-            type: 'line',
-            data: {
-                labels: @json($comparison['dates']),
-                datasets: [
-                    {
-                        label: 'Actual Sales',
-                        data: @json($comparison['actuals']),
-                        borderColor: '#10b981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        borderWidth: 2,
-                        tension: 0.4,
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('✅ Chart Script Running...');
+
+            const isDark = document.documentElement.classList.contains('dark');
+            const textColor = isDark ? '#fafafa' : '#111827';
+            const gridColor = isDark ? '#262626' : '#e5e7eb';
+
+            // 1. Prepare Data
+            const rawDates = {!! json_encode($forecastDates ?? []) !!};
+            // Convert strings to numbers just to be safe
+            const rawValues = {!! json_encode($forecastValues ?? []) !!}.map(Number);
+
+            // 2. Render Future Chart
+            const futureCtx = document.getElementById('futureForecastChart');
+            if (futureCtx && rawDates.length > 0) {
+                new Chart(futureCtx, {
+                    type: 'line',
+                    data: {
+                        labels: rawDates,
+                        datasets: [{
+                            label: 'Projected Sales',
+                            data: rawValues,
+                            borderColor: '#7c3aed',
+                            backgroundColor: 'rgba(124, 58, 237, 0.2)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#fff'
+                        }]
                     },
-                    {
-                        label: 'Forecasted Sales',
-                        data: @json($comparison['forecasts']),
-                        borderColor: '#8b5cf6',
-                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                        borderWidth: 2,
-                        borderDash: [5, 5],
-                        tension: 0.4,
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        labels: {
-                            color: document.documentElement.classList.contains('dark') ? '#fff' : '#000'
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            color: document.documentElement.classList.contains('dark') ? '#999' : '#666',
-                            callback: function(value) {
-                                return '{{ $selectedBranch->currency }} ' + value.toLocaleString();
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { labels: { color: textColor } },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return 'Forecast: ₱' + context.parsed.y.toLocaleString('en-PH', {minimumFractionDigits: 2});
+                                    }
+                                }
                             }
                         },
-                        grid: {
-                            color: document.documentElement.classList.contains('dark') ? '#333' : '#e5e7eb'
-                        }
-                    },
-                    x: {
-                        ticks: {
-                            color: document.documentElement.classList.contains('dark') ? '#999' : '#666'
-                        },
-                        grid: {
-                            color: document.documentElement.classList.contains('dark') ? '#333' : '#e5e7eb'
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: gridColor },
+                                ticks: {
+                                    color: textColor,
+                                    callback: function(value) { return '₱' + value.toLocaleString(); }
+                                }
+                            },
+                            x: {
+                                grid: { color: gridColor },
+                                ticks: { color: textColor }
+                            }
                         }
                     }
+                });
+            }
+
+            // 3. Render Accuracy Chart (if exists)
+            const pastDates = {!! json_encode($comparisonDates ?? []) !!};
+            if (pastDates.length > 0) {
+                const accuracyCtx = document.getElementById('forecastChart');
+                if (accuracyCtx) {
+                    new Chart(accuracyCtx, {
+                        type: 'line',
+                        data: {
+                            labels: pastDates,
+                            datasets: [
+                                {
+                                    label: 'Actual',
+                                    data: {!! json_encode($comparisonActuals ?? []) !!}.map(Number),
+                                    borderColor: '#10b981',
+                                    tension: 0.3
+                                },
+                                {
+                                    label: 'Forecast',
+                                    data: {!! json_encode($comparisonForecasts ?? []) !!}.map(Number),
+                                    borderColor: '#6b7280',
+                                    borderDash: [5, 5],
+                                    tension: 0.3
+                                }
+                            ]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false }
+                    });
                 }
             }
         });
-        @endif
-
-        @if($forecasts->isNotEmpty())
-        // Forecast Chart
-        const forecastCtx = document.getElementById('forecastChart').getContext('2d');
-        new Chart(forecastCtx, {
-            type: 'line',
-            data: {
-                labels: @json($forecasts->map(fn($f) => \Carbon\Carbon::parse($f->forecast_date)->format('M d'))),
-                datasets: [
-                    {
-                        label: 'Predicted Sales',
-                        data: @json($forecasts->pluck('predicted_sales')),
-                        borderColor: '#8b5cf6',
-                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.4,
-                    },
-                    {
-                        label: 'Upper Confidence',
-                        data: @json($forecasts->pluck('confidence_upper')),
-                        borderColor: '#c4b5fd',
-                        backgroundColor: 'rgba(196, 181, 253, 0.05)',
-                        borderWidth: 1,
-                        borderDash: [3, 3],
-                        fill: false,
-                        tension: 0.4,
-                    },
-                    {
-                        label: 'Lower Confidence',
-                        data: @json($forecasts->pluck('confidence_lower')),
-                        borderColor: '#c4b5fd',
-                        backgroundColor: 'rgba(196, 181, 253, 0.05)',
-                        borderWidth: 1,
-                        borderDash: [3, 3],
-                        fill: false,
-                        tension: 0.4,
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        labels: {
-                            color: document.documentElement.classList.contains('dark') ? '#fff' : '#000'
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            color: document.documentElement.classList.contains('dark') ? '#999' : '#666',
-                            callback: function(value) {
-                                return '{{ $selectedBranch->currency }} ' + value.toLocaleString();
-                            }
-                        },
-                        grid: {
-                            color: document.documentElement.classList.contains('dark') ? '#333' : '#e5e7eb'
-                        }
-                    },
-                    x: {
-                        ticks: {
-                            color: document.documentElement.classList.contains('dark') ? '#999' : '#666'
-                        },
-                        grid: {
-                            color: document.documentElement.classList.contains('dark') ? '#333' : '#e5e7eb'
-                        }
-                    }
-                }
-            }
-        });
-        @endif
-
-        console.log('Forecast data:', @json($forecasts->pluck('predicted_sales')));
-        console.log('Comparison actuals:', @json($comparison['actuals']));
-        console.log('Comparison forecasts:', @json($comparison['forecasts']));
     </script>
-    @endpush
+
 </x-app-layout>

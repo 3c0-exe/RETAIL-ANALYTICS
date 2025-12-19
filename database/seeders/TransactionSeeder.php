@@ -62,22 +62,21 @@ class TransactionSeeder extends Seeder
                 ]);
             }
 
-            // Create transaction
+// Create transaction
             $transaction = Transaction::create([
                 'transaction_code' => 'TXN' . now()->format('Ymd') . str_pad($i + 1, 6, '0', STR_PAD_LEFT),
                 'branch_id' => $branch->id,
                 'customer_id' => $customer?->id,
                 'cashier_id' => $cashier?->id,
-                'transaction_date' => $date,
-                'timestamp' => $date,
+                // 'transaction_date' => $date,  <-- REMOVE THIS LINE (Column doesn't exist)
+                'timestamp' => $date,            // This holds the date/time
                 'payment_method' => $paymentMethod,
                 'status' => 'completed',
                 'subtotal' => 0,
-                'tax' => 0,
-                'discount' => 0,
-                'total' => 0,
+                'tax_amount' => 0,       // FIXED: was 'tax'
+                'discount_amount' => 0,  // FIXED: was 'discount'
+                'total_amount' => 0,     // FIXED: was 'total'
             ]);
-
             // Add 1-5 random products
             $itemCount = rand(1, 5);
             $subtotal = 0;
@@ -93,7 +92,7 @@ class TransactionSeeder extends Seeder
                     'transaction_id' => $transaction->id,
                     'product_id' => $product->id,
                     'product_name' => $product->name,
-                    'product_sku' => $product->sku,
+                    'sku' => $product->sku,
                     'quantity' => $quantity,
                     'unit_price' => $unitPrice,
                     'discount' => $discount,
@@ -107,11 +106,11 @@ class TransactionSeeder extends Seeder
             $tax = $subtotal * 0.12; // 12% VAT
             $total = $subtotal + $tax;
 
-            // Update transaction totals
+// Update transaction totals
             $transaction->update([
                 'subtotal' => $subtotal,
-                'tax' => $tax,
-                'total' => $total,
+                'tax_amount' => $tax,       // FIXED: was 'tax'
+                'total_amount' => $total,   // FIXED: was 'total'
             ]);
 
             if ($i % 50 == 0) {
