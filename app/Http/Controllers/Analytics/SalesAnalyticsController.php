@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Analytics;
 
 use App\Http\Controllers\Controller;
 use App\Models\Transaction;
-use App\Models\TransactionItem;
 use App\Models\Branch;
 use App\Models\User;
 use App\Models\Category;
@@ -35,11 +34,11 @@ class SalesAnalyticsController extends Controller
         // Build base query
         $baseQuery = Transaction::query()
             ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
-            ->whereBetween('transaction_date', [$startDate, $endDate]);
+            ->whereBetween('timestamp', [$startDate, $endDate]); // FIXED: transaction_date -> timestamp
 
         // Apply category filter
         if ($request->category_id) {
-            $baseQuery->whereHas('items.product', function($q) use ($request) {
+            $baseQuery->whereHas('transactionItems.product', function($q) use ($request) {
                 $q->where('category_id', $request->category_id);
             });
         }
@@ -54,12 +53,12 @@ class SalesAnalyticsController extends Controller
                 'branches.id',
                 'branches.name',
                 DB::raw('COUNT(transactions.id) as transaction_count'),
-                DB::raw('SUM(transactions.total) as total_sales'),
-                DB::raw('AVG(transactions.total) as avg_transaction')
+                DB::raw('SUM(transactions.total_amount) as total_sales'), // FIXED: total -> total_amount
+                DB::raw('AVG(transactions.total_amount) as avg_transaction') // FIXED
             )
             ->join('branches', 'transactions.branch_id', '=', 'branches.id')
             ->when($branchId, fn($q) => $q->where('transactions.branch_id', $branchId))
-            ->whereBetween('transactions.transaction_date', [$startDate, $endDate])
+            ->whereBetween('transactions.timestamp', [$startDate, $endDate]) // FIXED
             ->groupBy('branches.id', 'branches.name')
             ->orderByDesc('total_sales')
             ->get();
@@ -71,8 +70,8 @@ class SalesAnalyticsController extends Controller
 
         $salesByBranch = $salesByBranch->map(function($branch) use ($previousStart, $previousEnd) {
             $previousSales = Transaction::where('branch_id', $branch->id)
-                ->whereBetween('transaction_date', [$previousStart, $previousEnd])
-                ->sum('total');
+                ->whereBetween('timestamp', [$previousStart, $previousEnd]) // FIXED
+                ->sum('total_amount'); // FIXED
 
             if ($previousSales > 0) {
                 $branch->growth = (($branch->total_sales - $previousSales) / $previousSales) * 100;
@@ -94,7 +93,7 @@ class SalesAnalyticsController extends Controller
             ->join('products', 'transaction_items.product_id', '=', 'products.id')
             ->join('categories', 'products.category_id', '=', 'categories.id')
             ->when($branchId, fn($q) => $q->where('transactions.branch_id', $branchId))
-            ->whereBetween('transactions.transaction_date', [$startDate, $endDate])
+            ->whereBetween('transactions.timestamp', [$startDate, $endDate]) // FIXED
             ->groupBy('categories.id', 'categories.name')
             ->orderByDesc('total_sales')
             ->get();
@@ -121,7 +120,7 @@ class SalesAnalyticsController extends Controller
             ->join('products', 'transaction_items.product_id', '=', 'products.id')
             ->join('categories', 'products.category_id', '=', 'categories.id')
             ->when($branchId, fn($q) => $q->where('transactions.branch_id', $branchId))
-            ->whereBetween('transactions.transaction_date', [$startDate, $endDate])
+            ->whereBetween('transactions.timestamp', [$startDate, $endDate]) // FIXED
             ->groupBy('products.id', 'products.sku', 'products.name', 'products.price', 'products.cost', 'categories.name')
             ->orderByDesc('revenue')
             ->limit(20)
@@ -129,13 +128,13 @@ class SalesAnalyticsController extends Controller
 
         // 4. SALES HEATMAP (Hour x Day of Week)
         $heatmapData = Transaction::select(
-                DB::raw('HOUR(transaction_date) as hour'),
-                DB::raw('DAYOFWEEK(transaction_date) as day'),
-                DB::raw('SUM(total) as total_sales'),
+                DB::raw('HOUR(timestamp) as hour'), // FIXED
+                DB::raw('DAYOFWEEK(timestamp) as day'), // FIXED
+                DB::raw('SUM(total_amount) as total_sales'), // FIXED
                 DB::raw('COUNT(*) as transaction_count')
             )
             ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
-            ->whereBetween('transaction_date', [$startDate, $endDate])
+            ->whereBetween('timestamp', [$startDate, $endDate]) // FIXED
             ->groupBy('hour', 'day')
             ->get();
 
@@ -158,12 +157,12 @@ class SalesAnalyticsController extends Controller
         $salesByCashier = Transaction::select(
                 'users.name as cashier_name',
                 DB::raw('COUNT(transactions.id) as transaction_count'),
-                DB::raw('SUM(transactions.total) as total_sales'),
-                DB::raw('AVG(transactions.total) as avg_transaction')
+                DB::raw('SUM(transactions.total_amount) as total_sales'), // FIXED
+                DB::raw('AVG(transactions.total_amount) as avg_transaction') // FIXED
             )
             ->join('users', 'transactions.cashier_id', '=', 'users.id')
             ->when($branchId, fn($q) => $q->where('transactions.branch_id', $branchId))
-            ->whereBetween('transactions.transaction_date', [$startDate, $endDate])
+            ->whereBetween('transactions.timestamp', [$startDate, $endDate]) // FIXED
             ->groupBy('users.id', 'users.name')
             ->orderByDesc('total_sales')
             ->limit(10)
@@ -191,11 +190,5 @@ class SalesAnalyticsController extends Controller
             'startDate',
             'endDate'
         ));
-    }
-
-    public function export(Request $request)
-    {
-        // Export functionality - we'll add this in Step 4
-        return back()->with('info', 'Export feature coming in next step!');
     }
 }
