@@ -66,28 +66,23 @@
             </form>
         </div>
 
-        <!-- Role Info -->
-        <div class="p-6 mb-6 border border-purple-200 rounded-lg bg-purple-50 dark:bg-purple-900/10 dark:border-purple-800">
-            <div class="flex items-start gap-3">
-                <svg class="w-5 h-5 text-purple-600 dark:text-purple-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
+        <!-- Top Branch (Admin Only) - Moved to top -->
+        @if(auth()->user()->isAdmin() && $topBranch && $selectedBranchId === 'all')
+        <div class="p-6 mb-8 rounded-lg bg-gradient-to-r from-purple-500 to-purple-600 dark:from-purple-600 dark:to-purple-700">
+            <div class="flex items-center justify-between text-white">
                 <div>
-                    <h3 class="text-sm font-semibold text-purple-900 dark:text-purple-100">Your Role: {{ ucfirst(str_replace('_', ' ', auth()->user()->role)) }}</h3>
-                    <p class="mt-1 text-sm text-purple-700 dark:text-purple-300">
-                        @if(auth()->user()->isAdmin())
-                            You have full access to all features including branch and user management.
-                        @elseif(auth()->user()->isBranchManager())
-                            You can manage your branch ({{ auth()->user()->branch->name }}) and view branch-specific reports.
-                        @elseif(auth()->user()->isAnalyst())
-                            You can view analytics and reports across all branches.
-                        @else
-                            You can view reports for {{ auth()->user()->branch->name }}.
-                        @endif
-                    </p>
+                    <p class="text-sm font-medium opacity-90">🏆 Top Performing Branch (Selected Period)</p>
+                    <p class="mt-2 text-3xl font-bold">{{ $topBranch->name }}</p>
+                    <p class="mt-1 text-lg opacity-90">₱{{ number_format($topBranch->total, 2) }}</p>
+                </div>
+                <div class="flex items-center justify-center w-16 h-16 rounded-lg bg-white/20">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+                    </svg>
                 </div>
             </div>
         </div>
+        @endif
 
         <!-- Quick Stats Cards -->
         <div class="grid grid-cols-1 gap-6 mb-8 md:grid-cols-2 lg:grid-cols-4">
@@ -208,23 +203,7 @@
             </div>
         </div>
 
-        <!-- Top Branch (Admin Only) -->
-        @if(auth()->user()->isAdmin() && $topBranch && $selectedBranchId === 'all')
-        <div class="p-6 mb-8 rounded-lg bg-gradient-to-r from-purple-500 to-purple-600 dark:from-purple-600 dark:to-purple-700">
-            <div class="flex items-center justify-between text-white">
-                <div>
-                    <p class="text-sm font-medium opacity-90">Top Performing Branch (Selected Period)</p>
-                    <p class="mt-2 text-3xl font-bold">{{ $topBranch->name }}</p>
-                    <p class="mt-1 text-lg opacity-90">₱{{ number_format($topBranch->total, 2) }}</p>
-                </div>
-                <div class="flex items-center justify-center w-16 h-16 rounded-lg bg-white/20">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
-                    </svg>
-                </div>
-            </div>
-        </div>
-        @endif
+
 
         <!-- Charts Section -->
         <div class="grid grid-cols-1 gap-6 mb-8 lg:grid-cols-2">
@@ -496,5 +475,28 @@
                 });
             }
         </script>
+
+        <!-- Role Info - Moved to bottom -->
+        <div class="p-6 mt-8 border border-purple-200 rounded-lg bg-purple-50 dark:bg-purple-900/10 dark:border-purple-800">
+            <div class="flex items-start gap-3">
+                <svg class="w-5 h-5 text-purple-600 dark:text-purple-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <div>
+                    <h3 class="text-sm font-semibold text-purple-900 dark:text-purple-100">Your Role: {{ ucfirst(str_replace('_', ' ', auth()->user()->role)) }}</h3>
+                    <p class="mt-1 text-sm text-purple-700 dark:text-purple-300">
+                        @if(auth()->user()->isAdmin())
+                            You have full access to all features including branch and user management.
+                        @elseif(auth()->user()->isBranchManager())
+                            You can manage your branch ({{ auth()->user()->branch->name }}) and view branch-specific reports.
+                        @elseif(auth()->user()->isAnalyst())
+                            You can view analytics and reports across all branches.
+                        @else
+                            You can view reports for {{ auth()->user()->branch->name }}.
+                        @endif
+                    </p>
+                </div>
+            </div>
+        </div>
     </div>
 </x-app-layout>
