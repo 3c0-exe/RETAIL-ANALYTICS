@@ -37,7 +37,7 @@ class ForecastController extends Controller
         $historyStartDate  = $today->copy()->subDays($historyPeriod);
         $historyEndDate    = $today->copy()->subDay();
 
-        // 3. FETCH FUTURE FORECASTS
+        // 3. FETCH FUTURE FORECASTS (with confidence intervals)
         $forecasts = Forecast::where('branch_id', $selectedBranchId)
             ->whereNull('product_id')
             ->whereNull('category')
@@ -47,6 +47,8 @@ class ForecastController extends Controller
 
         $forecastDates = $forecasts->pluck('forecast_date')->map(fn($date) => Carbon::parse($date)->format('M d'))->toArray();
         $forecastValues = $forecasts->pluck('predicted_sales')->toArray();
+        $forecastLower = $forecasts->pluck('confidence_lower')->toArray();
+        $forecastUpper = $forecasts->pluck('confidence_upper')->toArray();
 
         // 4. FETCH HISTORICAL ACTUAL SALES
         $historicalTransactions = Transaction::where('branch_id', $selectedBranchId)
@@ -90,10 +92,9 @@ class ForecastController extends Controller
             ? max(0, 100 - (($totalError / $totalActual) * 100))
             : null;
 
-        // NEW: Prepare Past Forecast values aligned with History Dates for the Chart
+        // Prepare Past Forecast values aligned with History Dates for the Chart
         $historyForecastValues = [];
         foreach ($historicalTransactions as $txn) {
-            // We match the forecast value to the exact date of the transaction
             $dateKey = Carbon::parse($txn->date)->toDateString();
             $historyForecastValues[] = $pastForecastMap[$dateKey] ?? null;
         }
@@ -111,8 +112,8 @@ class ForecastController extends Controller
 
         return view('forecasts.index', compact(
             'branches', 'selectedBranchId', 'forecastPeriod', 'historyPeriod',
-            'forecastDates', 'forecastValues',
-            'historyDates', 'historyValues', 'historyForecastValues', // Passed explicitly now
+            'forecastDates', 'forecastValues', 'forecastLower', 'forecastUpper',
+            'historyDates', 'historyValues', 'historyForecastValues',
             'accuracy', 'topProductsForecasts'
         ));
     }
