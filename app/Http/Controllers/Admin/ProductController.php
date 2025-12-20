@@ -37,7 +37,29 @@ class ProductController extends Controller
             $query->where('is_active', $request->is_active);
         }
 
-        $products = $query->latest()->paginate(15);
+        // Sorting
+        $sortField = $request->get('sort', 'created_at');
+        $sortDirection = $request->get('direction', 'desc');
+
+        // Validate sort field to prevent SQL injection
+        $allowedSortFields = ['name', 'sku', 'price', 'created_at', 'is_active'];
+        if (!in_array($sortField, $allowedSortFields)) {
+            $sortField = 'created_at';
+        }
+
+        // Validate direction
+        $sortDirection = in_array($sortDirection, ['asc', 'desc']) ? $sortDirection : 'desc';
+
+        // Apply sorting
+        if ($sortField === 'category_id') {
+            $query->join('categories', 'products.category_id', '=', 'categories.id')
+                  ->select('products.*', 'categories.name as category_name')
+                  ->orderBy('category_name', $sortDirection);
+        } else {
+            $query->orderBy($sortField, $sortDirection);
+        }
+
+        $products = $query->paginate(15)->appends($request->except('page'));
         $categories = Category::where('is_active', true)->get();
 
         return view('admin.products.index', compact('products', 'categories'));

@@ -11,12 +11,41 @@ use Illuminate\Validation\Rule;
 
 class BranchController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $branches = Branch::with('manager')
-            ->withCount('users')
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
+        $query = Branch::with('manager')
+            ->withCount('users');
+
+        // Search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('code', 'like', "%{$search}%");
+            });
+        }
+
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Sorting
+        $sortField = $request->get('sort', 'created_at');
+        $sortDirection = $request->get('direction', 'desc');
+
+        // Validate sort field
+        $allowedSortFields = ['name', 'code', 'status', 'created_at'];
+        if (!in_array($sortField, $allowedSortFields)) {
+            $sortField = 'created_at';
+        }
+
+        // Validate direction
+        $sortDirection = in_array($sortDirection, ['asc', 'desc']) ? $sortDirection : 'desc';
+
+        $query->orderBy($sortField, $sortDirection);
+
+        $branches = $query->paginate(10)->appends($request->except('page'));
 
         ActivityLog::log('viewed_branches');
 
@@ -55,7 +84,6 @@ class BranchController extends Controller
             ]);
         }
 
-        // Fixed: Pass Branch::class, $branch->id, then changes array
         ActivityLog::log('created_branch', Branch::class, $branch->id, ['name' => $branch->name]);
 
         return redirect()
@@ -106,7 +134,6 @@ class BranchController extends Controller
 
         $branch->update($validated);
 
-        // Fixed: Pass Branch::class, $branch->id, then changes array
         ActivityLog::log('updated_branch', Branch::class, $branch->id, ['name' => $branch->name]);
 
         return redirect()
@@ -125,7 +152,6 @@ class BranchController extends Controller
         $branchId = $branch->id;
         $branch->delete();
 
-        // Fixed: Pass Branch::class, $branchId, then changes array
         ActivityLog::log('deleted_branch', Branch::class, $branchId, ['name' => $branchName]);
 
         return redirect()
