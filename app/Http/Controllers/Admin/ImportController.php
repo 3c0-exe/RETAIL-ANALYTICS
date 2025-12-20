@@ -201,6 +201,84 @@ class ImportController extends Controller
     }
 
     /**
+     * Download sample CSV template
+     */
+    public function downloadSample()
+    {
+        $headers = [
+            'transaction_code',
+            'date',
+            'product_name',
+            'sku',
+            'quantity',
+            'unit_price',
+            'total',
+            'customer_name',
+            'customer_email',
+            'payment_method',
+            'discount'
+        ];
+
+        $sampleData = [
+            ['TXN001', '2024-12-01', 'Gaming Laptop', 'LAP001', '1', '45000', '45000', 'Juan Dela Cruz', 'juan@email.com', 'cash', '0'],
+            ['TXN001', '2024-12-01', 'Wireless Mouse', 'MOU001', '2', '500', '1000', 'Juan Dela Cruz', 'juan@email.com', 'cash', '0'],
+            ['TXN002', '2024-12-02', '4K Monitor', 'MON001', '1', '15000', '14500', 'Maria Santos', 'maria@email.com', 'card', '500'],
+            ['TXN003', '2024-12-03', 'Mechanical Keyboard', 'KEY001', '3', '1200', '3600', 'Pedro Garcia', 'pedro@email.com', 'gcash', '0'],
+        ];
+
+        $filename = 'sample_sales_template_' . date('Y-m-d') . '.csv';
+
+        $callback = function() use ($headers, $sampleData) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $headers);
+            foreach ($sampleData as $row) {
+                fputcsv($file, $row);
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
+    }
+
+    /**
+     * Export import errors as CSV
+     */
+    public function exportErrors(Import $import)
+    {
+        if (empty($import->errors) || $import->failed_rows === 0) {
+            return redirect()->route('admin.imports.show', $import)
+                ->with('error', 'No errors to export.');
+        }
+
+        $filename = 'import_errors_' . $import->id . '_' . date('Y-m-d') . '.csv';
+
+        $callback = function() use ($import) {
+            $file = fopen('php://output', 'w');
+
+            // Headers
+            fputcsv($file, ['Row Number', 'Error Message']);
+
+            // Error data
+            foreach ($import->errors as $error) {
+                fputcsv($file, [
+                    $error['row'] ?? 'N/A',
+                    $error['message'] ?? 'Unknown error'
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
+    }
+
+    /**
      * Get preview of file data
      */
     private function getFilePreview($filePath, $rows = 50)
@@ -271,7 +349,7 @@ class ImportController extends Controller
     }
 
     /**
-     * Import a single transaction row
+     * Import a single transaction row with duplicate detection
      */
     private function importTransactionRow($row, $map, $branchId)
     {
@@ -313,9 +391,12 @@ class ImportController extends Controller
             );
         }
 
-        // Check if transaction already exists
+        // Check for duplicate transaction code
         if ($transactionCode) {
-            $existingTransaction = Transaction::where('transaction_code', $transactionCode)->first();
+            $existingTransaction = Transaction::where('transaction_code', $transactionCode)
+                ->where('branch_id', $branchId)
+                ->first();
+
             if ($existingTransaction) {
                 // Add item to existing transaction
                 $transaction = $existingTransaction;
@@ -325,10 +406,10 @@ class ImportController extends Controller
                     'transaction_code' => $transactionCode,
                     'branch_id' => $branchId,
                     'customer_id' => $customer?->id,
-                    'transaction_date' => $date,
+                    'timestamp' => $date,
                     'subtotal' => $total,
-                    'discount' => $discount,
-                    'total' => $total - $discount,
+                    'discount_amount' => $discount,
+                    'total_amount' => $total - $discount,
                     'payment_method' => $paymentMethod,
                 ]);
             }
@@ -337,10 +418,10 @@ class ImportController extends Controller
             $transaction = $this->createTransaction([
                 'branch_id' => $branchId,
                 'customer_id' => $customer?->id,
-                'transaction_date' => $date,
+                'timestamp' => $date,
                 'subtotal' => $total,
-                'discount' => $discount,
-                'total' => $total - $discount,
+                'discount_amount' => $discount,
+                'total_amount' => $total - $discount,
                 'payment_method' => $paymentMethod,
             ]);
         }
@@ -354,17 +435,35 @@ class ImportController extends Controller
             $product = Product::where('name', 'LIKE', '%' . $productName . '%')->first();
         }
 
-        // Create transaction item
-        TransactionItem::create([
-            'transaction_id' => $transaction->id,
-            'product_id' => $product?->id,
-            'product_name' => $productName,
-            'product_sku' => $sku,
-            'quantity' => $quantity,
-            'unit_price' => $unitPrice,
-            'discount' => 0,
-            'subtotal' => $quantity * $unitPrice,
-        ]);
+        // Check for duplicate transaction item
+        $existingItem = TransactionItem::where('transaction_id', $transaction->id)
+            ->where('product_name', $productName)
+            ->where('product_sku', $sku)
+            ->first();
+
+        if ($existingItem) {
+            // Update quantity instead of creating duplicate
+            $existingItem->quantity += $quantity;
+            $existingItem->subtotal = $existingItem->quantity * $existingItem->unit_price;
+            $existingItem->save();
+        } else {
+            // Create new transaction item
+            TransactionItem::create([
+                'transaction_id' => $transaction->id,
+                'product_id' => $product?->id,
+                'product_name' => $productName,
+                'product_sku' => $sku,
+                'quantity' => $quantity,
+                'unit_price' => $unitPrice,
+                'discount' => 0,
+                'subtotal' => $quantity * $unitPrice,
+            ]);
+        }
+
+        // Recalculate transaction totals
+        $transaction->subtotal = $transaction->items()->sum('subtotal');
+        $transaction->total_amount = $transaction->subtotal + $transaction->tax_amount - $transaction->discount_amount;
+        $transaction->save();
 
         // Update customer stats
         if ($customer) {

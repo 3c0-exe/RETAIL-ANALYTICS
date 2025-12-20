@@ -12,72 +12,91 @@ use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
 
-        // Get branch filter based on role
-        $branchId = ($user->role === 'admin') ? null : $user->branch_id;
+        // Get filters from request
+        $dateRange = $request->get('date_range', 'last_30_days');
+        $selectedBranchId = $request->get('branch_id', 'all');
+
+        // Determine branch filter based on role
+        if ($user->role === 'admin') {
+            // Admin can filter by branch or see all
+            $branchId = ($selectedBranchId === 'all') ? null : $selectedBranchId;
+        } else {
+            // Non-admins always see their own branch
+            $branchId = $user->branch_id;
+        }
+
+        // Calculate date range
+        $dateFilter = $this->getDateFilter($dateRange);
+        $startDate = $dateFilter['start'];
+        $endDate = $dateFilter['end'];
 
         // Today's Sales
         $todaySales = Transaction::when($branchId, fn($q) => $q->where('branch_id', $branchId))
-            ->whereDate('timestamp', today()) // FIXED: was transaction_date
-            ->sum('total_amount'); // FIXED: was total
+            ->whereDate('timestamp', today())
+            ->sum('total_amount');
+
+        // Sales for selected period
+        $periodSales = Transaction::when($branchId, fn($q) => $q->where('branch_id', $branchId))
+            ->whereBetween('timestamp', [$startDate, $endDate])
+            ->sum('total_amount');
 
         // Monthly Sales (current month)
         $monthlySales = Transaction::when($branchId, fn($q) => $q->where('branch_id', $branchId))
-            ->whereYear('timestamp', now()->year) // FIXED
-            ->whereMonth('timestamp', now()->month) // FIXED
-            ->sum('total_amount'); // FIXED
+            ->whereYear('timestamp', now()->year)
+            ->whereMonth('timestamp', now()->month)
+            ->sum('total_amount');
 
         // YTD Sales
         $ytdSales = Transaction::when($branchId, fn($q) => $q->where('branch_id', $branchId))
-            ->whereYear('timestamp', now()->year) // FIXED
-            ->sum('total_amount'); // FIXED
+            ->whereYear('timestamp', now()->year)
+            ->sum('total_amount');
 
-        // Average Transaction Value
+        // Average Transaction Value (for selected period)
         $avgTransaction = Transaction::when($branchId, fn($q) => $q->where('branch_id', $branchId))
-            ->whereDate('timestamp', '>=', now()->subDays(30)) // FIXED
-            ->avg('total_amount') ?? 0; // FIXED
+            ->whereBetween('timestamp', [$startDate, $endDate])
+            ->avg('total_amount') ?? 0;
 
         // Transaction counts
         $todayTransactions = Transaction::when($branchId, fn($q) => $q->where('branch_id', $branchId))
-            ->whereDate('timestamp', today()) // FIXED
+            ->whereDate('timestamp', today())
             ->count();
 
         $totalTransactions = Transaction::when($branchId, fn($q) => $q->where('branch_id', $branchId))
             ->count();
 
         // Product count
-        // FIXED: Changed 'is_active' to 'status' based on your migrations
         $productCount = Product::where('status', 'active')->count();
 
         // Customer count
         $customerCount = Customer::count();
 
-        // Top Branch (Admin only)
+        // Top Branch (Admin only, and only if viewing all branches)
         $topBranch = null;
-        if ($user->role === 'admin') {
-            $topBranch = Transaction::select('branches.name', DB::raw('SUM(total_amount) as total')) // FIXED: Summing total_amount
+        if ($user->role === 'admin' && $selectedBranchId === 'all') {
+            $topBranch = Transaction::select('branches.name', DB::raw('SUM(total_amount) as total'))
                 ->join('branches', 'transactions.branch_id', '=', 'branches.id')
-                ->whereMonth('timestamp', now()->month) // FIXED
+                ->whereBetween('timestamp', [$startDate, $endDate])
                 ->groupBy('branches.id', 'branches.name')
                 ->orderByDesc('total')
                 ->first();
         }
 
-        // Sales Trend (Last 30 days)
+        // Sales Trend (for selected period)
         $salesTrend = Transaction::when($branchId, fn($q) => $q->where('branch_id', $branchId))
             ->select(
-                DB::raw('DATE(timestamp) as date'), // FIXED
-                DB::raw('SUM(total_amount) as total') // FIXED
+                DB::raw('DATE(timestamp) as date'),
+                DB::raw('SUM(total_amount) as total')
             )
-            ->whereDate('timestamp', '>=', now()->subDays(30)) // FIXED
+            ->whereBetween('timestamp', [$startDate, $endDate])
             ->groupBy('date')
             ->orderBy('date')
             ->get();
 
-        // Top 5 Products
+        // Top 5 Products (for selected period)
         $topProducts = DB::table('transaction_items')
             ->select(
                 'transaction_items.product_name',
@@ -86,18 +105,21 @@ class DashboardController extends Controller
             )
             ->join('transactions', 'transaction_items.transaction_id', '=', 'transactions.id')
             ->when($branchId, fn($q) => $q->where('transactions.branch_id', $branchId))
-            ->whereDate('transactions.timestamp', '>=', now()->subDays(30)) // FIXED
+            ->whereBetween('transactions.timestamp', [$startDate, $endDate])
             ->groupBy('transaction_items.product_name')
             ->orderByDesc('total_sales')
             ->limit(5)
             ->get();
 
-        // Payment Method Breakdown
+        // Payment Method Breakdown (for selected period)
         $paymentMethods = Transaction::when($branchId, fn($q) => $q->where('branch_id', $branchId))
-            ->select('payment_method', DB::raw('COUNT(*) as count'), DB::raw('SUM(total_amount) as total')) // FIXED
-            ->whereMonth('timestamp', now()->month) // FIXED
+            ->select('payment_method', DB::raw('COUNT(*) as count'), DB::raw('SUM(total_amount) as total'))
+            ->whereBetween('timestamp', [$startDate, $endDate])
             ->groupBy('payment_method')
             ->get();
+
+        // Get all branches for dropdown (admin only)
+        $branches = ($user->role === 'admin') ? Branch::where('status', 'active')->get() : collect();
 
         return view('dashboard', compact(
             'todaySales',
@@ -111,7 +133,50 @@ class DashboardController extends Controller
             'topBranch',
             'salesTrend',
             'topProducts',
-            'paymentMethods'
+            'paymentMethods',
+            'dateRange',
+            'selectedBranchId',
+            'branches',
+            'periodSales',
+            'startDate',
+            'endDate'
         ));
+    }
+
+    /**
+     * Calculate start and end dates based on selected range
+     */
+    private function getDateFilter($dateRange)
+    {
+        $end = now();
+
+        switch ($dateRange) {
+            case 'today':
+                $start = now()->startOfDay();
+                break;
+            case 'last_7_days':
+                $start = now()->subDays(7)->startOfDay();
+                break;
+            case 'last_30_days':
+                $start = now()->subDays(30)->startOfDay();
+                break;
+            case 'this_month':
+                $start = now()->startOfMonth();
+                break;
+            case 'last_month':
+                $start = now()->subMonth()->startOfMonth();
+                $end = now()->subMonth()->endOfMonth();
+                break;
+            case 'this_year':
+                $start = now()->startOfYear();
+                break;
+            default:
+                $start = now()->subDays(30)->startOfDay();
+        }
+
+        return [
+            'start' => $start,
+            'end' => $end,
+        ];
     }
 }

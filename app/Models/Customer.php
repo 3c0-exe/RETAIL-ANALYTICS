@@ -42,6 +42,25 @@ class Customer extends Model
         return $query->where('segment', $segment);
     }
 
+    // Helper methods
+    public function updateStats()
+    {
+        $this->total_spent = $this->transactions()->sum('total_amount');
+        $this->visit_count = $this->transactions()->count();
+        $this->last_visit_date = $this->transactions()->latest('timestamp')->first()?->timestamp;
+        $this->save();
+    }
+
+    public function isVIP()
+    {
+        return $this->segment === 'vip';
+    }
+
+    public function isAtRisk()
+    {
+        return $this->segment === 'at_risk';
+    }
+
     // RFM Getters
     public function getRecencyScore()
     {
@@ -68,5 +87,26 @@ class Customer extends Model
     {
         if (!$this->last_visit_date) return null;
         return Carbon::parse($this->last_visit_date)->diffInDays(now());
+    }
+
+    // Auto-generate customer code
+    public static function generateCustomerCode()
+    {
+        do {
+            $code = 'CUST-' . str_pad(rand(1, 999999), 6, '0', STR_PAD_LEFT);
+        } while (self::where('customer_code', $code)->exists());
+
+        return $code;
+    }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($customer) {
+            if (empty($customer->customer_code)) {
+                $customer->customer_code = self::generateCustomerCode();
+            }
+        });
     }
 }

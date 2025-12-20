@@ -1,21 +1,15 @@
 <x-app-layout>
-
-    <div class="flex items-center justify-between lg:px-8 max-w-7xl mx-auto">
+    <!-- Custom Page Header (above main content) -->
+    <div class="py-6 bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+        <div class="flex items-center justify-between px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
             <div>
                 <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">
                     Imports
                 </h1>
                 <p class="mt-2 text-gray-600 dark:text-gray-400">
-                    Drag your csv or excel files here
+                    Upload and manage your sales data files
                 </p>
             </div>
-
-        </div>
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
-                {{ __('Import History') }}
-            </h2>
             <a href="{{ route('admin.imports.create') }}" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white transition bg-purple-600 rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
@@ -23,7 +17,7 @@
                 New Import
             </a>
         </div>
-    </x-slot>
+    </div>
 
     <div class="py-12">
         <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
