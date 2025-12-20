@@ -21,29 +21,36 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/analytics/sales/export', [\App\Http\Controllers\Analytics\SalesAnalyticsController::class, 'export'])
         ->name('analytics.sales.export');
 
+        // NEW: Heatmap detail endpoint
+        Route::get('/analytics/sales/heatmap-detail', [\App\Http\Controllers\Analytics\SalesAnalyticsController::class, 'getHeatmapDetail'])
+            ->name('analytics.sales.heatmap-detail');
+
+        Route::post('/analytics/sales/export', [\App\Http\Controllers\Analytics\SalesAnalyticsController::class, 'export'])
+            ->name('analytics.sales.export');
+
     // Customer Analytics Routes
-    Route::get('/analytics/customers', [\App\Http\Controllers\Analytics\CustomerAnalyticsController::class, 'index'])
-        ->name('analytics.customers');
-    Route::get('/analytics/customers/{customer}', [\App\Http\Controllers\Analytics\CustomerAnalyticsController::class, 'show'])
-        ->name('analytics.customers.show');
+        Route::get('/analytics/customers', [\App\Http\Controllers\Analytics\CustomerAnalyticsController::class, 'index'])
+            ->name('analytics.customers');
+        Route::get('/analytics/customers/{customer}', [\App\Http\Controllers\Analytics\CustomerAnalyticsController::class, 'show'])
+            ->name('analytics.customers.show');
 
     // Export Routes
-    Route::post('/export/sales/csv', [\App\Http\Controllers\ExportController::class, 'salesCsv'])
-        ->name('export.sales.csv');
-    Route::post('/export/sales/excel', [\App\Http\Controllers\ExportController::class, 'salesExcel'])
-        ->name('export.sales.excel');
-    Route::post('/export/sales/pdf', [\App\Http\Controllers\ExportController::class, 'salesPdf'])
-        ->name('export.sales.pdf');
-    Route::post('/export/customers/csv', [\App\Http\Controllers\ExportController::class, 'customersCsv'])
-        ->name('export.customers.csv');
+        Route::post('/export/sales/csv', [\App\Http\Controllers\ExportController::class, 'salesCsv'])
+            ->name('export.sales.csv');
+        Route::post('/export/sales/excel', [\App\Http\Controllers\ExportController::class, 'salesExcel'])
+            ->name('export.sales.excel');
+        Route::post('/export/sales/pdf', [\App\Http\Controllers\ExportController::class, 'salesPdf'])
+            ->name('export.sales.pdf');
+        Route::post('/export/customers/csv', [\App\Http\Controllers\ExportController::class, 'customersCsv'])
+            ->name('export.customers.csv');
 
     // Forecast Routes
-    Route::get('/forecasts', [ForecastController::class, 'index'])->name('forecasts.index');
-    Route::post('/forecasts/regenerate', [ForecastController::class, 'regenerate'])->name('forecasts.regenerate');
-    Route::post('/forecasts/regenerate', function() {
-    \Artisan::call('forecast:generate');
-    return back()->with('success', 'Forecasts regenerated successfully!');
-})->name('forecasts.regenerate')->middleware(['auth']);
+            Route::get('/forecasts', [ForecastController::class, 'index'])->name('forecasts.index');
+            Route::post('/forecasts/regenerate', [ForecastController::class, 'regenerate'])->name('forecasts.regenerate');
+            Route::post('/forecasts/regenerate', function() {
+            \Artisan::call('forecast:generate');
+            return back()->with('success', 'Forecasts regenerated successfully!');
+        })->name('forecasts.regenerate')->middleware(['auth']);
 
     // Alerts Routes
     Route::get('/alerts', [AlertController::class, 'index'])->name('alerts.index');

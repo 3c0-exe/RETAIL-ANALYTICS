@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="max-w-7xl mx-auto">
+    <div class="mx-auto max-w-7xl">
         <!-- Page Header -->
         <div class="flex items-center justify-between mb-6">
             <div>
@@ -11,47 +11,44 @@
                 </p>
             </div>
             <button onclick="window.print()"
-                    class="inline-flex items-center justify-center text-white font-medium transition-all duration-200
-                        bg-primary-600 hover:bg-primary-700
-                        md:px-4 md:py-2 md:rounded-md
-                        px-3 py-3 rounded-full">
-                <svg class="w-4 h-4 md:mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    class="inline-flex items-center justify-center px-3 py-3 font-medium text-white transition-all duration-200 rounded-full bg-primary-600 hover:bg-primary-700 md:px-4 md:py-2 md:rounded-md">
+                <svg class="flex-shrink-0 w-4 h-4 md:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
                 </svg>
-                <span class="hidden md:inline text-sm">Print Report</span>
+                <span class="hidden text-sm md:inline">Print Report</span>
             </button>
         </div>
 
         <!-- Filters Section -->
         <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-6 mb-6">
-            <form method="GET" action="{{ route('analytics.sales') }}" class="space-y-4">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <form method="GET" action="{{ route('analytics.sales') }}" class="space-y-4" id="filterForm">
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
                     <!-- Date Range -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                             Start Date
                         </label>
-                        <input type="date" name="start_date"
+                        <input type="date" name="start_date" id="startDate"
                                value="{{ $startDate->format('Y-m-d') }}"
-                               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
+                               class="w-full px-3 py-2 text-gray-900 bg-white border border-gray-300 rounded-md dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                             End Date
                         </label>
-                        <input type="date" name="end_date"
+                        <input type="date" name="end_date" id="endDate"
                                value="{{ $endDate->format('Y-m-d') }}"
-                               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
+                               class="w-full px-3 py-2 text-gray-900 bg-white border border-gray-300 rounded-md dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
                     </div>
 
                     <!-- Branch Filter (Admin Only) -->
                     @if(auth()->user()->isAdmin())
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                             Branch
                         </label>
-                        <select name="branch_id" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
+                        <select name="branch_id" id="branchId" class="w-full px-3 py-2 text-gray-900 bg-white border border-gray-300 rounded-md dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
                             <option value="">All Branches</option>
                             @foreach($branches as $branch)
                                 <option value="{{ $branch->id }}" {{ request('branch_id') == $branch->id ? 'selected' : '' }}>
@@ -64,10 +61,10 @@
 
                     <!-- Category Filter -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                             Category
                         </label>
-                        <select name="category_id" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
+                        <select name="category_id" class="w-full px-3 py-2 text-gray-900 bg-white border border-gray-300 rounded-md dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
                             <option value="">All Categories</option>
                             @foreach($categories as $category)
                                 <option value="{{ $category->id }}" {{ request('category_id') == $category->id ? 'selected' : '' }}>
@@ -80,10 +77,10 @@
 
                 <!-- Action Buttons -->
                 <div class="flex gap-3">
-                    <button type="submit" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md font-medium text-sm">
+                    <button type="submit" class="px-4 py-2 text-sm font-medium text-white rounded-md bg-primary-600 hover:bg-primary-700">
                         Apply Filters
                     </button>
-                    <a href="{{ route('analytics.sales') }}" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 rounded-md font-medium text-sm">
+                    <a href="{{ route('analytics.sales') }}" class="px-4 py-2 text-sm font-medium text-gray-900 bg-gray-200 rounded-md hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100">
                         Reset
                     </a>
                 </div>
@@ -94,14 +91,11 @@
         <div class="flex justify-end mb-4">
             <div x-data="{ open: false }" class="relative">
                 <button @click="open = !open" type="button"
-                        class="inline-flex items-center justify-center text-white font-medium transition-all duration-200
-                            bg-green-600 hover:bg-green-700
-                            md:px-4 md:py-2 md:rounded-md
-                            px-3 py-3 rounded-full">
-                    <svg class="w-4 h-4 md:mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        class="inline-flex items-center justify-center px-3 py-3 font-medium text-white transition-all duration-200 bg-green-600 rounded-full hover:bg-green-700 md:px-4 md:py-2 md:rounded-md">
+                    <svg class="flex-shrink-0 w-4 h-4 md:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
-                    <span class="hidden md:inline text-sm">Export</span>
+                    <span class="hidden text-sm md:inline">Export</span>
                 </button>
 
                 <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-48 bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-md shadow-lg py-1 z-10">
@@ -110,7 +104,7 @@
                         <input type="hidden" name="start_date" value="{{ request('start_date') }}">
                         <input type="hidden" name="end_date" value="{{ request('end_date') }}">
                         <input type="hidden" name="branch_id" value="{{ request('branch_id') }}">
-                        <button type="submit" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
+                        <button type="submit" class="w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
                             Export as CSV
                         </button>
                     </form>
@@ -120,7 +114,7 @@
                         <input type="hidden" name="start_date" value="{{ request('start_date') }}">
                         <input type="hidden" name="end_date" value="{{ request('end_date') }}">
                         <input type="hidden" name="branch_id" value="{{ request('branch_id') }}">
-                        <button type="submit" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
+                        <button type="submit" class="w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
                             Export as Excel
                         </button>
                     </form>
@@ -130,7 +124,7 @@
                         <input type="hidden" name="start_date" value="{{ request('start_date') }}">
                         <input type="hidden" name="end_date" value="{{ request('end_date') }}">
                         <input type="hidden" name="branch_id" value="{{ request('branch_id') }}">
-                        <button type="submit" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
+                        <button type="submit" class="w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
                             Export as PDF
                         </button>
                     </form>
@@ -141,7 +135,7 @@
         <!-- 1. SALES BY BRANCH -->
         @if(auth()->user()->isAdmin())
         <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-6 mb-6">
-            <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+            <h2 class="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">
                 Sales by Branch
             </h2>
 
@@ -149,194 +143,104 @@
                 <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
                     <thead>
                         <tr>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Branch
-                            </th>
-                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Transactions
-                            </th>
-                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Total Sales
-                            </th>
-                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Avg Transaction
-                            </th>
-                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Growth
-                            </th>
+                            <th class="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">Branch</th>
+                            <th class="px-4 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase dark:text-gray-400">Transactions</th>
+                            <th class="px-4 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase dark:text-gray-400">Total Sales</th>
+                            <th class="px-4 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase dark:text-gray-400">Avg Transaction</th>
+                            <th class="px-4 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase dark:text-gray-400">Growth</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
                         @forelse($salesByBranch as $branch)
                         <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                            <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
-                                {{ $branch->name }}
-                            </td>
-                            <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 text-right">
-                                {{ number_format($branch->transaction_count) }}
-                            </td>
-                            <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100 text-right">
-                                ₱{{ number_format($branch->total_sales, 2) }}
-                            </td>
-                            <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 text-right">
-                                ₱{{ number_format($branch->avg_transaction, 2) }}
-                            </td>
+                            <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">{{ $branch->name }}</td>
+                            <td class="px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400">{{ number_format($branch->transaction_count) }}</td>
+                            <td class="px-4 py-3 text-sm font-medium text-right text-gray-900 dark:text-gray-100">₱{{ number_format($branch->total_sales, 2) }}</td>
+                            <td class="px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400">₱{{ number_format($branch->avg_transaction, 2) }}</td>
                             <td class="px-4 py-3 text-sm text-right">
-                                <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium
-                                    {{ $branch->growth >= 0 ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300' }}">
+                                <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium {{ $branch->growth >= 0 ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300' }}">
                                     @if($branch->growth >= 0)
-                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
-                                        </svg>
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>
                                     @else
-                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
-                                        </svg>
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
                                     @endif
                                     {{ number_format(abs($branch->growth), 1) }}%
                                 </span>
                             </td>
                         </tr>
                         @empty
-                        <tr>
-                            <td colspan="5" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                                No sales data for selected period
-                            </td>
-                        </tr>
+                        <tr><td colspan="5" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">No sales data for selected period</td></tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
-
-            <!-- Branch Chart -->
-            <div class="mt-6" style="height: 300px;">
-                <canvas id="branchChart"></canvas>
-            </div>
+            <div class="mt-6" style="height: 300px;"><canvas id="branchChart"></canvas></div>
         </div>
         @endif
 
         <!-- 2. SALES BY CATEGORY -->
         <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-6 mb-6">
-            <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                Sales by Category
-            </h2>
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Category Table -->
+            <h2 class="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">Sales by Category</h2>
+            <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
                         <thead>
                             <tr>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                                    Category
-                                </th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                                    Units
-                                </th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                                    Sales
-                                </th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                                    %
-                                </th>
+                                <th class="px-4 py-3 text-xs font-medium text-left text-gray-500 uppercase dark:text-gray-400">Category</th>
+                                <th class="px-4 py-3 text-xs font-medium text-right text-gray-500 uppercase dark:text-gray-400">Units</th>
+                                <th class="px-4 py-3 text-xs font-medium text-right text-gray-500 uppercase dark:text-gray-400">Sales</th>
+                                <th class="px-4 py-3 text-xs font-medium text-right text-gray-500 uppercase dark:text-gray-400">%</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
                             @forelse($salesByCategory->take(10) as $category)
                             <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                                <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
-                                    {{ $category->category_name }}
-                                </td>
-                                <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 text-right">
-                                    {{ number_format($category->total_quantity) }}
-                                </td>
-                                <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100 text-right">
-                                    ₱{{ number_format($category->total_sales, 2) }}
-                                </td>
-                                <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 text-right">
-                                    {{ number_format($category->percentage, 1) }}%
-                                </td>
+                                <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{{ $category->category_name }}</td>
+                                <td class="px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400">{{ number_format($category->total_quantity) }}</td>
+                                <td class="px-4 py-3 text-sm font-medium text-right text-gray-900 dark:text-gray-100">₱{{ number_format($category->total_sales, 2) }}</td>
+                                <td class="px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400">{{ number_format($category->percentage, 1) }}%</td>
                             </tr>
                             @empty
-                            <tr>
-                                <td colspan="4" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                                    No category data available
-                                </td>
-                            </tr>
+                            <tr><td colspan="4" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">No category data available</td></tr>
                             @endforelse
                         </tbody>
                     </table>
                 </div>
-
-                <!-- Category Chart -->
-                <div style="height: 300px;">
-                    <canvas id="categoryChart"></canvas>
-                </div>
+                <div style="height: 300px;"><canvas id="categoryChart"></canvas></div>
             </div>
         </div>
 
         <!-- 3. TOP 20 PRODUCTS -->
         <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-6 mb-6">
-            <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                Top 20 Products
-            </h2>
-
+            <h2 class="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">Top 20 Products</h2>
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
                     <thead>
                         <tr>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                SKU
-                            </th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Product
-                            </th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Category
-                            </th>
-                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Units Sold
-                            </th>
-                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Revenue
-                            </th>
-                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Avg Margin
-                            </th>
+                            <th class="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">SKU</th>
+                            <th class="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">Product</th>
+                            <th class="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">Category</th>
+                            <th class="px-4 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase dark:text-gray-400">Units Sold</th>
+                            <th class="px-4 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase dark:text-gray-400">Revenue</th>
+                            <th class="px-4 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase dark:text-gray-400">Avg Margin</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
                         @forelse($topProducts as $product)
                         <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                            <td class="px-4 py-3 text-sm font-mono text-gray-600 dark:text-gray-400">
-                                {{ $product->sku }}
-                            </td>
-                            <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
-                                {{ Str::limit($product->product_name, 40) }}
-                            </td>
-                            <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                                {{ $product->category_name }}
-                            </td>
-                            <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 text-right">
-                                {{ number_format($product->units_sold) }}
-                            </td>
-                            <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100 text-right">
-                                ₱{{ number_format($product->revenue, 2) }}
-                            </td>
+                            <td class="px-4 py-3 font-mono text-sm text-gray-600 dark:text-gray-400">{{ $product->sku }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{{ Str::limit($product->product_name, 40) }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{{ $product->category_name }}</td>
+                            <td class="px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400">{{ number_format($product->units_sold) }}</td>
+                            <td class="px-4 py-3 text-sm font-medium text-right text-gray-900 dark:text-gray-100">₱{{ number_format($product->revenue, 2) }}</td>
                             <td class="px-4 py-3 text-sm text-right">
-                                <span class="px-2 py-1 rounded-full text-xs font-medium
-                                    {{ $product->avg_margin > 0 ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400' }}">
+                                <span class="px-2 py-1 rounded-full text-xs font-medium {{ $product->avg_margin > 0 ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400' }}">
                                     ₱{{ number_format($product->avg_margin, 2) }}
                                 </span>
                             </td>
                         </tr>
                         @empty
-
-<tr>
-                            <td colspan="6" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                                No product data available
-                            </td>
-                        </tr>
+                        <tr><td colspan="6" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">No product data available</td></tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -345,30 +249,28 @@
 
         <!-- 4. SALES HEATMAP -->
         <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-6 mb-6">
-            <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+            <h2 class="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">
                 Sales Heatmap (Hour × Day of Week)
             </h2>
-            <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">
-                Identify peak sales hours and days. Darker colors indicate higher sales.
+            <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
+                Click any cell to see detailed breakdown. Darker colors indicate higher sales.
             </p>
 
             <div class="overflow-x-auto">
                 <div class="inline-block min-w-full">
-                    <div class="grid grid-cols-25 gap-1">
-                        <!-- Header Row (Hours) -->
+                    <div class="grid gap-1 grid-cols-25">
+                        <!-- Header Row -->
                         <div class="col-span-1"></div>
                         @for($hour = 0; $hour < 24; $hour++)
-                            <div class="text-center text-xs text-gray-600 dark:text-gray-400 pb-2">
+                            <div class="pb-2 text-xs text-center text-gray-600 dark:text-gray-400">
                                 {{ str_pad($hour, 2, '0', STR_PAD_LEFT) }}
                             </div>
                         @endfor
 
-                        <!-- Data Rows (Days) -->
-                        @php
-                            $days = ['', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-                        @endphp
+                        <!-- Data Rows -->
+                        @php $days = ['', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']; @endphp
                         @for($day = 1; $day <= 7; $day++)
-                            <div class="text-right text-xs text-gray-600 dark:text-gray-400 pr-2 flex items-center justify-end">
+                            <div class="flex items-center justify-end pr-2 text-xs text-right text-gray-600 dark:text-gray-400">
                                 {{ $days[$day] }}
                             </div>
                             @for($hour = 0; $hour < 24; $hour++)
@@ -378,10 +280,9 @@
                                     $opacity = max(0.1, $intensity);
                                 @endphp
                                 <div
-                                    class="aspect-square rounded cursor-pointer transition-all hover:ring-2 hover:ring-primary-500"
+                                    class="transition-all rounded cursor-pointer aspect-square hover:ring-2 hover:ring-primary-500 hover:scale-110"
                                     style="background-color: rgba(139, 92, 246, {{ $opacity }})"
-                                    title="₱{{ number_format($cell['sales'], 2) }} ({{ $cell['count'] }} transactions)"
-                                    onclick="showHeatmapDetail('{{ $days[$day] }}', {{ $hour }}, {{ $cell['sales'] }}, {{ $cell['count'] }})">
+                                    onclick="openHeatmapModal({{ $day }}, {{ $hour }}, '{{ $days[$day] }}')">
                                 </div>
                             @endfor
                         @endfor
@@ -403,67 +304,72 @@
 
         <!-- 5. SALES BY CASHIER -->
         <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-6 mb-6">
-            <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                Top Performers (Cashiers)
-            </h2>
-
+            <h2 class="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">Top Performers (Cashiers)</h2>
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
                     <thead>
                         <tr>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Rank
-                            </th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Cashier
-                            </th>
-                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Transactions
-                            </th>
-                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Total Sales
-                            </th>
-                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Avg Transaction
-                            </th>
+                            <th class="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">Rank</th>
+                            <th class="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">Cashier</th>
+                            <th class="px-4 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase dark:text-gray-400">Transactions</th>
+                            <th class="px-4 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase dark:text-gray-400">Total Sales</th>
+                            <th class="px-4 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase dark:text-gray-400">Avg Transaction</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
                         @forelse($salesByCashier as $index => $cashier)
                         <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                             <td class="px-4 py-3 text-sm font-bold text-gray-900 dark:text-gray-100">
-                                @if($index === 0)
-                                    🥇
-                                @elseif($index === 1)
-                                    🥈
-                                @elseif($index === 2)
-                                    🥉
-                                @else
-                                    {{ $index + 1 }}
-                                @endif
+                                @if($index === 0) 🥇 @elseif($index === 1) 🥈 @elseif($index === 2) 🥉 @else {{ $index + 1 }} @endif
                             </td>
-                            <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
-                                {{ $cashier->cashier_name }}
-                            </td>
-                            <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 text-right">
-                                {{ number_format($cashier->transaction_count) }}
-                            </td>
-                            <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100 text-right">
-                                ₱{{ number_format($cashier->total_sales, 2) }}
-                            </td>
-                            <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 text-right">
-                                ₱{{ number_format($cashier->avg_transaction, 2) }}
-                            </td>
+                            <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{{ $cashier->cashier_name }}</td>
+                            <td class="px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400">{{ number_format($cashier->transaction_count) }}</td>
+                            <td class="px-4 py-3 text-sm font-medium text-right text-gray-900 dark:text-gray-100">₱{{ number_format($cashier->total_sales, 2) }}</td>
+                            <td class="px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400">₱{{ number_format($cashier->avg_transaction, 2) }}</td>
                         </tr>
                         @empty
-                        <tr>
-                            <td colspan="5" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                                No cashier data available
-                            </td>
-                        </tr>
+                        <tr><td colspan="5" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">No cashier data available</td></tr>
                         @endforelse
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- HEATMAP DETAIL MODAL -->
+    <div id="heatmapModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <!-- Background overlay -->
+            <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75 dark:bg-gray-900 dark:bg-opacity-75" onclick="closeHeatmapModal()"></div>
+
+            <!-- Modal panel -->
+            <div class="inline-block overflow-hidden text-left align-bottom transition-all transform bg-white rounded-lg shadow-xl dark:bg-gray-800 sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <!-- Header -->
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100" id="modalTitle">
+                            Sales Detail
+                        </h3>
+                        <button onclick="closeHeatmapModal()" class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Content -->
+                <div class="px-6 py-4">
+                    <div id="modalContent" class="space-y-4">
+                        <!-- Loading spinner -->
+                        <div class="flex items-center justify-center py-8">
+                            <svg class="w-8 h-8 text-primary-600 animate-spin" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -477,17 +383,13 @@
             textSecondary: isDarkMode ? '#a3a3a3' : '#6b7280',
             grid: isDarkMode ? '#262626' : '#e5e7eb',
             accent: isDarkMode ? '#a78bfa' : '#8b5cf6',
-            success: isDarkMode ? '#34d399' : '#10b981',
-            warning: isDarkMode ? '#fbbf24' : '#f59e0b',
-            danger: isDarkMode ? '#f87171' : '#ef4444',
-            info: isDarkMode ? '#60a5fa' : '#3b82f6',
+            success: isDarkMode ? '#34d399' : '#10b981'
         };
 
         Chart.defaults.color = colors.text;
         Chart.defaults.borderColor = colors.grid;
-        Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
 
-        // Branch Chart (Admin only)
+        // Branch Chart
         @if(auth()->user()->isAdmin())
         const branchCtx = document.getElementById('branchChart');
         if (branchCtx) {
@@ -500,38 +402,16 @@
                         label: 'Total Sales',
                         data: branchData.map(b => b.total_sales),
                         backgroundColor: colors.accent,
-                        borderRadius: 6,
-                        borderSkipped: false,
+                        borderRadius: 6
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            backgroundColor: isDarkMode ? '#262626' : '#ffffff',
-                            titleColor: colors.text,
-                            bodyColor: colors.text,
-                            borderColor: colors.grid,
-                            borderWidth: 1,
-                            padding: 12,
-                            callbacks: {
-                                label: (context) => `₱${context.parsed.y.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
-                            }
-                        }
-                    },
+                    plugins: { legend: { display: false } },
                     scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: { color: colors.grid, drawBorder: false },
-                            ticks: {
-                                callback: (value) => '₱' + value.toLocaleString('en-US', { maximumFractionDigits: 0 })
-                            }
-                        },
-                        x: {
-                            grid: { display: false, drawBorder: false },
-                        }
+                        y: { beginAtZero: true, grid: { color: colors.grid } },
+                        x: { grid: { display: false } }
                     }
                 }
             });
@@ -548,52 +428,107 @@
                     labels: categoryData.map(c => c.category_name),
                     datasets: [{
                         data: categoryData.map(c => c.total_sales),
-                        backgroundColor: [
-                            colors.accent,
-                            colors.success,
-                            colors.info,
-                            colors.warning,
-                            colors.danger,
-                        ],
-                        borderWidth: 0,
+                        backgroundColor: [colors.accent, colors.success, '#60a5fa', '#fbbf24', '#f87171']
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                padding: 15,
-                                usePointStyle: true,
-                                pointStyle: 'circle',
-                            }
-                        },
-                        tooltip: {
-                            backgroundColor: isDarkMode ? '#262626' : '#ffffff',
-                            titleColor: colors.text,
-                            bodyColor: colors.text,
-                            borderColor: colors.grid,
-                            borderWidth: 1,
-                            padding: 12,
-                            callbacks: {
-                                label: (context) => {
-                                    const percentage = categoryData[context.dataIndex].percentage;
-                                    return `${context.label}: ₱${context.parsed.toLocaleString('en-US', { minimumFractionDigits: 2 })} (${percentage.toFixed(1)}%)`;
-                                }
-                            }
-                        }
-                    }
+                    plugins: { legend: { position: 'bottom' } }
                 }
             });
         }
 
-        // Heatmap detail popup
-        function showHeatmapDetail(day, hour, sales, count) {
-            if (count === 0) return;
-            const time = `${String(hour).padStart(2, '0')}:00`;
-            alert(`${day} at ${time}\nSales: ₱${sales.toLocaleString('en-US', { minimumFractionDigits: 2 })}\nTransactions: ${count}`);
+        // HEATMAP MODAL FUNCTIONS
+        function openHeatmapModal(day, hour, dayName) {
+            const modal = document.getElementById('heatmapModal');
+            const title = document.getElementById('modalTitle');
+            const content = document.getElementById('modalContent');
+
+            const timeStr = String(hour).padStart(2, '0') + ':00';
+            title.textContent = `${dayName} at ${timeStr}`;
+
+            modal.classList.remove('hidden');
+
+            // Show loading
+            content.innerHTML = `
+                <div class="flex items-center justify-center py-8">
+                    <svg class="w-8 h-8 text-primary-600 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </div>
+            `;
+
+            // Fetch details via AJAX
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const branchId = document.getElementById('branchId')?.value || '';
+
+            fetch(`/analytics/sales/heatmap-detail?day=${day}&hour=${hour}&start_date=${startDate}&end_date=${endDate}&branch_id=${branchId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.transactionCount === 0) {
+                        content.innerHTML = `
+                            <div class="py-8 text-center text-gray-500 dark:text-gray-400">
+                                <svg class="w-12 h-12 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                                </svg>
+                                <p>No sales during this time period</p>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    content.innerHTML = `
+                        <div class="grid grid-cols-3 gap-4 mb-6">
+                            <div class="p-4 text-center rounded-lg bg-purple-50 dark:bg-purple-900/20">
+                                <p class="mb-1 text-sm text-gray-600 dark:text-gray-400">Total Sales</p>
+                                <p class="text-2xl font-bold text-purple-600 dark:text-purple-400">₱${data.totalSales.toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+                            </div>
+                            <div class="p-4 text-center rounded-lg bg-blue-50 dark:bg-blue-900/20">
+                                <p class="mb-1 text-sm text-gray-600 dark:text-gray-400">Transactions</p>
+                                <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">${data.transactionCount}</p>
+                            </div>
+                            <div class="p-4 text-center rounded-lg bg-green-50 dark:bg-green-900/20">
+                                <p class="mb-1 text-sm text-gray-600 dark:text-gray-400">Avg Transaction</p>
+                                <p class="text-2xl font-bold text-green-600 dark:text-green-400">₱${data.avgTransaction.toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <h4 class="mb-3 text-sm font-semibold text-gray-900 dark:text-gray-100">Top 3 Products</h4>
+                            ${data.topProducts.length > 0 ? `
+                                <div class="space-y-2">
+                                    ${data.topProducts.map((product, index) => `
+                                        <div class="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-900/50">
+                                            <div class="flex items-center gap-3">
+                                                <span class="flex items-center justify-center w-6 h-6 text-xs font-bold text-white bg-purple-600 rounded-full">${index + 1}</span>
+                                                <div>
+                                                    <p class="text-sm font-medium text-gray-900 dark:text-gray-100">${product.name}</p>
+                                                    <p class="text-xs text-gray-500 dark:text-gray-400">${product.total_qty} units sold</p>
+                                                </div>
+                                            </div>
+                                            <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">₱${product.total_revenue.toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : '<p class="py-4 text-sm text-center text-gray-500 dark:text-gray-400">No product data available</p>'}
+                        </div>
+                    `;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    content.innerHTML = `
+                        <div class="py-8 text-center text-red-600 dark:text-red-400">
+                            <p>Failed to load details. Please try again.</p>
+                        </div>
+                    `;
+                });
+        }
+
+        function closeHeatmapModal() {
+            document.getElementById('heatmapModal').classList.add('hidden');
         }
     </script>
 </x-app-layout>

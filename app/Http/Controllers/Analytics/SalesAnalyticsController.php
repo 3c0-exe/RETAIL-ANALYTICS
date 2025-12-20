@@ -34,7 +34,7 @@ class SalesAnalyticsController extends Controller
         // Build base query
         $baseQuery = Transaction::query()
             ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
-            ->whereBetween('timestamp', [$startDate, $endDate]); // FIXED: transaction_date -> timestamp
+            ->whereBetween('timestamp', [$startDate, $endDate]);
 
         // Apply category filter
         if ($request->category_id) {
@@ -53,12 +53,12 @@ class SalesAnalyticsController extends Controller
                 'branches.id',
                 'branches.name',
                 DB::raw('COUNT(transactions.id) as transaction_count'),
-                DB::raw('SUM(transactions.total_amount) as total_sales'), // FIXED: total -> total_amount
-                DB::raw('AVG(transactions.total_amount) as avg_transaction') // FIXED
+                DB::raw('SUM(transactions.total_amount) as total_sales'),
+                DB::raw('AVG(transactions.total_amount) as avg_transaction')
             )
             ->join('branches', 'transactions.branch_id', '=', 'branches.id')
             ->when($branchId, fn($q) => $q->where('transactions.branch_id', $branchId))
-            ->whereBetween('transactions.timestamp', [$startDate, $endDate]) // FIXED
+            ->whereBetween('transactions.timestamp', [$startDate, $endDate])
             ->groupBy('branches.id', 'branches.name')
             ->orderByDesc('total_sales')
             ->get();
@@ -70,8 +70,8 @@ class SalesAnalyticsController extends Controller
 
         $salesByBranch = $salesByBranch->map(function($branch) use ($previousStart, $previousEnd) {
             $previousSales = Transaction::where('branch_id', $branch->id)
-                ->whereBetween('timestamp', [$previousStart, $previousEnd]) // FIXED
-                ->sum('total_amount'); // FIXED
+                ->whereBetween('timestamp', [$previousStart, $previousEnd])
+                ->sum('total_amount');
 
             if ($previousSales > 0) {
                 $branch->growth = (($branch->total_sales - $previousSales) / $previousSales) * 100;
@@ -93,7 +93,7 @@ class SalesAnalyticsController extends Controller
             ->join('products', 'transaction_items.product_id', '=', 'products.id')
             ->join('categories', 'products.category_id', '=', 'categories.id')
             ->when($branchId, fn($q) => $q->where('transactions.branch_id', $branchId))
-            ->whereBetween('transactions.timestamp', [$startDate, $endDate]) // FIXED
+            ->whereBetween('transactions.timestamp', [$startDate, $endDate])
             ->groupBy('categories.id', 'categories.name')
             ->orderByDesc('total_sales')
             ->get();
@@ -120,7 +120,7 @@ class SalesAnalyticsController extends Controller
             ->join('products', 'transaction_items.product_id', '=', 'products.id')
             ->join('categories', 'products.category_id', '=', 'categories.id')
             ->when($branchId, fn($q) => $q->where('transactions.branch_id', $branchId))
-            ->whereBetween('transactions.timestamp', [$startDate, $endDate]) // FIXED
+            ->whereBetween('transactions.timestamp', [$startDate, $endDate])
             ->groupBy('products.id', 'products.sku', 'products.name', 'products.price', 'products.cost', 'categories.name')
             ->orderByDesc('revenue')
             ->limit(20)
@@ -128,13 +128,13 @@ class SalesAnalyticsController extends Controller
 
         // 4. SALES HEATMAP (Hour x Day of Week)
         $heatmapData = Transaction::select(
-                DB::raw('HOUR(timestamp) as hour'), // FIXED
-                DB::raw('DAYOFWEEK(timestamp) as day'), // FIXED
-                DB::raw('SUM(total_amount) as total_sales'), // FIXED
+                DB::raw('HOUR(timestamp) as hour'),
+                DB::raw('DAYOFWEEK(timestamp) as day'),
+                DB::raw('SUM(total_amount) as total_sales'),
                 DB::raw('COUNT(*) as transaction_count')
             )
             ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
-            ->whereBetween('timestamp', [$startDate, $endDate]) // FIXED
+            ->whereBetween('timestamp', [$startDate, $endDate])
             ->groupBy('hour', 'day')
             ->get();
 
@@ -157,12 +157,12 @@ class SalesAnalyticsController extends Controller
         $salesByCashier = Transaction::select(
                 'users.name as cashier_name',
                 DB::raw('COUNT(transactions.id) as transaction_count'),
-                DB::raw('SUM(transactions.total_amount) as total_sales'), // FIXED
-                DB::raw('AVG(transactions.total_amount) as avg_transaction') // FIXED
+                DB::raw('SUM(transactions.total_amount) as total_sales'),
+                DB::raw('AVG(transactions.total_amount) as avg_transaction')
             )
             ->join('users', 'transactions.cashier_id', '=', 'users.id')
             ->when($branchId, fn($q) => $q->where('transactions.branch_id', $branchId))
-            ->whereBetween('transactions.timestamp', [$startDate, $endDate]) // FIXED
+            ->whereBetween('transactions.timestamp', [$startDate, $endDate])
             ->groupBy('users.id', 'users.name')
             ->orderByDesc('total_sales')
             ->limit(10)
@@ -188,7 +188,64 @@ class SalesAnalyticsController extends Controller
             'maxSales',
             'salesByCashier',
             'startDate',
-            'endDate'
+            'endDate',
+            'branchId'
         ));
+    }
+
+    /**
+     * NEW: Get heatmap cell details via AJAX
+     */
+    public function getHeatmapDetail(Request $request)
+    {
+        $user = auth()->user();
+        $branchId = $user->isAdmin() ? $request->branch_id : $user->branch_id;
+
+        $day = $request->day; // 1-7 (MySQL DAYOFWEEK)
+        $hour = $request->hour; // 0-23
+
+        $startDate = $request->start_date
+            ? Carbon::parse($request->start_date)
+            : now()->subDays(30);
+        $endDate = $request->end_date
+            ? Carbon::parse($request->end_date)
+            : now();
+
+        // Get transactions for this hour/day
+        $transactions = Transaction::select('transactions.*')
+            ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
+            ->whereBetween('timestamp', [$startDate, $endDate])
+            ->whereRaw('HOUR(timestamp) = ?', [$hour])
+            ->whereRaw('DAYOFWEEK(timestamp) = ?', [$day])
+            ->get();
+
+        $totalSales = $transactions->sum('total_amount');
+        $transactionCount = $transactions->count();
+        $avgTransaction = $transactionCount > 0 ? $totalSales / $transactionCount : 0;
+
+        // Get top 3 products for this time slot
+        $topProducts = DB::table('transaction_items')
+            ->select(
+                'products.name',
+                DB::raw('SUM(transaction_items.quantity) as total_qty'),
+                DB::raw('SUM(transaction_items.subtotal) as total_revenue')
+            )
+            ->join('transactions', 'transaction_items.transaction_id', '=', 'transactions.id')
+            ->join('products', 'transaction_items.product_id', '=', 'products.id')
+            ->when($branchId, fn($q) => $q->where('transactions.branch_id', $branchId))
+            ->whereBetween('transactions.timestamp', [$startDate, $endDate])
+            ->whereRaw('HOUR(transactions.timestamp) = ?', [$hour])
+            ->whereRaw('DAYOFWEEK(transactions.timestamp) = ?', [$day])
+            ->groupBy('products.id', 'products.name')
+            ->orderByDesc('total_revenue')
+            ->limit(3)
+            ->get();
+
+        return response()->json([
+            'totalSales' => $totalSales,
+            'transactionCount' => $transactionCount,
+            'avgTransaction' => $avgTransaction,
+            'topProducts' => $topProducts
+        ]);
     }
 }
