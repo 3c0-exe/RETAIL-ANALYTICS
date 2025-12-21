@@ -47,17 +47,17 @@ public function unread()
      * Mark single alert as read
      */
     public function markAsRead(Alert $alert)
-    {
-        // Ensure user can only mark their own alerts
-        if ($alert->user_id !== auth()->id()) {
-            abort(403);
-        }
-
-        $alert->markAsRead();
-
-        return response()->json(['success' => true]);
+{
+    // Ensure user can only mark their own alerts
+    if ($alert->user_id !== auth()->id()) {
+        abort(403);
     }
 
+    $alert->markAsRead();
+
+    // Return back to previous page
+    return redirect()->back()->with('success', 'Notification marked as read');
+}
     /**
      * Mark all alerts as read
      */
