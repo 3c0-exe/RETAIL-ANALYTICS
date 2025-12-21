@@ -39,6 +39,14 @@ class Alert extends Model
     }
 
     /**
+     * Scope a query to only include unread alerts.
+     */
+    public function scopeUnread($query)
+    {
+        return $query->where('is_read', false);
+    }
+
+    /**
      * Mark alert as read
      */
     public function markAsRead(): void

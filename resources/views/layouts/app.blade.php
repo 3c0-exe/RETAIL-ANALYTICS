@@ -203,6 +203,9 @@ use Illuminate\Support\Facades\Storage;
                     </div>
 
                     <div class="flex items-center gap-2 sm:gap-3">
+
+                         <!-- Notification Bell -->
+                     <x-notification-bell />
                         <!-- Dark Mode Toggle -->
                         <button @click="darkMode = !darkMode" class="p-2 text-gray-500 transition-colors rounded-md hover:bg-gray-100 dark:hover:bg-gray-800">
                             <svg x-show="!darkMode" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

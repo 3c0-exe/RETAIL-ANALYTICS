@@ -52,12 +52,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
             return back()->with('success', 'Forecasts regenerated successfully!');
         })->name('forecasts.regenerate')->middleware(['auth']);
 
-    // Alerts Routes
-    Route::get('/alerts', [AlertController::class, 'index'])->name('alerts.index');
-    Route::get('/alerts/unread', [AlertController::class, 'unread'])->name('alerts.unread');
-    Route::post('/alerts/{id}/read', [AlertController::class, 'markAsRead'])->name('alerts.read');
-    Route::post('/alerts/read-all', [AlertController::class, 'markAllAsRead'])->name('alerts.readAll');
-
+ // Alert routes
+Route::prefix('alerts')->name('alerts.')->group(function () {
+    Route::get('/', [AlertController::class, 'index'])->name('index');
+    Route::get('/unread', [AlertController::class, 'unread'])->name('unread');
+    Route::post('/{alert}/read', [AlertController::class, 'markAsRead'])->name('read');
+    Route::post('/read-all', [AlertController::class, 'markAllAsRead'])->name('readAll');
+    Route::get('/{alert}', [AlertController::class, 'show'])->name('show');
+});
     // Profile Management
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'updateProfile'])->name('profile.update');
