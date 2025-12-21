@@ -21,11 +21,13 @@ class Alert extends Model
         'related_type',
         'related_id',
         'read_at',
+        'metadata',
     ];
 
     protected $casts = [
         'is_read' => 'boolean',
         'read_at' => 'datetime',
+        'metadata' => 'array',  // ← ADD THIS LINE
     ];
 
     public function user(): BelongsTo

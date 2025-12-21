@@ -17,7 +17,7 @@ class CheckLowStock extends Command
     {
         $this->info('Checking for low stock products...');
 
-        // Get all branch products below threshold - FIXED QUERY
+        // Get all branch products below threshold
         $lowStockProducts = BranchProduct::with(['product', 'branch'])
             ->whereRaw('quantity <= low_stock_threshold')
             ->where('quantity', '>', 0)
@@ -34,12 +34,12 @@ class CheckLowStock extends Command
         $emailsQueued = 0;
 
         foreach ($lowStockProducts as $branchProduct) {
-            // Get branch manager
+            // 1. Get branch manager for this specific branch
             $branchManager = User::where('role', 'branch_manager')
                 ->where('branch_id', $branchProduct->branch_id)
+                ->whereNotNull('email')
                 ->first();
 
-            // Create alert for branch manager
             if ($branchManager) {
                 $alert = $this->createAlertIfNotExists($branchManager, $branchProduct);
                 if ($alert) {
@@ -49,8 +49,11 @@ class CheckLowStock extends Command
                 }
             }
 
-            // Create alert for admins
-            $admins = User::where('role', 'admin')->get();
+            // 2. Get all admins (they monitor all branches)
+            $admins = User::where('role', 'admin')
+                ->whereNotNull('email')
+                ->get();
+
             foreach ($admins as $admin) {
                 $alert = $this->createAlertIfNotExists($admin, $branchProduct);
                 if ($alert) {
@@ -69,21 +72,21 @@ class CheckLowStock extends Command
 
     private function createAlertIfNotExists(User $user, BranchProduct $branchProduct): ?Alert
     {
-        // Check if alert already exists today
+        // Check if alert already exists today for this user + product + branch combination
         $existingAlert = Alert::where('user_id', $user->id)
             ->where('type', 'low_stock')
-            ->where('related_type', BranchProduct::class)
-            ->where('related_id', $branchProduct->id)
-            ->where('is_read', false)
             ->whereDate('created_at', today())
+            ->whereJsonContains('metadata->product_id', $branchProduct->product_id)
+            ->whereJsonContains('metadata->branch_id', $branchProduct->branch_id)
             ->exists();
 
         if ($existingAlert) {
+            $this->line("  ⏭️  Skipping duplicate: {$branchProduct->product->name} at {$branchProduct->branch->name} for {$user->email}");
             return null;
         }
 
-        // Create the alert
-        return Alert::create([
+        // Create the alert with metadata
+        $alert = Alert::create([
             'user_id' => $user->id,
             'type' => 'low_stock',
             'title' => 'Low Stock Alert',
@@ -99,6 +102,18 @@ class CheckLowStock extends Command
                 : 'warning',
             'related_type' => BranchProduct::class,
             'related_id' => $branchProduct->id,
+            'metadata' => [
+                'product_id' => $branchProduct->product_id,
+                'branch_id' => $branchProduct->branch_id,
+                'product_name' => $branchProduct->product->name,
+                'branch_name' => $branchProduct->branch->name,
+                'quantity' => $branchProduct->quantity,
+                'threshold' => $branchProduct->low_stock_threshold,
+            ],
         ]);
+
+        $this->info("  ✓ Created alert: {$branchProduct->product->name} at {$branchProduct->branch->name} for {$user->email}");
+
+        return $alert;
     }
 }
