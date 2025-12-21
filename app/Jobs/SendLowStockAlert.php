@@ -17,6 +17,8 @@ class SendLowStockAlert implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public $alert;
+    public $tries = 3; // Retry 3 times if failed
+    public $backoff = [10, 30, 60]; // Wait 10s, 30s, 60s between retries
 
     public function __construct(Alert $alert)
     {
@@ -40,6 +42,9 @@ class SendLowStockAlert implements ShouldQueue
                 return;
             }
 
+            // Add delay between emails to respect Mailtrap rate limits
+            sleep(2); // Wait 2 seconds before sending
+
             // Send email
             Mail::to($this->alert->user->email)
                 ->send(new LowStockAlert($this->alert));
@@ -53,6 +58,8 @@ class SendLowStockAlert implements ShouldQueue
                 'line' => $e->getLine(),
                 'file' => $e->getFile(),
             ]);
+
+            // Re-throw to trigger retry mechanism
             throw $e;
         }
     }
@@ -61,6 +68,7 @@ class SendLowStockAlert implements ShouldQueue
     {
         Log::error('SendLowStockAlert job failed permanently', [
             'alert_id' => $this->alert->id,
+            'user_email' => $this->alert->user->email ?? 'no email',
             'error' => $exception->getMessage(),
         ]);
     }

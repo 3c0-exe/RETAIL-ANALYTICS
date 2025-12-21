@@ -1,21 +1,32 @@
 <x-mail::message>
-# Low Stock Alert
+# {{ $urgencyLevel === 'CRITICAL' ? '🚨 CRITICAL' : '⚠️' }} Low Stock Alert
 
-Hello **{{ $alert->user->name ?? 'User' }}**,
+Hello **{{ $userName }}**,
 
-A product is running low on stock:
+A product is running low on stock and requires immediate attention:
 
 <x-mail::panel>
-**Product:** {{ $alert->related->product->name ?? 'Unknown Product' }}
+**Product:** {{ $productName }}
+**SKU:** {{ $sku }}
+**Category:** {{ $category->name ?? 'N/A' }}
 
-**Branch:** {{ $alert->related->branch->name ?? 'Unknown Branch' }}
+---
 
-**Current Stock:** {{ $alert->related->quantity ?? 0 }} units
+**Branch:** {{ $branchName }}
+**Current Stock:** {{ $currentStock }} units
+**Threshold:** {{ $threshold }} units
+**Stock Level:** {{ $stockPercentage }}%
 
-**Threshold:** {{ $alert->related->low_stock_threshold ?? 0 }} units
+@if($urgencyLevel === 'CRITICAL')
+⚠️ **CRITICAL: Stock is below 50% of threshold!**
+@else
+⚠️ **WARNING: Stock is running low**
+@endif
 </x-mail::panel>
 
-<x-mail::button :url="config('app.url')">
+Please restock this product as soon as possible to avoid stockouts.
+
+<x-mail::button :url="$alertUrl" color="primary">
 View Dashboard
 </x-mail::button>
 
