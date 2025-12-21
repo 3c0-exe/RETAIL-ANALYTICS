@@ -61,13 +61,13 @@ class CheckLowStock extends Command
 
     private function createAlertIfNotExists(User $user, BranchProduct $branchProduct)
     {
-        // Check if alert already exists (not read, same product, created today)
+        // Check if alert already exists (not read, same product)
         $existingAlert = Alert::where('user_id', $user->id)
             ->where('type', 'low_stock')
             ->where('related_type', BranchProduct::class)
             ->where('related_id', $branchProduct->id)
             ->where('is_read', false)
-            ->whereDate('created_at', today())
+            // ->whereDate('created_at', today()) // Commented out for testing
             ->exists();
 
         if ($existingAlert) {

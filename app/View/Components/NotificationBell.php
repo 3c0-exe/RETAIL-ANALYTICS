@@ -8,21 +8,24 @@ use Illuminate\View\View;
 
 class NotificationBell extends Component
 {
-    public function render(): View
+    public $unreadCount;
+    public $recentAlerts;
+
+    public function __construct()
     {
-        $unreadCount = Alert::where('user_id', auth()->id())
-            ->unread()
+        $this->unreadCount = Alert::where('user_id', auth()->id())
+            ->where('is_read', false)
             ->count();
 
-        $recentAlerts = Alert::where('user_id', auth()->id())
-            ->with('related')
+        $this->recentAlerts = Alert::where('user_id', auth()->id())
+            ->where('is_read', false)
             ->orderBy('created_at', 'desc')
             ->limit(5)
-            ->get();
+            ->get(['id', 'title', 'message', 'type', 'severity', 'created_at']);
+    }
 
-        return view('components.notification-bell', [
-            'unreadCount' => $unreadCount,
-            'recentAlerts' => $recentAlerts,
-        ]);
+    public function render(): View
+    {
+        return view('components.notification-bell');
     }
 }

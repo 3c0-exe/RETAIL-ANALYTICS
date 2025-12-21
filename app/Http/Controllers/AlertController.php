@@ -23,27 +23,26 @@ class AlertController extends Controller
     /**
      * Get unread alerts (API for notification bell)
      */
-    public function unread()
-    {
-        $alerts = Alert::where('user_id', auth()->id())
-            ->unread()
-            ->orderBy('created_at', 'desc')
-            ->limit(5)
-            ->get()
-            ->map(function ($alert) {
-                return [
-                    'id' => $alert->id,
-                    'title' => $alert->title,
-                    'message' => $alert->message,
-                    'icon' => $alert->icon,
-                    'severity' => $alert->severity,
-                    'created_at' => $alert->created_at->toIso8601String(),
-                ];
-            });
+public function unread()
+{
+    $alerts = Alert::where('user_id', auth()->id())
+        ->where('is_read', false)
+        ->orderBy('created_at', 'desc')
+        ->limit(5)
+        ->get(['id', 'title', 'message', 'type', 'severity', 'created_at']) // Only select needed columns
+        ->map(function ($alert) {
+            return [
+                'id' => $alert->id,
+                'title' => $alert->title,
+                'message' => $alert->message,
+                'icon' => $alert->icon,
+                'severity' => $alert->severity,
+                'created_at' => $alert->created_at->toIso8601String(),
+            ];
+        });
 
-        return response()->json($alerts);
-    }
-
+    return response()->json($alerts);
+}
     /**
      * Mark single alert as read
      */
