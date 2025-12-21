@@ -10,6 +10,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 
 class SendLowStockAlert implements ShouldQueue
 {
@@ -17,33 +18,49 @@ class SendLowStockAlert implements ShouldQueue
 
     public $alert;
 
-    /**
-     * Create a new job instance.
-     */
     public function __construct(Alert $alert)
     {
+        // Load relationships before serialization
+        $alert->load(['user', 'related.product', 'related.branch']);
         $this->alert = $alert;
     }
 
-    /**
-     * Execute the job.
-     */
     public function handle(): void
     {
-        // Send email to the user
-        Mail::to($this->alert->user->email)
-            ->send(new LowStockAlert($this->alert));
+        try {
+            // Verify user has email
+            if (empty($this->alert->user->email)) {
+                Log::warning("User {$this->alert->user->id} has no email");
+                return;
+            }
+
+            // Verify related data exists
+            if (!$this->alert->related) {
+                Log::error("Alert {$this->alert->id} has no related data");
+                return;
+            }
+
+            // Send email
+            Mail::to($this->alert->user->email)
+                ->send(new LowStockAlert($this->alert));
+
+            Log::info("✓ Low stock alert sent to {$this->alert->user->email}");
+
+        } catch (\Exception $e) {
+            Log::error('Failed to send alert email', [
+                'alert_id' => $this->alert->id,
+                'error' => $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile(),
+            ]);
+            throw $e;
+        }
     }
 
-    /**
-     * Handle a job failure.
-     */
     public function failed(\Throwable $exception): void
     {
-        // Log the failure
-        \Log::error('Failed to send low stock alert email', [
+        Log::error('SendLowStockAlert job failed permanently', [
             'alert_id' => $this->alert->id,
-            'user_email' => $this->alert->user->email,
             'error' => $exception->getMessage(),
         ]);
     }

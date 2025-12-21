@@ -17,10 +17,10 @@ class CheckLowStock extends Command
     {
         $this->info('Checking for low stock products...');
 
-        // Get all branch products that are below threshold
+        // Get all branch products below threshold - FIXED QUERY
         $lowStockProducts = BranchProduct::with(['product', 'branch'])
-            ->whereColumn('quantity', '<=', 'low_stock_threshold')
-            ->where('quantity', '>', 0) // Exclude out of stock
+            ->whereRaw('quantity <= low_stock_threshold')
+            ->where('quantity', '>', 0)
             ->get();
 
         if ($lowStockProducts->isEmpty()) {
@@ -28,11 +28,13 @@ class CheckLowStock extends Command
             return 0;
         }
 
+        $this->info("Found {$lowStockProducts->count()} low stock products.");
+
         $alertsCreated = 0;
         $emailsQueued = 0;
 
         foreach ($lowStockProducts as $branchProduct) {
-            // Get the branch manager for this branch
+            // Get branch manager
             $branchManager = User::where('role', 'branch_manager')
                 ->where('branch_id', $branchProduct->branch_id)
                 ->first();
@@ -42,19 +44,17 @@ class CheckLowStock extends Command
                 $alert = $this->createAlertIfNotExists($branchManager, $branchProduct);
                 if ($alert) {
                     $alertsCreated++;
-                    // Queue email notification
                     SendLowStockAlert::dispatch($alert);
                     $emailsQueued++;
                 }
             }
 
-            // Create alert for all admins
+            // Create alert for admins
             $admins = User::where('role', 'admin')->get();
             foreach ($admins as $admin) {
                 $alert = $this->createAlertIfNotExists($admin, $branchProduct);
                 if ($alert) {
                     $alertsCreated++;
-                    // Queue email notification
                     SendLowStockAlert::dispatch($alert);
                     $emailsQueued++;
                 }
@@ -69,21 +69,21 @@ class CheckLowStock extends Command
 
     private function createAlertIfNotExists(User $user, BranchProduct $branchProduct): ?Alert
     {
-        // Check if alert already exists (not read, same product)
+        // Check if alert already exists today
         $existingAlert = Alert::where('user_id', $user->id)
             ->where('type', 'low_stock')
             ->where('related_type', BranchProduct::class)
             ->where('related_id', $branchProduct->id)
             ->where('is_read', false)
-            ->whereDate('created_at', today()) // Only check today's alerts
+            ->whereDate('created_at', today())
             ->exists();
 
         if ($existingAlert) {
-            return null; // Don't create duplicate
+            return null;
         }
 
         // Create the alert
-        $alert = Alert::create([
+        return Alert::create([
             'user_id' => $user->id,
             'type' => 'low_stock',
             'title' => 'Low Stock Alert',
@@ -100,7 +100,5 @@ class CheckLowStock extends Command
             'related_type' => BranchProduct::class,
             'related_id' => $branchProduct->id,
         ]);
-
-        return $alert;
     }
 }

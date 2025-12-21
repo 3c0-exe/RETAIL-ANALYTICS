@@ -67,7 +67,8 @@ class LowStockAlert extends Mailable
                 'sku' => $this->branchProduct->product->sku,
                 'category' => $this->branchProduct->product->category,
                 'userName' => $this->alert->user->name,
-                'alertUrl' => route('products.index'), // Adjust to your route
+                // 'alertUrl' => url('/products'), // Adjust to your route
+                'alertUrl' => url('/dashboard'),
             ],
         );
     }
