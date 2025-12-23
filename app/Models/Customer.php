@@ -21,7 +21,9 @@ class Customer extends Model
         'visit_count',
         'last_visit_date',
         'segment',
-        'rfm_score'
+        'rfm_score',
+        'age',
+        'gender'
     ];
 
     protected $casts = [
