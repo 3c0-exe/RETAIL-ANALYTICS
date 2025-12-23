@@ -23,11 +23,11 @@ class HistoricalTransactionSeeder extends Seeder
             return;
         }
 
-        // Generate 60 days of historical data
+        // Generate 60 days of historical data INCLUDING TODAY
         $startDate = Carbon::now()->subDays(60);
-        $endDate = Carbon::now()->subDay(); // Up to yesterday
+        $endDate = Carbon::now(); // CHANGED: Include today!
 
-        $this->command->info('Generating 60 days of historical transactions...');
+        $this->command->info('Generating 60 days of historical transactions (including today)...');
 
         $transactionCount = 0;
 
@@ -71,14 +71,23 @@ class HistoricalTransactionSeeder extends Seeder
                     ? rand(30, 50)
                     : rand(15, 35);
 
+                // For today, only generate transactions up to current hour
+                $maxHour = $currentDate->isToday() ? Carbon::now()->hour : 21;
+
                 for ($i = 0; $i < $transactionsPerDay; $i++) {
-                    // Random time during business hours (8 AM - 9 PM)
-                    $hour = rand(8, 21);
+                    // Random time during business hours (8 AM - 9 PM, or current time if today)
+                    $hour = rand(8, $maxHour);
                     $minute = rand(0, 59);
+
                     $timestamp = $currentDate->copy()
                         ->setHour($hour)
                         ->setMinute($minute)
                         ->setSecond(rand(0, 59));
+
+                    // Skip if timestamp is in the future
+                    if ($timestamp->isFuture()) {
+                        continue;
+                    }
 
                     // Create transaction
                     $cashier = $cashiers->random();
@@ -88,15 +97,14 @@ class HistoricalTransactionSeeder extends Seeder
                         'transaction_code' => 'TXN' . $branch->code . $timestamp->format('YmdHis') . rand(100, 999),
                         'branch_id' => $branch->id,
                         'timestamp' => $timestamp,
-                        'transaction_date' => $timestamp->format('Y-m-d'), // ✅ FIXED: Added this line
                         'cashier_id' => $cashier->id,
                         'customer_id' => $customer?->id,
                         'payment_method' => ['cash', 'card', 'gcash', 'paymaya'][rand(0, 3)],
                         'status' => rand(0, 100) > 5 ? 'completed' : 'refunded', // 95% completed
-                        'subtotal' => 0, // Will calculate
+                        'subtotal' => 0,
                         'tax_amount' => 0,
                         'discount_amount' => 0,
-                        'total_amount' => 0, // ✅ FIXED: Changed 'total' to 'total_amount'
+                        'total_amount' => 0,
                     ]);
 
                     // Add 1-5 items per transaction
@@ -132,7 +140,7 @@ class HistoricalTransactionSeeder extends Seeder
                     $transaction->update([
                         'subtotal' => $subtotal,
                         'tax_amount' => $taxAmount,
-                        'total_amount' => $total, // ✅ FIXED: Changed 'total' to 'total_amount'
+                        'total_amount' => $total,
                     ]);
 
                     // Update customer stats

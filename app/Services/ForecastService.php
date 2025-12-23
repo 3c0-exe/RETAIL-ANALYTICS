@@ -14,12 +14,10 @@ class ForecastService
     /**
      * Generate forecasts using Holt-Winters Triple Exponential Smoothing
      */
-    public function generateForecasts(Branch $branch, int $days = 30)
+    public function generateForecasts(Branch $branch, int $days = 30, bool $includeHistorical = true)
     {
-        // 1. Clear future forecasts to prevent duplicates
-        Forecast::where('branch_id', $branch->id)
-            ->where('forecast_date', '>=', Carbon::today())
-            ->delete();
+        // 1. Clear ALL forecasts (past and future) to regenerate fresh
+        Forecast::where('branch_id', $branch->id)->delete();
 
         // 2. Get historical data (Need at least 14 days for weekly patterns)
         $historicalData = $this->getHistoricalSales($branch->id, 90);
@@ -29,10 +27,15 @@ class ForecastService
              return false;
         }
 
-        // 3. Generate Branch Forecasts
+        // 3. Generate HISTORICAL Forecasts (for comparison with actuals)
+        if ($includeHistorical) {
+            $this->generateHistoricalForecasts($branch, 60); // Generate for past 60 days
+        }
+
+        // 4. Generate FUTURE Branch Forecasts
         $this->generateBranchForecasts($branch, $historicalData, $days);
 
-        // 4. Generate Product Forecasts (Top 10)
+        // 5. Generate FUTURE Product Forecasts (Top 10)
         $this->generateProductForecasts($branch, $days);
 
         return true;
@@ -48,6 +51,53 @@ class ForecastService
             ->groupBy('date')
             ->orderBy('date')
             ->get();
+    }
+
+    /**
+     * Generate historical forecasts for past dates (for accuracy comparison)
+     * Uses a sliding window approach - for each past date, train on data BEFORE that date
+     */
+    private function generateHistoricalForecasts(Branch $branch, int $daysBack)
+    {
+        $endDate = Carbon::today()->subDay(); // Yesterday
+        $startDate = $endDate->copy()->subDays($daysBack);
+
+        // For each day in the historical period
+        for ($targetDate = $startDate->copy(); $targetDate <= $endDate; $targetDate->addDay()) {
+            // Get training data UP TO (but not including) the target date
+            $trainingData = Transaction::where('branch_id', $branch->id)
+                ->where('status', 'completed')
+                ->where('timestamp', '>=', $targetDate->copy()->subDays(90)) // Use 90 days of history
+                ->where('timestamp', '<', $targetDate->startOfDay()) // Train only on data BEFORE target date
+                ->selectRaw('DATE(timestamp) as date, SUM(total_amount) as sales')
+                ->groupBy('date')
+                ->orderBy('date')
+                ->get();
+
+            if ($trainingData->count() < 14) {
+                continue; // Skip if not enough data
+            }
+
+            $salesValues = $trainingData->pluck('sales')->toArray();
+
+            // Generate a 1-day forecast (just for this target date)
+            $forecasts = $this->holtWinters($salesValues, 1, 7, 0.2, 0.01, 0.4);
+
+            if (isset($forecasts[0])) {
+                $forecast = $forecasts[0];
+                $margin = $forecast * 0.20; // 20% Confidence Interval
+
+                Forecast::create([
+                    'branch_id'        => $branch->id,
+                    'forecast_date'    => $targetDate->toDateString(),
+                    'predicted_sales'  => round($forecast, 2),
+                    'confidence_lower' => round(max(0, $forecast - $margin), 2),
+                    'confidence_upper' => round($forecast + $margin, 2),
+                    'model_version'    => 'holt_winters_v1',
+                    'metadata'         => json_encode(['method' => 'Holt-Winters', 'season' => 7, 'type' => 'historical']),
+                ]);
+            }
+        }
     }
 
     private function generateBranchForecasts(Branch $branch, $historicalData, $days)

@@ -131,6 +131,7 @@
                     <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
                         🎯 Forecast vs Actual (Last {{ $historyPeriod }} Days)
                     </h3>
+
                     <div class="relative w-full" style="height: 350px;">
                         <canvas id="historyChart"></canvas>
                     </div>

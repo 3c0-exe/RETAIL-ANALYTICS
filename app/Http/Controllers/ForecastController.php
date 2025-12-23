@@ -64,15 +64,22 @@ class ForecastController extends Controller
         $historyDates = $historicalTransactions->pluck('date')->map(fn($date) => Carbon::parse($date)->format('M d'))->toArray();
         $historyValues = $historicalTransactions->pluck('total')->toArray();
 
-        // 5. FETCH PAST FORECASTS (For Accuracy & Comparison Chart)
-        $pastForecasts = Forecast::where('branch_id', $selectedBranchId)
-            ->whereNull('product_id')
-            ->whereNull('category')
-            ->whereBetween('forecast_date', [$historyStartDate->toDateString(), $today->toDateString()])
-            ->get();
+// 5. FETCH PAST FORECASTS (For Accuracy & Comparison Chart)
+$pastForecasts = Forecast::where('branch_id', $selectedBranchId)
+    ->whereBetween('forecast_date', [$historyStartDate->toDateString(), $today->toDateString()])
+    ->select(
+        'forecast_date',
+        DB::raw('SUM(predicted_sales) as total_predicted')
+    )
+    ->groupBy('forecast_date')
+    ->get();
 
-        $pastForecastMap = $pastForecasts->pluck('predicted_sales', 'forecast_date')->toArray();
-        $actualsMap = $historicalTransactions->pluck('total', 'date')->toArray();
+// AFTER:
+$pastForecastMap = $pastForecasts->mapWithKeys(function ($forecast) {
+    return [Carbon::parse($forecast->forecast_date)->toDateString() => $forecast->total_predicted];
+})->toArray();
+
+$actualsMap = $historicalTransactions->pluck('total', 'date')->toArray();
 
         // Calculate Accuracy
         $totalError = 0;
@@ -98,6 +105,14 @@ class ForecastController extends Controller
             $dateKey = Carbon::parse($txn->date)->toDateString();
             $historyForecastValues[] = $pastForecastMap[$dateKey] ?? null;
         }
+
+        // DEBUG - Add this
+Log::info('Date Matching Debug', [
+    'sample_txn_date' => $historicalTransactions->first()->date ?? 'none',
+    'sample_dateKey' => isset($historicalTransactions->first()->date) ? Carbon::parse($historicalTransactions->first()->date)->toDateString() : 'none',
+    'pastForecastMap_keys_sample' => array_slice(array_keys($pastForecastMap), 0, 5),
+    'pastForecastMap_sample' => array_slice($pastForecastMap, 0, 3, true),
+]);
 
         // 6. TOP PRODUCTS
         $topProductsForecasts = Forecast::where('branch_id', $selectedBranchId)
