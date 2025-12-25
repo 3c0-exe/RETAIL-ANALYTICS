@@ -23,7 +23,7 @@ class ExportController extends Controller
         $startDate = $request->start_date ? Carbon::parse($request->start_date) : now()->subDays(30);
         $endDate = $request->end_date ? Carbon::parse($request->end_date) : now();
 
-        // FIXED: Changed transactions.total to transactions.total_amount
+        // FIXED: Use created_at instead of transaction_date
         $salesByBranch = Transaction::select(
                 'branches.name as branch',
                 DB::raw('COUNT(transactions.id) as transactions'),
@@ -32,7 +32,7 @@ class ExportController extends Controller
             )
             ->join('branches', 'transactions.branch_id', '=', 'branches.id')
             ->when($branchId, fn($q) => $q->where('transactions.branch_id', $branchId))
-            ->whereBetween('transactions.transaction_date', [$startDate, $endDate])
+            ->whereBetween('transactions.created_at', [$startDate, $endDate])
             ->groupBy('branches.id', 'branches.name')
             ->orderByDesc('total_sales')
             ->get();
@@ -75,7 +75,7 @@ class ExportController extends Controller
         $startDate = $request->start_date ? Carbon::parse($request->start_date) : now()->subDays(30);
         $endDate = $request->end_date ? Carbon::parse($request->end_date) : now();
 
-        // FIXED: Changed transactions.total to transactions.total_amount
+        // FIXED: Use created_at instead of transaction_date
         $salesByBranch = Transaction::select(
                 'branches.name as branch',
                 DB::raw('COUNT(transactions.id) as transactions'),
@@ -84,7 +84,7 @@ class ExportController extends Controller
             )
             ->join('branches', 'transactions.branch_id', '=', 'branches.id')
             ->when($branchId, fn($q) => $q->where('transactions.branch_id', $branchId))
-            ->whereBetween('transactions.transaction_date', [$startDate, $endDate])
+            ->whereBetween('transactions.created_at', [$startDate, $endDate])
             ->groupBy('branches.id', 'branches.name')
             ->orderByDesc('total_sales')
             ->get();
@@ -143,7 +143,7 @@ class ExportController extends Controller
         $startDate = $request->start_date ? Carbon::parse($request->start_date) : now()->subDays(30);
         $endDate = $request->end_date ? Carbon::parse($request->end_date) : now();
 
-        // FIXED: Changed transactions.total to transactions.total_amount
+        // FIXED: Use created_at instead of transaction_date
         $salesByBranch = Transaction::select(
                 'branches.name as branch',
                 DB::raw('COUNT(transactions.id) as transactions'),
@@ -152,7 +152,7 @@ class ExportController extends Controller
             )
             ->join('branches', 'transactions.branch_id', '=', 'branches.id')
             ->when($branchId, fn($q) => $q->where('transactions.branch_id', $branchId))
-            ->whereBetween('transactions.transaction_date', [$startDate, $endDate])
+            ->whereBetween('transactions.created_at', [$startDate, $endDate])
             ->groupBy('branches.id', 'branches.name')
             ->orderByDesc('total_sales')
             ->get();

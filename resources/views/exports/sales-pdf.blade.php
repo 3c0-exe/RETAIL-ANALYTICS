@@ -16,26 +16,32 @@
 </head>
 <body>
     <h1>Sales Analytics Report</h1>
-    <p class="subtitle">Period: {{ $startDate->format('M d, Y') }} - {{ $endDate->format('M d, Y') }}</p>
+    <p class="period">Period: {{ $startDate->format('M d, Y') }} - {{ $endDate->format('M d, Y') }}</p>
 
     <table>
         <thead>
             <tr>
                 <th>Branch</th>
-                <th>Transactions</th>
-                <th>Total Sales</th>
-                <th>Avg Transaction</th>
+                <th class="text-right">Transactions</th>
+                <th class="text-right">Total Sales</th>
+                <th class="text-right">Avg Transaction</th>
             </tr>
         </thead>
         <tbody>
-            @foreach($salesByBranch as $row)
-            <tr>
-                <td>{{ $row->branch }}</td>
-                <td>{{ number_format($row->transactions) }}</td>
-                <td>₱{{ number_format($row->total_sales, 2) }}</td>
-                <td>₱{{ number_format($row->avg_transaction, 2) }}</td>
-            </tr>
-            @endforeach
+            @forelse($salesByBranch as $branch)
+                <tr>
+                    <td>{{ $branch->branch }}</td>
+                    <td class="text-right">{{ number_format($branch->transactions) }}</td>
+                    <td class="text-right">PHP {{ number_format($branch->total_sales, 2) }}</td>
+                    <td class="text-right">PHP {{ number_format($branch->avg_transaction, 2) }}</td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: 30px; color: #999;">
+                        No sales data available for the selected period
+                    </td>
+                </tr>
+            @endforelse
         </tbody>
     </table>
 

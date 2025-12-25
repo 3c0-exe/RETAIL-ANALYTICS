@@ -12,7 +12,6 @@ class Transaction extends Model
     protected $fillable = [
         'transaction_code',
         'branch_id',
-        'timestamp',
         'customer_id',
         'cashier_id',
         'subtotal',
@@ -24,7 +23,6 @@ class Transaction extends Model
     ];
 
     protected $casts = [
-        'timestamp' => 'datetime',
         'subtotal' => 'decimal:2',
         'tax_amount' => 'decimal:2',
         'discount_amount' => 'decimal:2',
