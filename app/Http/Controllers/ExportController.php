@@ -23,12 +23,12 @@ class ExportController extends Controller
         $startDate = $request->start_date ? Carbon::parse($request->start_date) : now()->subDays(30);
         $endDate = $request->end_date ? Carbon::parse($request->end_date) : now();
 
-        // Get sales by branch
+        // FIXED: Changed transactions.total to transactions.total_amount
         $salesByBranch = Transaction::select(
                 'branches.name as branch',
                 DB::raw('COUNT(transactions.id) as transactions'),
-                DB::raw('SUM(transactions.total) as total_sales'),
-                DB::raw('AVG(transactions.total) as avg_transaction')
+                DB::raw('SUM(transactions.total_amount) as total_sales'),
+                DB::raw('AVG(transactions.total_amount) as avg_transaction')
             )
             ->join('branches', 'transactions.branch_id', '=', 'branches.id')
             ->when($branchId, fn($q) => $q->where('transactions.branch_id', $branchId))
@@ -75,12 +75,12 @@ class ExportController extends Controller
         $startDate = $request->start_date ? Carbon::parse($request->start_date) : now()->subDays(30);
         $endDate = $request->end_date ? Carbon::parse($request->end_date) : now();
 
-        // Get data
+        // FIXED: Changed transactions.total to transactions.total_amount
         $salesByBranch = Transaction::select(
                 'branches.name as branch',
                 DB::raw('COUNT(transactions.id) as transactions'),
-                DB::raw('SUM(transactions.total) as total_sales'),
-                DB::raw('AVG(transactions.total) as avg_transaction')
+                DB::raw('SUM(transactions.total_amount) as total_sales'),
+                DB::raw('AVG(transactions.total_amount) as avg_transaction')
             )
             ->join('branches', 'transactions.branch_id', '=', 'branches.id')
             ->when($branchId, fn($q) => $q->where('transactions.branch_id', $branchId))
@@ -143,11 +143,12 @@ class ExportController extends Controller
         $startDate = $request->start_date ? Carbon::parse($request->start_date) : now()->subDays(30);
         $endDate = $request->end_date ? Carbon::parse($request->end_date) : now();
 
+        // FIXED: Changed transactions.total to transactions.total_amount
         $salesByBranch = Transaction::select(
                 'branches.name as branch',
                 DB::raw('COUNT(transactions.id) as transactions'),
-                DB::raw('SUM(transactions.total) as total_sales'),
-                DB::raw('AVG(transactions.total) as avg_transaction')
+                DB::raw('SUM(transactions.total_amount) as total_sales'),
+                DB::raw('AVG(transactions.total_amount) as avg_transaction')
             )
             ->join('branches', 'transactions.branch_id', '=', 'branches.id')
             ->when($branchId, fn($q) => $q->where('transactions.branch_id', $branchId))
