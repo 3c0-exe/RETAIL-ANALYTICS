@@ -20,7 +20,7 @@
         </div>
 
         <!-- KPI Cards -->
-        <div class="grid grid-cols-1 gap-6 mb-8 md:grid-cols-2 lg:grid-cols-4">
+        <div class="grid grid-cols-1 gap-4 mb-8 kpi-grid sm:grid-cols-2 lg:grid-cols-4 sm:gap-6">
             <!-- Total Customers -->
             <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-6">
                 <div class="flex items-center justify-between">
@@ -197,8 +197,10 @@
                     @endforeach
                 </div>
 
-                <div style="height: 250px;">
-                    <canvas id="segmentChart"></canvas>
+                <div class="chart-container">
+                    <div style="height: 250px;">
+                        <canvas id="segmentChart"></canvas>
+                    </div>
                 </div>
             </div>
 

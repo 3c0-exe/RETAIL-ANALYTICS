@@ -7,3 +7,93 @@
     display: grid;
     grid-template-columns: 60px repeat(24, minmax(0, 1fr));
 }
+
+/* ============================================
+   MOBILE RESPONSIVE FIXES - Phase 9 (UPDATED)
+   ============================================ */
+
+/* Chart Containers - Better mobile handling */
+@media (max-width: 768px) {
+    /* Reduce chart height on mobile */
+    .chart-wrapper {
+        height: 250px !important;
+    }
+
+    /* Stack chart grids to single column */
+    .chart-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Tables with horizontal scroll */
+    .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Responsive text sizing */
+    h1 {
+        font-size: 1.5rem !important; /* 24px */
+    }
+
+    h2 {
+        font-size: 1.125rem !important; /* 18px */
+    }
+
+    h3 {
+        font-size: 1rem !important; /* 16px */
+    }
+
+    /* Button text readable */
+    button, .btn {
+        font-size: 0.875rem !important; /* 14px */
+    }
+
+    /* Table text */
+    table {
+        font-size: 0.8125rem !important; /* 13px */
+    }
+
+    /* Card padding adjustment */
+    .card-mobile-padding {
+        padding: 1rem !important;
+    }
+
+    /* Chart labels rotation on mobile */
+    .chart-wrapper canvas {
+        max-width: 100% !important;
+    }
+}
+
+/* Touch-friendly buttons */
+@media (max-width: 768px) {
+    button, a[role="button"], .btn {
+        min-height: 44px !important;
+        padding: 0.5rem 1rem !important;
+    }
+}
+
+/* Prevent horizontal overflow */
+body {
+    overflow-x: hidden;
+}
+
+/* Grid responsiveness for KPI cards */
+@media (max-width: 640px) {
+    .kpi-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+}
+
+@media (min-width: 641px) and (max-width: 768px) {
+    .kpi-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+/* Chart containers should not have fixed heights on mobile */
+@media (max-width: 768px) {
+    .relative[style*="height"] {
+        height: 250px !important;
+    }
+}

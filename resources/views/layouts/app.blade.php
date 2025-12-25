@@ -41,7 +41,7 @@ use Illuminate\Support\Facades\Storage;
 
                 <!-- Logo - Fixed at top -->
                 <div class="flex items-center justify-between flex-shrink-0 h-16 px-6 border-b border-gray-200 dark:border-gray-800">
-                    <h1 class="text-xl font-bold text-primary-600 dark:text-primary-400">RetailAnalytics</h1>
+                    <h1 class="text-xl font-bold text-primary-600 dark:text-primary-400">PRISMA</h1>
                     <!-- Close button for mobile -->
                     <button @click="sidebarOpen = false" class="p-2 text-gray-500 rounded-md lg:hidden hover:bg-gray-100 dark:hover:bg-gray-800">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
