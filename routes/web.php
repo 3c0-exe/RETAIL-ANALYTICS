@@ -15,26 +15,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Main Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Analytics Routes (THESE WERE MISSING!)
+    // Analytics Routes
     Route::get('/analytics/sales', [\App\Http\Controllers\Analytics\SalesAnalyticsController::class, 'index'])
         ->name('analytics.sales');
-    Route::post('/analytics/sales/export', [\App\Http\Controllers\Analytics\SalesAnalyticsController::class, 'export'])
-        ->name('analytics.sales.export');
 
-        // NEW: Heatmap detail endpoint
-        Route::get('/analytics/sales/heatmap-detail', [\App\Http\Controllers\Analytics\SalesAnalyticsController::class, 'getHeatmapDetail'])
-            ->name('analytics.sales.heatmap-detail');
-
-        Route::post('/analytics/sales/export', [\App\Http\Controllers\Analytics\SalesAnalyticsController::class, 'export'])
-            ->name('analytics.sales.export');
+    // Heatmap detail endpoint
+    Route::get('/analytics/sales/heatmap-detail', [\App\Http\Controllers\Analytics\SalesAnalyticsController::class, 'getHeatmapDetail'])
+        ->name('analytics.sales.heatmap-detail');
 
     // Customer Analytics Routes
-        Route::get('/analytics/customers', [\App\Http\Controllers\Analytics\CustomerAnalyticsController::class, 'index'])
-            ->name('analytics.customers');
-        Route::get('/analytics/customers/{customer}', [\App\Http\Controllers\Analytics\CustomerAnalyticsController::class, 'show'])
-            ->name('analytics.customers.show');
+    Route::get('/analytics/customers', [\App\Http\Controllers\Analytics\CustomerAnalyticsController::class, 'index'])
+        ->name('analytics.customers');
+    Route::get('/analytics/customers/{customer}', [\App\Http\Controllers\Analytics\CustomerAnalyticsController::class, 'show'])
+        ->name('analytics.customers.show');
 
-    // Export Routes
+    // Export Routes (Rate Limited - 10 per minute)
+    Route::middleware(['throttle:exports'])->group(function () {
         Route::post('/export/sales/csv', [\App\Http\Controllers\ExportController::class, 'salesCsv'])
             ->name('export.sales.csv');
         Route::post('/export/sales/excel', [\App\Http\Controllers\ExportController::class, 'salesExcel'])
@@ -43,34 +39,40 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('export.sales.pdf');
         Route::post('/export/customers/csv', [\App\Http\Controllers\ExportController::class, 'customersCsv'])
             ->name('export.customers.csv');
+    });
 
-    // Forecast Routes
-            Route::get('/forecasts', [ForecastController::class, 'index'])->name('forecasts.index');
-            Route::post('/forecasts/regenerate', [ForecastController::class, 'regenerate'])->name('forecasts.regenerate');
-            Route::post('/forecasts/regenerate', function() {
-            \Artisan::call('forecast:generate');
-            return back()->with('success', 'Forecasts regenerated successfully!');
-        })->name('forecasts.regenerate')->middleware(['auth']);
+    // Forecast Routes (Rate Limited - 5 regenerations per hour)
+    Route::get('/forecasts', [ForecastController::class, 'index'])->name('forecasts.index');
+    Route::post('/forecasts/regenerate', function() {
+        \Artisan::call('forecast:generate');
+        return back()->with('success', 'Forecasts regenerated successfully!');
+    })->name('forecasts.regenerate')->middleware(['throttle:forecast']);
 
- // Alert routes
-Route::prefix('alerts')->name('alerts.')->group(function () {
-    Route::get('/', [AlertController::class, 'index'])->name('index');
-    Route::get('/unread', [AlertController::class, 'unread'])->name('unread');
-    Route::post('/{alert}/read', [AlertController::class, 'markAsRead'])->name('read');
-    Route::post('/read-all', [AlertController::class, 'markAllAsRead'])->name('readAll');
-    Route::get('/{alert}', [AlertController::class, 'show'])->name('show');
-});
+    // Alert routes
+    Route::prefix('alerts')->name('alerts.')->group(function () {
+        Route::get('/', [AlertController::class, 'index'])->name('index');
+        Route::get('/unread', [AlertController::class, 'unread'])->name('unread');
+        Route::post('/{alert}/read', [AlertController::class, 'markAsRead'])->name('read');
+        Route::post('/read-all', [AlertController::class, 'markAllAsRead'])->name('readAll');
+        Route::get('/{alert}', [AlertController::class, 'show'])->name('show');
+    });
+
     // Profile Management
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'updateProfile'])->name('profile.update');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update'); // Keep both for compatibility
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar.update');
     Route::delete('/profile/avatar', [ProfileController::class, 'deleteAvatar'])->name('profile.avatar.delete');
-    Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
+
+    // Password update (Rate Limited - 5 per hour)
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword'])
+        ->name('profile.password.update')
+        ->middleware(['throttle:password']);
+
     Route::put('/profile/theme', [ProfileController::class, 'updateTheme'])->name('profile.theme.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // Admin Routes
+    // Admin Routes (Rate Limited - 60 per minute for imports)
     Route::middleware(['role:admin'])->prefix('admin')->name('admin.')->group(function () {
         // Branch Management
         Route::resource('branches', \App\Http\Controllers\Admin\BranchController::class);
@@ -84,12 +86,16 @@ Route::prefix('alerts')->name('alerts.')->group(function () {
         // Product Management
         Route::resource('products', \App\Http\Controllers\Admin\ProductController::class);
 
-        // Import routes
+        // Import routes (Rate Limited)
         Route::get('imports', [\App\Http\Controllers\Admin\ImportController::class, 'index'])->name('imports.index');
         Route::get('imports/create', [\App\Http\Controllers\Admin\ImportController::class, 'create'])->name('imports.create');
         Route::get('imports/download-sample', [\App\Http\Controllers\Admin\ImportController::class, 'downloadSample'])->name('imports.download-sample');
-        Route::post('imports/upload', [\App\Http\Controllers\Admin\ImportController::class, 'upload'])->name('imports.upload');
-        Route::post('imports/{import}/process', [\App\Http\Controllers\Admin\ImportController::class, 'process'])->name('imports.process');
+
+        Route::middleware(['throttle:imports'])->group(function () {
+            Route::post('imports/upload', [\App\Http\Controllers\Admin\ImportController::class, 'upload'])->name('imports.upload');
+            Route::post('imports/{import}/process', [\App\Http\Controllers\Admin\ImportController::class, 'process'])->name('imports.process');
+        });
+
         Route::get('imports/{import}', [\App\Http\Controllers\Admin\ImportController::class, 'show'])->name('imports.show');
         Route::get('imports/{import}/export-errors', [\App\Http\Controllers\Admin\ImportController::class, 'exportErrors'])->name('imports.export-errors');
         Route::delete('imports/{import}', [\App\Http\Controllers\Admin\ImportController::class, 'destroy'])->name('imports.destroy');
