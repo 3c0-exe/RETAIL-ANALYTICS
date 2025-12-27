@@ -60,4 +60,93 @@ class ActivityLog extends Model
     {
         return $this->morphTo();
     }
+
+    /**
+     * Scope: Filter by action type
+     */
+    public function scopeAction($query, $action)
+    {
+        return $query->where('action', $action);
+    }
+
+    /**
+     * Scope: Filter by date range
+     */
+    public function scopeDateRange($query, $start, $end)
+    {
+        return $query->whereBetween('created_at', [$start, $end]);
+    }
+
+    /**
+     * Scope: Filter by user
+     */
+    public function scopeByUser($query, $userId)
+    {
+        return $query->where('user_id', $userId);
+    }
+
+    /**
+     * Scope: Filter by IP address
+     */
+    public function scopeByIp($query, $ip)
+    {
+        return $query->where('ip_address', $ip);
+    }
+
+    /**
+     * Get browser name from user agent
+     */
+    public function getBrowserAttribute()
+    {
+        $agent = $this->user_agent ?? '';
+
+        if (str_contains($agent, 'Chrome')) return 'Chrome';
+        if (str_contains($agent, 'Firefox')) return 'Firefox';
+        if (str_contains($agent, 'Safari')) return 'Safari';
+        if (str_contains($agent, 'Edge')) return 'Edge';
+        if (str_contains($agent, 'Opera')) return 'Opera';
+
+        return 'Unknown';
+    }
+
+    /**
+     * Get device type from user agent
+     */
+    public function getDeviceAttribute()
+    {
+        $agent = $this->user_agent ?? '';
+
+        if (str_contains($agent, 'Mobile')) return 'Mobile';
+        if (str_contains($agent, 'Tablet')) return 'Tablet';
+
+        return 'Desktop';
+    }
+
+    /**
+     * Check if activity is suspicious
+     */
+    public function isSuspicious()
+    {
+        // Check for unusual activities
+        $suspiciousActions = ['deleted', 'force_deleted', 'restored'];
+
+        if (in_array($this->action, $suspiciousActions)) {
+            return true;
+        }
+
+        // Check for multiple logins from different IPs in short time
+        if ($this->action === 'login') {
+            $recentLogins = static::where('user_id', $this->user_id)
+                ->where('action', 'login')
+                ->where('created_at', '>=', now()->subHours(1))
+                ->where('ip_address', '!=', $this->ip_address)
+                ->count();
+
+            if ($recentLogins > 2) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }

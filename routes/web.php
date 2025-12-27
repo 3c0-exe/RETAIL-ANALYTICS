@@ -72,6 +72,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('/profile/theme', [ProfileController::class, 'updateTheme'])->name('profile.theme.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    // Session Management Routes
+    Route::prefix('sessions')->name('sessions.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\SessionController::class, 'index'])->name('index');
+        Route::post('/logout-others', [\App\Http\Controllers\SessionController::class, 'logoutOtherDevices'])->name('logout-others');
+        Route::delete('/{sessionId}', [\App\Http\Controllers\SessionController::class, 'destroy'])->name('destroy');
+    });
+
     // Admin Routes (Rate Limited - 60 per minute for imports)
     Route::middleware(['role:admin'])->prefix('admin')->name('admin.')->group(function () {
         // Branch Management
