@@ -8,4 +8,5 @@ export default defineConfig({
             refresh: true,
         }),
     ],
+    // Remove cssCodeSplit - it's not needed
 });
