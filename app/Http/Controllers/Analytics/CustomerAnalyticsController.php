@@ -316,4 +316,139 @@ class CustomerAnalyticsController extends Controller
             'monthlyTrend'
         ));
     }
+    public function getProductCombinations(Request $request)
+{
+    $minSupport = $request->get('min_support', 3); // Minimum times products bought together
+    $limit = $request->get('limit', 20); // Top combinations to return
+
+    // Find product pairs bought together in same transaction
+    $productPairs = DB::table('transaction_items as ti1')
+        ->join('transaction_items as ti2', function($join) {
+            $join->on('ti1.transaction_id', '=', 'ti2.transaction_id')
+                 ->whereColumn('ti1.product_id', '<', 'ti2.product_id'); // Avoid duplicates
+        })
+        ->join('products as p1', 'ti1.product_id', '=', 'p1.id')
+        ->join('products as p2', 'ti2.product_id', '=', 'p2.id')
+        ->join('transactions', 'ti1.transaction_id', '=', 'transactions.id')
+        ->where('transactions.status', 'completed')
+        ->select(
+            'p1.id as product_a_id',
+            'p1.name as product_a',
+            'p2.id as product_b_id',
+            'p2.name as product_b',
+            DB::raw('COUNT(DISTINCT ti1.transaction_id) as frequency'),
+            DB::raw('SUM(ti1.quantity + ti2.quantity) as total_quantity')
+        )
+        ->groupBy('p1.id', 'p1.name', 'p2.id', 'p2.name')
+        ->having('frequency', '>=', $minSupport)
+        ->orderByDesc('frequency')
+        ->limit($limit)
+        ->get();
+
+    // Calculate association metrics for each pair
+    $totalTransactions = DB::table('transactions')
+        ->where('status', 'completed')
+        ->count();
+
+    $productPairs = $productPairs->map(function($pair) use ($totalTransactions) {
+        // Support: % of transactions containing both products
+        $pair->support = ($pair->frequency / $totalTransactions) * 100;
+
+        // Get individual product transaction counts
+        $productACount = DB::table('transaction_items')
+            ->join('transactions', 'transaction_items.transaction_id', '=', 'transactions.id')
+            ->where('transaction_items.product_id', $pair->product_a_id)
+            ->where('transactions.status', 'completed')
+            ->distinct('transaction_items.transaction_id')
+            ->count('transaction_items.transaction_id');
+
+        $productBCount = DB::table('transaction_items')
+            ->join('transactions', 'transaction_items.transaction_id', '=', 'transactions.id')
+            ->where('transaction_items.product_id', $pair->product_b_id)
+            ->where('transactions.status', 'completed')
+            ->distinct('transaction_items.transaction_id')
+            ->count('transaction_items.transaction_id');
+
+        // Confidence: P(B|A) = transactions with both / transactions with A
+        $pair->confidence_a_to_b = $productACount > 0
+            ? ($pair->frequency / $productACount) * 100
+            : 0;
+
+        $pair->confidence_b_to_a = $productBCount > 0
+            ? ($pair->frequency / $productBCount) * 100
+            : 0;
+
+        // Lift: How much more likely B is purchased when A is purchased
+        $expectedFrequency = ($productACount * $productBCount) / $totalTransactions;
+        $pair->lift = $expectedFrequency > 0
+            ? $pair->frequency / $expectedFrequency
+            : 0;
+
+        // Add revenue impact
+        $pair->revenue_impact = DB::table('transaction_items as ti1')
+            ->join('transaction_items as ti2', 'ti1.transaction_id', '=', 'ti2.transaction_id')
+            ->where('ti1.product_id', $pair->product_a_id)
+            ->where('ti2.product_id', $pair->product_b_id)
+            ->sum(DB::raw('ti1.subtotal + ti2.subtotal'));
+
+        return $pair;
+    });
+
+    return response()->json([
+        'pairs' => $productPairs,
+        'total_transactions' => $totalTransactions,
+        'min_support' => $minSupport
+    ]);
+}
+
+/**
+ * Get "Frequently Bought Together" recommendations for a specific product
+ */
+public function getFrequentlyBoughtTogether(Request $request, $productId)
+{
+    $limit = $request->get('limit', 5);
+
+    // Find products bought with this product
+    $recommendations = DB::table('transaction_items as ti1')
+        ->join('transaction_items as ti2', 'ti1.transaction_id', '=', 'ti2.transaction_id')
+        ->join('products as p', 'ti2.product_id', '=', 'p.id')
+        ->join('transactions', 'ti1.transaction_id', '=', 'transactions.id')
+        ->where('ti1.product_id', $productId)
+        ->where('ti2.product_id', '!=', $productId)
+        ->where('transactions.status', 'completed')
+        ->select(
+            'p.id',
+            'p.name',
+            'p.category_id',
+            DB::raw('COUNT(DISTINCT ti1.transaction_id) as times_bought_together'),
+            DB::raw('SUM(ti2.quantity) as total_quantity_sold'),
+            DB::raw('SUM(ti2.subtotal) as total_revenue')
+        )
+        ->groupBy('p.id', 'p.name', 'p.category_id')
+        ->orderByDesc('times_bought_together')
+        ->limit($limit)
+        ->get();
+
+    // Calculate confidence for each recommendation
+    $sourceProductTransactionCount = DB::table('transaction_items')
+        ->join('transactions', 'transaction_items.transaction_id', '=', 'transactions.id')
+        ->where('transaction_items.product_id', $productId)
+        ->where('transactions.status', 'completed')
+        ->distinct('transaction_items.transaction_id')
+        ->count('transaction_items.transaction_id');
+
+    $recommendations = $recommendations->map(function($rec) use ($sourceProductTransactionCount) {
+        $rec->confidence = $sourceProductTransactionCount > 0
+            ? ($rec->times_bought_together / $sourceProductTransactionCount) * 100
+            : 0;
+        return $rec;
+    });
+
+    return response()->json([
+        'product_id' => $productId,
+        'recommendations' => $recommendations,
+        'source_transaction_count' => $sourceProductTransactionCount
+    ]);
+}
+
 }

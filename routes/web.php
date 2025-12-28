@@ -26,6 +26,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Customer Analytics Routes
     Route::get('/analytics/customers', [\App\Http\Controllers\Analytics\CustomerAnalyticsController::class, 'index'])
         ->name('analytics.customers');
+
+    // 🔥 CRITICAL: Specific routes MUST come BEFORE dynamic {customer} route
+    Route::get('/analytics/customers/product-combinations', [\App\Http\Controllers\Analytics\CustomerAnalyticsController::class, 'getProductCombinations'])
+        ->name('analytics.customers.product-combinations');
+    Route::get('/analytics/customers/frequently-bought-together/{product}', [\App\Http\Controllers\Analytics\CustomerAnalyticsController::class, 'getFrequentlyBoughtTogether'])
+        ->name('analytics.customers.frequently-bought-together');
+
+    // This MUST be last because {customer} matches anything
     Route::get('/analytics/customers/{customer}', [\App\Http\Controllers\Analytics\CustomerAnalyticsController::class, 'show'])
         ->name('analytics.customers.show');
 

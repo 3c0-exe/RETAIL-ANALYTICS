@@ -256,7 +256,7 @@
             </div>
 
             <!-- Table Container - Improved Mobile Scroll -->
-            <div class="overflow-x-auto -mx-4 sm:mx-0">
+            <div class="-mx-4 overflow-x-auto sm:mx-0">
                 <div class="inline-block min-w-full align-middle">
                     <div class="overflow-hidden">
                         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
@@ -421,12 +421,12 @@
                 <!-- Pagination Buttons -->
                 <div class="flex gap-2">
                     <button onclick="previousPage()" id="prevBtn"
-                            class="px-4 py-2 text-xs sm:text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200">
+                            class="px-4 py-2 text-xs font-medium text-gray-700 transition-colors duration-200 bg-white border border-gray-300 rounded-md sm:text-sm hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
                         <span class="hidden sm:inline">Previous</span>
                         <span class="sm:hidden">Prev</span>
                     </button>
                     <button onclick="nextPage()" id="nextBtn"
-                            class="px-4 py-2 text-xs sm:text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200">
+                            class="px-4 py-2 text-xs font-medium text-gray-700 transition-colors duration-200 bg-white border border-gray-300 rounded-md sm:text-sm hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
                         Next
                     </button>
                 </div>
@@ -458,7 +458,7 @@
                 </h3>
 
                 <div class="space-y-6">
-                <div class="overflow-x-auto -mx-4 sm:mx-0">
+                <div class="-mx-4 overflow-x-auto sm:mx-0">
                         <div class="inline-block min-w-full align-middle">
                             <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
                                 <thead class="bg-gray-50 dark:bg-gray-900">
@@ -520,7 +520,7 @@
             </h3>
 
             <div class="space-y-6">
-                <div class="overflow-x-auto -mx-4 sm:mx-0">
+                <div class="-mx-4 overflow-x-auto sm:mx-0">
                     <div class="inline-block min-w-full align-middle">
                         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
                             <thead class="bg-gray-50 dark:bg-gray-900">
@@ -570,6 +570,220 @@
         </div>
 
         <!-- Continue with Gender, Top Products, Additional Charts, Cohort Analysis -->
+
+        <!-- ADD THIS SECTION TO: resources/views/analytics/customers.blade.php -->
+<!-- Place it AFTER the "By Gender" section and BEFORE the cohort analysis -->
+
+<!-- PRODUCT COMBINATION ANALYSIS SECTION -->
+<div class="mt-8 mb-6">
+    <h2 class="mb-2 text-xl font-bold text-gray-900 sm:text-2xl dark:text-gray-100">
+        🛒 Product Combination Analysis
+    </h2>
+    <p class="text-xs text-gray-600 sm:text-sm dark:text-gray-400">
+        Discover which products are frequently bought together (Market Basket Analysis)
+    </p>
+</div>
+
+<div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-4 sm:p-6 mb-6">
+    <!-- Control Panel -->
+    <div class="flex flex-col gap-3 pb-4 mb-6 border-b border-gray-200 sm:flex-row sm:items-center sm:justify-between dark:border-gray-700">
+        <div class="flex items-center gap-3">
+            <label class="text-xs text-gray-600 sm:text-sm dark:text-gray-400">Min Support:</label>
+            <select id="minSupportFilter" onchange="loadProductCombinations()"
+                    class="px-3 py-1.5 text-xs sm:text-sm text-gray-900 bg-white border border-gray-300 rounded-md dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
+                <option value="2">2+ transactions</option>
+                <option value="3" selected>3+ transactions</option>
+                <option value="5">5+ transactions</option>
+                <option value="10">10+ transactions</option>
+            </select>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <button id="refreshCombosBtn" onclick="loadProductCombinations()"
+                    class="px-4 py-2 text-xs font-medium text-white transition-colors rounded-md sm:text-sm bg-primary-600 hover:bg-primary-700">
+                <span class="flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    Refresh
+                </span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    <div id="comboLoadingState" class="flex items-center justify-center py-12">
+        <div class="text-center">
+            <svg class="w-12 h-12 mx-auto mb-4 text-gray-400 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Loading product combinations...</p>
+        </div>
+    </div>
+
+    <!-- Results Container -->
+    <div id="combosContainer" style="display:none;">
+        <!-- Stats Summary -->
+        <div class="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-3">
+            <div class="p-4 border border-gray-200 rounded-lg dark:border-gray-700">
+                <p class="text-xs text-gray-600 dark:text-gray-400">Total Combinations Found</p>
+                <p id="totalCombos" class="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">-</p>
+            </div>
+            <div class="p-4 border border-gray-200 rounded-lg dark:border-gray-700">
+                <p class="text-xs text-gray-600 dark:text-gray-400">Avg Confidence</p>
+                <p id="avgConfidence" class="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">-</p>
+            </div>
+            <div class="p-4 border border-gray-200 rounded-lg dark:border-gray-700">
+                <p class="text-xs text-gray-600 dark:text-gray-400">Highest Lift</p>
+                <p id="highestLift" class="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">-</p>
+            </div>
+        </div>
+
+        <!-- Combinations Table -->
+        <div class="-mx-4 overflow-x-auto sm:mx-0">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+                <thead class="bg-gray-50 dark:bg-gray-900">
+                    <tr>
+                        <th class="px-3 py-3 text-xs font-medium text-left text-gray-500 uppercase sm:px-4 dark:text-gray-400">Product A</th>
+                        <th class="px-3 py-3 text-xs font-medium text-center text-gray-500 uppercase sm:px-4 dark:text-gray-400">
+                            <span class="hidden sm:inline">+</span>
+                            <span class="sm:hidden">&</span>
+                        </th>
+                        <th class="px-3 py-3 text-xs font-medium text-left text-gray-500 uppercase sm:px-4 dark:text-gray-400">Product B</th>
+                        <th class="hidden px-3 py-3 text-xs font-medium text-right text-gray-500 uppercase sm:table-cell sm:px-4 dark:text-gray-400">Frequency</th>
+                        <th class="px-3 py-3 text-xs font-medium text-right text-gray-500 uppercase sm:px-4 dark:text-gray-400">
+                            <span class="hidden sm:inline">Confidence</span>
+                            <span class="sm:hidden">Conf.</span>
+                        </th>
+                        <th class="hidden px-3 py-3 text-xs font-medium text-right text-gray-500 uppercase md:table-cell sm:px-4 dark:text-gray-400">Lift</th>
+                        <th class="hidden px-3 py-3 text-xs font-medium text-right text-gray-500 uppercase lg:table-cell sm:px-4 dark:text-gray-400">Revenue</th>
+                    </tr>
+                </thead>
+                <tbody id="combosTableBody" class="bg-white divide-y divide-gray-200 dark:bg-[#171717] dark:divide-gray-800">
+                    <!-- Populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Empty State -->
+        <div id="combosEmptyState" style="display:none;" class="py-12 text-center">
+            <svg class="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+            </svg>
+            <p class="text-sm font-medium text-gray-900 dark:text-gray-100">No product combinations found</p>
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Try lowering the minimum support threshold</p>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for Product Combinations -->
+<script>
+let comboData = null;
+
+async function loadProductCombinations() {
+    const minSupport = document.getElementById('minSupportFilter').value;
+    const loadingState = document.getElementById('comboLoadingState');
+    const container = document.getElementById('combosContainer');
+    const refreshBtn = document.getElementById('refreshCombosBtn');
+
+    // Show loading
+    loadingState.style.display = 'flex';
+    container.style.display = 'none';
+    refreshBtn.disabled = true;
+
+    try {
+        const response = await fetch(`/analytics/customers/product-combinations?min_support=${minSupport}`);
+        const data = await response.json();
+        comboData = data;
+
+        displayProductCombinations(data);
+    } catch (error) {
+        console.error('Error loading product combinations:', error);
+        alert('Failed to load product combinations. Please try again.');
+    } finally {
+        loadingState.style.display = 'none';
+        container.style.display = 'block';
+        refreshBtn.disabled = false;
+    }
+}
+
+function displayProductCombinations(data) {
+    const tbody = document.getElementById('combosTableBody');
+    const emptyState = document.getElementById('combosEmptyState');
+
+    if (!data.pairs || data.pairs.length === 0) {
+        tbody.innerHTML = '';
+        emptyState.style.display = 'block';
+        return;
+    }
+
+    emptyState.style.display = 'none';
+
+    // Update stats
+    document.getElementById('totalCombos').textContent = data.pairs.length;
+
+    const avgConf = data.pairs.reduce((sum, p) => sum + p.confidence_a_to_b, 0) / data.pairs.length;
+    document.getElementById('avgConfidence').textContent = avgConf.toFixed(1) + '%';
+
+    const maxLift = Math.max(...data.pairs.map(p => p.lift));
+    document.getElementById('highestLift').textContent = maxLift.toFixed(2) + 'x';
+
+    // Build table rows
+    tbody.innerHTML = data.pairs.map((pair, index) => {
+        const liftClass = pair.lift > 1.5 ? 'text-green-600 dark:text-green-400' :
+                         pair.lift > 1.0 ? 'text-blue-600 dark:text-blue-400' :
+                         'text-gray-600 dark:text-gray-400';
+
+        const confClass = pair.confidence_a_to_b > 50 ? 'text-green-600 dark:text-green-400' :
+                         pair.confidence_a_to_b > 30 ? 'text-blue-600 dark:text-blue-400' :
+                         'text-gray-600 dark:text-gray-400';
+
+        return `
+            <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                <td class="px-3 py-3 sm:px-4">
+                    <div class="text-xs font-medium text-gray-900 sm:text-sm dark:text-gray-100">
+                        ${truncateText(pair.product_a, 30)}
+                    </div>
+                </td>
+                <td class="px-3 py-3 text-xl text-center text-gray-400 sm:px-4">
+                    ${index < 3 ? '🔥' : '+'}
+                </td>
+                <td class="px-3 py-3 sm:px-4">
+                    <div class="text-xs font-medium text-gray-900 sm:text-sm dark:text-gray-100">
+                        ${truncateText(pair.product_b, 30)}
+                    </div>
+                </td>
+                <td class="hidden px-3 py-3 text-xs text-right text-gray-600 sm:table-cell sm:px-4 sm:text-sm dark:text-gray-400">
+                    ${pair.frequency}x
+                    <div class="mt-1 text-xs text-gray-500 sm:hidden dark:text-gray-400">
+                        Conf: ${pair.confidence_a_to_b.toFixed(1)}%
+                    </div>
+                </td>
+                <td class="px-3 py-3 text-xs font-medium text-right sm:px-4 sm:text-sm ${confClass}">
+                    ${pair.confidence_a_to_b.toFixed(1)}%
+                </td>
+                <td class="hidden px-3 py-3 text-xs font-medium text-right md:table-cell sm:px-4 sm:text-sm ${liftClass}">
+                    ${pair.lift.toFixed(2)}x
+                </td>
+                <td class="hidden px-3 py-3 text-xs text-right text-gray-600 lg:table-cell whitespace-nowrap sm:px-4 sm:text-sm dark:text-gray-400">
+                    ₱${parseFloat(pair.revenue_impact).toLocaleString('en-PH', {minimumFractionDigits: 2})}
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function truncateText(text, maxLength) {
+    return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+}
+
+// Load on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadProductCombinations();
+});
+</script>
+
         <!-- Then add the JavaScript at the bottom -->
 
         <!-- Chart.js Scripts -->
@@ -746,7 +960,7 @@
                         }
                     });
 
-                  
+
                     const clvCounts = ranges.map(r => r.count);
                     const clvLabels = isMobile ? mobileLabels : ranges.map(r => r.label);
 
