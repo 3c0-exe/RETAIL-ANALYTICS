@@ -784,7 +784,343 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-        <!-- Then add the JavaScript at the bottom -->
+        <!-- COHORT RETENTION ANALYSIS SECTION -->
+<div class="mt-8 mb-6">
+    <h2 class="mb-2 text-xl font-bold text-gray-900 sm:text-2xl dark:text-gray-100">
+        📈 Cohort Retention Analysis
+    </h2>
+    <p class="text-xs text-gray-600 sm:text-sm dark:text-gray-400">
+        Track customer retention rates month-over-month by acquisition cohort
+    </p>
+</div>
+
+<div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-4 sm:p-6 mb-6">
+    <!-- Control Panel -->
+    <div class="flex flex-col gap-3 pb-4 mb-6 border-b border-gray-200 sm:flex-row sm:items-center sm:justify-between dark:border-gray-700">
+        <div class="flex items-center gap-3">
+            <label class="text-xs text-gray-600 sm:text-sm dark:text-gray-400">Cohorts to Show:</label>
+            <select id="cohortMonthsFilter" onchange="loadCohortRetention()"
+                    class="px-3 py-1.5 text-xs sm:text-sm text-gray-900 bg-white border border-gray-300 rounded-md dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
+                <option value="6">Last 6 months</option>
+                <option value="12" selected>Last 12 months</option>
+                <option value="24">Last 24 months</option>
+            </select>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <button id="refreshCohortBtn" onclick="loadCohortRetention()"
+                    class="px-4 py-2 text-xs font-medium text-white transition-colors rounded-md sm:text-sm bg-primary-600 hover:bg-primary-700">
+                <span class="flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    Refresh
+                </span>
+            </button>
+            <button onclick="exportCohortData()"
+                    class="px-4 py-2 text-xs font-medium text-white transition-colors bg-green-600 rounded-md sm:text-sm hover:bg-green-700">
+                <span class="flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    Export CSV
+                </span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    <div id="cohortLoadingState" class="flex items-center justify-center py-12">
+        <div class="text-center">
+            <svg class="w-12 h-12 mx-auto mb-4 text-gray-400 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Loading cohort retention data...</p>
+        </div>
+    </div>
+
+    <!-- Results Container -->
+    <div id="cohortContainer" style="display:none;">
+        <!-- Key Metrics -->
+        <div class="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="p-4 border border-gray-200 rounded-lg dark:border-gray-700">
+                <p class="text-xs text-gray-600 dark:text-gray-400">Avg Retention Rate</p>
+                <p id="avgRetentionRate" class="mt-1 text-2xl font-bold text-green-600 dark:text-green-400">-</p>
+            </div>
+            <div class="p-4 border border-gray-200 rounded-lg dark:border-gray-700">
+                <p class="text-xs text-gray-600 dark:text-gray-400">Avg Churn Rate</p>
+                <p id="avgChurnRate" class="mt-1 text-2xl font-bold text-red-600 dark:text-red-400">-</p>
+            </div>
+            <div class="p-4 border border-gray-200 rounded-lg dark:border-gray-700">
+                <p class="text-xs text-gray-600 dark:text-gray-400">Total Cohorts</p>
+                <p id="totalCohorts" class="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">-</p>
+            </div>
+            <div class="p-4 border border-gray-200 rounded-lg dark:border-gray-700">
+                <p class="text-xs text-gray-600 dark:text-gray-400">Avg Cohort Size</p>
+                <p id="avgCohortSize" class="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">-</p>
+            </div>
+        </div>
+
+        <!-- Retention Curve Chart -->
+        <div class="mb-6">
+            <h3 class="mb-4 text-base font-semibold text-gray-900 sm:text-lg dark:text-gray-100">
+                Average Retention Curve
+            </h3>
+            <div class="h-64 sm:h-80">
+                <canvas id="retentionCurveChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Retention Matrix Heatmap -->
+        <div class="mb-6">
+            <h3 class="mb-4 text-base font-semibold text-gray-900 sm:text-lg dark:text-gray-100">
+                Cohort Retention Matrix
+            </h3>
+
+            <div class="-mx-4 overflow-x-auto sm:mx-0">
+                <table class="min-w-full text-xs border-collapse sm:text-sm">
+                    <thead>
+                        <tr class="bg-gray-50 dark:bg-gray-900">
+                            <th class="sticky left-0 z-10 px-3 py-2 font-medium text-left text-gray-700 border-b-2 border-gray-300 bg-gray-50 sm:px-4 dark:bg-gray-900 dark:text-gray-300 dark:border-gray-700">
+                                Cohort
+                            </th>
+                            <th class="px-3 py-2 font-medium text-right text-gray-700 border-b-2 border-gray-300 whitespace-nowrap sm:px-4 dark:text-gray-300 dark:border-gray-700">
+                                Size
+                            </th>
+                            <th class="px-2 py-2 font-medium text-center text-gray-700 border-b-2 border-gray-300 sm:px-3 dark:text-gray-300 dark:border-gray-700" colspan="12">
+                                Months Since First Purchase
+                            </th>
+                        </tr>
+                        <tr class="bg-gray-50 dark:bg-gray-900">
+                            <th colspan="2" class="border-b border-gray-300 dark:border-gray-700"></th>
+                            <th class="px-2 py-1 text-xs text-center text-gray-600 border-b border-gray-300 dark:text-gray-400 dark:border-gray-700">0</th>
+                            <th class="px-2 py-1 text-xs text-center text-gray-600 border-b border-gray-300 dark:text-gray-400 dark:border-gray-700">1</th>
+                            <th class="px-2 py-1 text-xs text-center text-gray-600 border-b border-gray-300 dark:text-gray-400 dark:border-gray-700">2</th>
+                            <th class="px-2 py-1 text-xs text-center text-gray-600 border-b border-gray-300 dark:text-gray-400 dark:border-gray-700">3</th>
+                            <th class="px-2 py-1 text-xs text-center text-gray-600 border-b border-gray-300 dark:text-gray-400 dark:border-gray-700">4</th>
+                            <th class="px-2 py-1 text-xs text-center text-gray-600 border-b border-gray-300 dark:text-gray-400 dark:border-gray-700">5</th>
+                            <th class="hidden px-2 py-1 text-xs text-center text-gray-600 border-b border-gray-300 lg:table-cell dark:text-gray-400 dark:border-gray-700">6</th>
+                            <th class="hidden px-2 py-1 text-xs text-center text-gray-600 border-b border-gray-300 lg:table-cell dark:text-gray-400 dark:border-gray-700">7</th>
+                            <th class="hidden px-2 py-1 text-xs text-center text-gray-600 border-b border-gray-300 xl:table-cell dark:text-gray-400 dark:border-gray-700">8</th>
+                            <th class="hidden px-2 py-1 text-xs text-center text-gray-600 border-b border-gray-300 xl:table-cell dark:text-gray-400 dark:border-gray-700">9</th>
+                            <th class="hidden px-2 py-1 text-xs text-center text-gray-600 border-b border-gray-300 xl:table-cell dark:text-gray-400 dark:border-gray-700">10</th>
+                            <th class="hidden px-2 py-1 text-xs text-center text-gray-600 border-b border-gray-300 xl:table-cell dark:text-gray-400 dark:border-gray-700">11</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cohortMatrixBody" class="bg-white divide-y divide-gray-200 dark:bg-[#171717] dark:divide-gray-800">
+                        <!-- Populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Legend -->
+            <div class="flex flex-wrap items-center gap-4 mt-4">
+                <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Retention Rate:</span>
+                <div class="flex items-center gap-2">
+                    <div class="w-4 h-4 bg-green-600 rounded"></div>
+                    <span class="text-xs text-gray-600 dark:text-gray-400">80-100%</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-4 h-4 bg-green-400 rounded"></div>
+                    <span class="text-xs text-gray-600 dark:text-gray-400">60-80%</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-4 h-4 bg-yellow-400 rounded"></div>
+                    <span class="text-xs text-gray-600 dark:text-gray-400">40-60%</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-4 h-4 bg-orange-400 rounded"></div>
+                    <span class="text-xs text-gray-600 dark:text-gray-400">20-40%</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-4 h-4 bg-red-400 rounded"></div>
+                    <span class="text-xs text-gray-600 dark:text-gray-400">0-20%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Empty State -->
+        <div id="cohortEmptyState" style="display:none;" class="py-12 text-center">
+            <svg class="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+            </svg>
+            <p class="text-sm font-medium text-gray-900 dark:text-gray-100">No cohort data available</p>
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Need at least 2 months of customer data</p>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for Cohort Retention -->
+<script>
+let cohortRetentionChart = null;
+let cohortRetentionData = null;
+
+async function loadCohortRetention() {
+    const months = document.getElementById('cohortMonthsFilter').value;
+    const loadingState = document.getElementById('cohortLoadingState');
+    const container = document.getElementById('cohortContainer');
+    const refreshBtn = document.getElementById('refreshCohortBtn');
+
+    loadingState.style.display = 'flex';
+    container.style.display = 'none';
+    refreshBtn.disabled = true;
+
+    try {
+        const response = await fetch(`/analytics/customers/cohort-retention?months=${months}`);
+        const data = await response.json();
+        cohortRetentionData = data;
+
+        displayCohortRetention(data);
+    } catch (error) {
+        console.error('Error loading cohort retention:', error);
+        alert('Failed to load cohort retention data. Please try again.');
+    } finally {
+        loadingState.style.display = 'none';
+        container.style.display = 'block';
+        refreshBtn.disabled = false;
+    }
+}
+
+function displayCohortRetention(data) {
+    const tbody = document.getElementById('cohortMatrixBody');
+    const emptyState = document.getElementById('cohortEmptyState');
+
+    if (!data.cohorts || data.cohorts.length === 0) {
+        tbody.innerHTML = '';
+        emptyState.style.display = 'block';
+        return;
+    }
+
+    emptyState.style.display = 'none';
+
+    // Update metrics
+    document.getElementById('avgRetentionRate').textContent = data.metrics.avg_retention_rate.toFixed(1) + '%';
+    document.getElementById('avgChurnRate').textContent = data.metrics.avg_churn_rate.toFixed(1) + '%';
+    document.getElementById('totalCohorts').textContent = data.metrics.total_cohorts;
+    document.getElementById('avgCohortSize').textContent = Math.round(data.metrics.avg_cohort_size);
+
+    // Build retention matrix
+    tbody.innerHTML = data.cohorts.map(cohort => {
+        let row = `
+            <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                <td class="sticky left-0 z-10 px-3 py-2 font-medium text-gray-900 bg-white border-r border-gray-200 sm:px-4 dark:bg-[#171717] dark:text-gray-100 dark:border-gray-800">
+                    ${cohort.cohort}
+                </td>
+                <td class="px-3 py-2 text-right text-gray-600 border-r border-gray-200 sm:px-4 dark:text-gray-400 dark:border-gray-800">
+                    ${cohort.cohort_size}
+                </td>
+        `;
+
+        // Add retention cells (up to 12 months)
+        for (let i = 0; i < 12; i++) {
+            const month = cohort.months[i];
+            const hideClass = i >= 6 ? (i >= 8 ? 'hidden xl:table-cell' : 'hidden lg:table-cell') : '';
+
+            if (month) {
+                const rate = month.retention_rate;
+                const bgColor = getRetentionColor(rate);
+                const textColor = rate > 50 ? 'text-white' : 'text-gray-900 dark:text-gray-100';
+
+                row += `
+                    <td class="px-2 py-2 text-xs text-center ${hideClass} ${bgColor} ${textColor}" title="${month.active_customers} active / ${cohort.cohort_size} total">
+                        ${rate.toFixed(0)}%
+                    </td>
+                `;
+            } else {
+                row += `<td class="px-2 py-2 text-center ${hideClass} bg-gray-100 dark:bg-gray-800">-</td>`;
+            }
+        }
+
+        row += '</tr>';
+        return row;
+    }).join('');
+
+    // Draw retention curve chart
+    drawRetentionCurveChart(data.retention_curves);
+}
+
+function getRetentionColor(rate) {
+    if (rate >= 80) return 'bg-green-600';
+    if (rate >= 60) return 'bg-green-400';
+    if (rate >= 40) return 'bg-yellow-400';
+    if (rate >= 20) return 'bg-orange-400';
+    return 'bg-red-400';
+}
+
+function drawRetentionCurveChart(curves) {
+    const ctx = document.getElementById('retentionCurveChart');
+    if (!ctx) return;
+
+    // Destroy existing chart
+    if (cohortRetentionChart) {
+        cohortRetentionChart.destroy();
+    }
+
+    const isDarkMode = document.documentElement.classList.contains('dark');
+    const textColor = isDarkMode ? '#a3a3a3' : '#6b7280';
+    const gridColor = isDarkMode ? '#262626' : '#e5e7eb';
+
+    cohortRetentionChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: curves.map(c => `Month ${c.month_index}`),
+            datasets: [{
+                label: 'Average Retention',
+                data: curves.map(c => c.avg_retention),
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                fill: true,
+                tension: 0.4,
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `Retention: ${context.parsed.y.toFixed(1)}%`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        color: textColor,
+                        callback: function(value) {
+                            return value + '%';
+                        }
+                    },
+                    grid: { color: gridColor }
+                },
+                x: {
+                    ticks: { color: textColor },
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+}
+
+function exportCohortData() {
+    const months = document.getElementById('cohortMonthsFilter').value;
+    window.location.href = `/analytics/customers/cohort-retention/export?months=${months}`;
+}
+
+// Load on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadCohortRetention();
+});
+</script>
 
         <!-- Chart.js Scripts -->
         <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>

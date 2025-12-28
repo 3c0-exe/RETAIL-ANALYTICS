@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
             ProductSeeder::class,
             RealisticTransactionSeeder::class, // Use this one!
             // PopulateCustomerDemographicsSeeder::class, // Not needed - demographics already set in RealisticTransactionSeeder
+            $this->call(CohortRetentionSeeder::class),
         ]);
     }
 }

@@ -23,19 +23,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/analytics/sales/heatmap-detail', [\App\Http\Controllers\Analytics\SalesAnalyticsController::class, 'getHeatmapDetail'])
         ->name('analytics.sales.heatmap-detail');
 
-        
-
     // Customer Analytics Routes
     Route::get('/analytics/customers', [\App\Http\Controllers\Analytics\CustomerAnalyticsController::class, 'index'])
         ->name('analytics.customers');
 
-    // 🔥 CRITICAL: Specific routes MUST come BEFORE dynamic {customer} route
+    // 🔥 Specific routes MUST come BEFORE the dynamic {customer} route
     Route::get('/analytics/customers/product-combinations', [\App\Http\Controllers\Analytics\CustomerAnalyticsController::class, 'getProductCombinations'])
         ->name('analytics.customers.product-combinations');
     Route::get('/analytics/customers/frequently-bought-together/{product}', [\App\Http\Controllers\Analytics\CustomerAnalyticsController::class, 'getFrequentlyBoughtTogether'])
         ->name('analytics.customers.frequently-bought-together');
+    Route::get('/analytics/customers/cohort-retention', [\App\Http\Controllers\Analytics\CustomerAnalyticsController::class, 'getCohortRetention'])
+        ->name('analytics.customers.cohort-retention');
+    Route::get('/analytics/customers/cohort-retention/export', [\App\Http\Controllers\Analytics\CustomerAnalyticsController::class, 'exportCohortRetention'])
+        ->name('analytics.customers.cohort-retention.export');
 
-    // This MUST be last because {customer} matches anything
+    // This MUST be LAST because {customer} matches anything
     Route::get('/analytics/customers/{customer}', [\App\Http\Controllers\Analytics\CustomerAnalyticsController::class, 'show'])
         ->name('analytics.customers.show');
 

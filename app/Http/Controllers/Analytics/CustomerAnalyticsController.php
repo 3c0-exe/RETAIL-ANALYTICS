@@ -49,7 +49,7 @@ class CustomerAnalyticsController extends Controller
             'dormant' => $segmentStats['dormant'] ?? 0,
         ];
 
-        // 2. TOP 20 CUSTOMERS (changed from 100)
+        // 2. TOP 20 CUSTOMERS
         $topCustomers = Customer::query()
             ->when($segmentFilter, fn($q) => $q->where('segment', $segmentFilter))
             ->orderByDesc('total_spent')
@@ -316,139 +316,300 @@ class CustomerAnalyticsController extends Controller
             'monthlyTrend'
         ));
     }
+
+    /**
+     * Get product combination analysis (Market Basket Analysis)
+     */
     public function getProductCombinations(Request $request)
-{
-    $minSupport = $request->get('min_support', 3); // Minimum times products bought together
-    $limit = $request->get('limit', 20); // Top combinations to return
+    {
+        $minSupport = $request->get('min_support', 3);
+        $limit = $request->get('limit', 20);
 
-    // Find product pairs bought together in same transaction
-    $productPairs = DB::table('transaction_items as ti1')
-        ->join('transaction_items as ti2', function($join) {
-            $join->on('ti1.transaction_id', '=', 'ti2.transaction_id')
-                 ->whereColumn('ti1.product_id', '<', 'ti2.product_id'); // Avoid duplicates
-        })
-        ->join('products as p1', 'ti1.product_id', '=', 'p1.id')
-        ->join('products as p2', 'ti2.product_id', '=', 'p2.id')
-        ->join('transactions', 'ti1.transaction_id', '=', 'transactions.id')
-        ->where('transactions.status', 'completed')
-        ->select(
-            'p1.id as product_a_id',
-            'p1.name as product_a',
-            'p2.id as product_b_id',
-            'p2.name as product_b',
-            DB::raw('COUNT(DISTINCT ti1.transaction_id) as frequency'),
-            DB::raw('SUM(ti1.quantity + ti2.quantity) as total_quantity')
-        )
-        ->groupBy('p1.id', 'p1.name', 'p2.id', 'p2.name')
-        ->having('frequency', '>=', $minSupport)
-        ->orderByDesc('frequency')
-        ->limit($limit)
-        ->get();
-
-    // Calculate association metrics for each pair
-    $totalTransactions = DB::table('transactions')
-        ->where('status', 'completed')
-        ->count();
-
-    $productPairs = $productPairs->map(function($pair) use ($totalTransactions) {
-        // Support: % of transactions containing both products
-        $pair->support = ($pair->frequency / $totalTransactions) * 100;
-
-        // Get individual product transaction counts
-        $productACount = DB::table('transaction_items')
-            ->join('transactions', 'transaction_items.transaction_id', '=', 'transactions.id')
-            ->where('transaction_items.product_id', $pair->product_a_id)
+        // Find product pairs bought together in same transaction
+        $productPairs = DB::table('transaction_items as ti1')
+            ->join('transaction_items as ti2', function($join) {
+                $join->on('ti1.transaction_id', '=', 'ti2.transaction_id')
+                     ->whereColumn('ti1.product_id', '<', 'ti2.product_id');
+            })
+            ->join('products as p1', 'ti1.product_id', '=', 'p1.id')
+            ->join('products as p2', 'ti2.product_id', '=', 'p2.id')
+            ->join('transactions', 'ti1.transaction_id', '=', 'transactions.id')
             ->where('transactions.status', 'completed')
-            ->distinct('transaction_items.transaction_id')
-            ->count('transaction_items.transaction_id');
+            ->select(
+                'p1.id as product_a_id',
+                'p1.name as product_a',
+                'p2.id as product_b_id',
+                'p2.name as product_b',
+                DB::raw('COUNT(DISTINCT ti1.transaction_id) as frequency'),
+                DB::raw('SUM(ti1.quantity + ti2.quantity) as total_quantity')
+            )
+            ->groupBy('p1.id', 'p1.name', 'p2.id', 'p2.name')
+            ->having('frequency', '>=', $minSupport)
+            ->orderByDesc('frequency')
+            ->limit($limit)
+            ->get();
 
-        $productBCount = DB::table('transaction_items')
-            ->join('transactions', 'transaction_items.transaction_id', '=', 'transactions.id')
-            ->where('transaction_items.product_id', $pair->product_b_id)
-            ->where('transactions.status', 'completed')
-            ->distinct('transaction_items.transaction_id')
-            ->count('transaction_items.transaction_id');
+        $totalTransactions = DB::table('transactions')
+            ->where('status', 'completed')
+            ->count();
 
-        // Confidence: P(B|A) = transactions with both / transactions with A
-        $pair->confidence_a_to_b = $productACount > 0
-            ? ($pair->frequency / $productACount) * 100
-            : 0;
+        $productPairs = $productPairs->map(function($pair) use ($totalTransactions) {
+            $pair->support = ($pair->frequency / $totalTransactions) * 100;
 
-        $pair->confidence_b_to_a = $productBCount > 0
-            ? ($pair->frequency / $productBCount) * 100
-            : 0;
+            $productACount = DB::table('transaction_items')
+                ->join('transactions', 'transaction_items.transaction_id', '=', 'transactions.id')
+                ->where('transaction_items.product_id', $pair->product_a_id)
+                ->where('transactions.status', 'completed')
+                ->distinct('transaction_items.transaction_id')
+                ->count('transaction_items.transaction_id');
 
-        // Lift: How much more likely B is purchased when A is purchased
-        $expectedFrequency = ($productACount * $productBCount) / $totalTransactions;
-        $pair->lift = $expectedFrequency > 0
-            ? $pair->frequency / $expectedFrequency
-            : 0;
+            $productBCount = DB::table('transaction_items')
+                ->join('transactions', 'transaction_items.transaction_id', '=', 'transactions.id')
+                ->where('transaction_items.product_id', $pair->product_b_id)
+                ->where('transactions.status', 'completed')
+                ->distinct('transaction_items.transaction_id')
+                ->count('transaction_items.transaction_id');
 
-        // Add revenue impact
-        $pair->revenue_impact = DB::table('transaction_items as ti1')
+            $pair->confidence_a_to_b = $productACount > 0
+                ? ($pair->frequency / $productACount) * 100
+                : 0;
+
+            $pair->confidence_b_to_a = $productBCount > 0
+                ? ($pair->frequency / $productBCount) * 100
+                : 0;
+
+            $expectedFrequency = ($productACount * $productBCount) / $totalTransactions;
+            $pair->lift = $expectedFrequency > 0
+                ? $pair->frequency / $expectedFrequency
+                : 0;
+
+            $pair->revenue_impact = DB::table('transaction_items as ti1')
+                ->join('transaction_items as ti2', 'ti1.transaction_id', '=', 'ti2.transaction_id')
+                ->where('ti1.product_id', $pair->product_a_id)
+                ->where('ti2.product_id', $pair->product_b_id)
+                ->sum(DB::raw('ti1.subtotal + ti2.subtotal'));
+
+            return $pair;
+        });
+
+        return response()->json([
+            'pairs' => $productPairs,
+            'total_transactions' => $totalTransactions,
+            'min_support' => $minSupport
+        ]);
+    }
+
+    /**
+     * Get "Frequently Bought Together" recommendations
+     */
+    public function getFrequentlyBoughtTogether(Request $request, $productId)
+    {
+        $limit = $request->get('limit', 5);
+
+        $recommendations = DB::table('transaction_items as ti1')
             ->join('transaction_items as ti2', 'ti1.transaction_id', '=', 'ti2.transaction_id')
-            ->where('ti1.product_id', $pair->product_a_id)
-            ->where('ti2.product_id', $pair->product_b_id)
-            ->sum(DB::raw('ti1.subtotal + ti2.subtotal'));
+            ->join('products as p', 'ti2.product_id', '=', 'p.id')
+            ->join('transactions', 'ti1.transaction_id', '=', 'transactions.id')
+            ->where('ti1.product_id', $productId)
+            ->where('ti2.product_id', '!=', $productId)
+            ->where('transactions.status', 'completed')
+            ->select(
+                'p.id',
+                'p.name',
+                'p.category_id',
+                DB::raw('COUNT(DISTINCT ti1.transaction_id) as times_bought_together'),
+                DB::raw('SUM(ti2.quantity) as total_quantity_sold'),
+                DB::raw('SUM(ti2.subtotal) as total_revenue')
+            )
+            ->groupBy('p.id', 'p.name', 'p.category_id')
+            ->orderByDesc('times_bought_together')
+            ->limit($limit)
+            ->get();
 
-        return $pair;
-    });
+        $sourceProductTransactionCount = DB::table('transaction_items')
+            ->join('transactions', 'transaction_items.transaction_id', '=', 'transactions.id')
+            ->where('transaction_items.product_id', $productId)
+            ->where('transactions.status', 'completed')
+            ->distinct('transaction_items.transaction_id')
+            ->count('transaction_items.transaction_id');
 
-    return response()->json([
-        'pairs' => $productPairs,
-        'total_transactions' => $totalTransactions,
-        'min_support' => $minSupport
-    ]);
-}
+        $recommendations = $recommendations->map(function($rec) use ($sourceProductTransactionCount) {
+            $rec->confidence = $sourceProductTransactionCount > 0
+                ? ($rec->times_bought_together / $sourceProductTransactionCount) * 100
+                : 0;
+            return $rec;
+        });
 
-/**
- * Get "Frequently Bought Together" recommendations for a specific product
- */
-public function getFrequentlyBoughtTogether(Request $request, $productId)
-{
-    $limit = $request->get('limit', 5);
+        return response()->json([
+            'product_id' => $productId,
+            'recommendations' => $recommendations,
+            'source_transaction_count' => $sourceProductTransactionCount
+        ]);
+    }
 
-    // Find products bought with this product
-    $recommendations = DB::table('transaction_items as ti1')
-        ->join('transaction_items as ti2', 'ti1.transaction_id', '=', 'ti2.transaction_id')
-        ->join('products as p', 'ti2.product_id', '=', 'p.id')
-        ->join('transactions', 'ti1.transaction_id', '=', 'transactions.id')
-        ->where('ti1.product_id', $productId)
-        ->where('ti2.product_id', '!=', $productId)
-        ->where('transactions.status', 'completed')
-        ->select(
-            'p.id',
-            'p.name',
-            'p.category_id',
-            DB::raw('COUNT(DISTINCT ti1.transaction_id) as times_bought_together'),
-            DB::raw('SUM(ti2.quantity) as total_quantity_sold'),
-            DB::raw('SUM(ti2.subtotal) as total_revenue')
-        )
-        ->groupBy('p.id', 'p.name', 'p.category_id')
-        ->orderByDesc('times_bought_together')
-        ->limit($limit)
-        ->get();
+    /**
+     * Get cohort retention analysis
+     */
+    public function getCohortRetention(Request $request)
+    {
+        $monthsToTrack = $request->get('months', 12);
 
-    // Calculate confidence for each recommendation
-    $sourceProductTransactionCount = DB::table('transaction_items')
-        ->join('transactions', 'transaction_items.transaction_id', '=', 'transactions.id')
-        ->where('transaction_items.product_id', $productId)
-        ->where('transactions.status', 'completed')
-        ->distinct('transaction_items.transaction_id')
-        ->count('transaction_items.transaction_id');
+        $cohorts = DB::table('customers')
+            ->select(
+                DB::raw('DATE_FORMAT(created_at, "%Y-%m") as cohort_month'),
+                DB::raw('COUNT(*) as cohort_size')
+            )
+            ->groupBy('cohort_month')
+            ->orderBy('cohort_month', 'desc')
+            ->limit($monthsToTrack)
+            ->get()
+            ->keyBy('cohort_month');
 
-    $recommendations = $recommendations->map(function($rec) use ($sourceProductTransactionCount) {
-        $rec->confidence = $sourceProductTransactionCount > 0
-            ? ($rec->times_bought_together / $sourceProductTransactionCount) * 100
+        if ($cohorts->isEmpty()) {
+            return response()->json([
+                'cohorts' => [],
+                'retention_curves' => [],
+                'metrics' => [
+                    'avg_retention_rate' => 0,
+                    'avg_churn_rate' => 0,
+                    'total_cohorts' => 0,
+                    'avg_cohort_size' => 0
+                ]
+            ]);
+        }
+
+        $retentionMatrix = [];
+
+        foreach ($cohorts as $cohortMonth => $cohortData) {
+            $cohortStart = Carbon::parse($cohortMonth . '-01');
+            $cohortSize = $cohortData->cohort_size;
+
+            $cohortCustomerIds = DB::table('customers')
+                ->whereRaw('DATE_FORMAT(created_at, "%Y-%m") = ?', [$cohortMonth])
+                ->pluck('id');
+
+            if ($cohortCustomerIds->isEmpty()) {
+                continue;
+            }
+
+            $retentionData = [
+                'cohort' => $cohortMonth,
+                'cohort_size' => $cohortSize,
+                'months' => []
+            ];
+
+            for ($i = 0; $i <= 11; $i++) {
+                $periodStart = $cohortStart->copy()->addMonths($i);
+                $periodEnd = $periodStart->copy()->endOfMonth();
+
+                if ($periodStart->isFuture()) {
+                    break;
+                }
+
+                $activeCustomers = DB::table('transactions')
+                    ->whereIn('customer_id', $cohortCustomerIds)
+                    ->whereBetween('timestamp', [$periodStart, $periodEnd])
+                    ->where('status', 'completed')
+                    ->distinct('customer_id')
+                    ->count('customer_id');
+
+                $retentionRate = $cohortSize > 0 ? ($activeCustomers / $cohortSize) * 100 : 0;
+
+                $retentionData['months'][] = [
+                    'month_index' => $i,
+                    'period' => $periodStart->format('Y-m'),
+                    'active_customers' => $activeCustomers,
+                    'retention_rate' => round($retentionRate, 2),
+                    'churned' => $cohortSize - $activeCustomers
+                ];
+            }
+
+            $retentionMatrix[] = $retentionData;
+        }
+
+        $allRetentionRates = [];
+        foreach ($retentionMatrix as $cohort) {
+            foreach ($cohort['months'] as $month) {
+                if ($month['month_index'] > 0) {
+                    $allRetentionRates[] = $month['retention_rate'];
+                }
+            }
+        }
+
+        $avgRetentionRate = !empty($allRetentionRates)
+            ? array_sum($allRetentionRates) / count($allRetentionRates)
             : 0;
-        return $rec;
-    });
 
-    return response()->json([
-        'product_id' => $productId,
-        'recommendations' => $recommendations,
-        'source_transaction_count' => $sourceProductTransactionCount
-    ]);
-}
+        $avgChurnRate = 100 - $avgRetentionRate;
 
+        $retentionCurves = [];
+        for ($i = 0; $i <= 11; $i++) {
+            $ratesForMonth = [];
+            foreach ($retentionMatrix as $cohort) {
+                if (isset($cohort['months'][$i])) {
+                    $ratesForMonth[] = $cohort['months'][$i]['retention_rate'];
+                }
+            }
+
+            if (!empty($ratesForMonth)) {
+                $retentionCurves[] = [
+                    'month_index' => $i,
+                    'avg_retention' => round(array_sum($ratesForMonth) / count($ratesForMonth), 2),
+                    'min_retention' => round(min($ratesForMonth), 2),
+                    'max_retention' => round(max($ratesForMonth), 2)
+                ];
+            }
+        }
+
+        return response()->json([
+            'cohorts' => array_values($retentionMatrix),
+            'retention_curves' => $retentionCurves,
+            'metrics' => [
+                'avg_retention_rate' => round($avgRetentionRate, 2),
+                'avg_churn_rate' => round($avgChurnRate, 2),
+                'total_cohorts' => count($retentionMatrix),
+                'avg_cohort_size' => round($cohorts->avg('cohort_size'))
+            ]
+        ]);
+    }
+
+    /**
+     * Export cohort retention data as CSV
+     */
+    public function exportCohortRetention(Request $request)
+    {
+        $retentionData = $this->getCohortRetention($request);
+        $data = json_decode($retentionData->getContent(), true);
+
+        $filename = 'cohort_retention_' . now()->format('Y-m-d') . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+
+        $callback = function() use ($data) {
+            $file = fopen('php://output', 'w');
+
+            $headerRow = ['Cohort', 'Cohort Size'];
+            for ($i = 0; $i <= 11; $i++) {
+                $headerRow[] = "Month $i";
+            }
+            fputcsv($file, $headerRow);
+
+            foreach ($data['cohorts'] as $cohort) {
+                $row = [$cohort['cohort'], $cohort['cohort_size']];
+
+                foreach ($cohort['months'] as $month) {
+                    $row[] = $month['retention_rate'] . '%';
+                }
+
+                fputcsv($file, $row);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
 }
