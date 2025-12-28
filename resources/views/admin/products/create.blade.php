@@ -1,13 +1,8 @@
 <x-app-layout>
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header with Back Button -->
         <div class="mb-6">
             <div class="flex items-center gap-3 mb-3">
-                <a href="{{ route('admin.products.index') }}"
-                   class="inline-flex items-center justify-center w-10 h-10 text-gray-600 transition bg-gray-100 rounded-lg dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                    </svg>
-                </a>
                 <div>
                     <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">Add New Product</h1>
                     <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Create a new product and assign inventory to branches</p>
@@ -18,10 +13,12 @@
         <form action="{{ route('admin.products.store') }}" method="POST" enctype="multipart/form-data" class="space-y-4 sm:space-y-6">
             @csrf
 
+            <!-- Basic Info Card -->
             <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-4 sm:p-6">
                 <h2 class="mb-4 text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100">Basic Information</h2>
 
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <!-- Product Name -->
                     <div class="sm:col-span-2">
                         <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                             Product Name *
@@ -36,6 +33,7 @@
                         @enderror
                     </div>
 
+                    <!-- Category -->
                     <div>
                         <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                             Category
@@ -54,6 +52,7 @@
                         @enderror
                     </div>
 
+                    <!-- Status -->
                     <div>
                         <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                             Status
@@ -65,6 +64,7 @@
                         </select>
                     </div>
 
+                    <!-- Description -->
                     <div class="sm:col-span-2">
                         <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                             Description
@@ -79,10 +79,12 @@
                 </div>
             </div>
 
+            <!-- Pricing Card -->
             <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-4 sm:p-6">
                 <h2 class="mb-4 text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100">Pricing</h2>
 
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <!-- Cost -->
                     <div>
                         <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                             Cost (₱) *
@@ -99,6 +101,7 @@
                         @enderror
                     </div>
 
+                    <!-- Price -->
                     <div>
                         <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                             Selling Price (₱) *
@@ -117,6 +120,7 @@
                 </div>
             </div>
 
+            <!-- Image Upload Card -->
             <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-4 sm:p-6">
                 <h2 class="mb-4 text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100">Product Image</h2>
 
@@ -130,6 +134,7 @@
                 @enderror
             </div>
 
+            <!-- Inventory Card -->
             <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-4 sm:p-6">
                 <h2 class="mb-4 text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100">Branch Inventory</h2>
                 <p class="mb-4 text-xs sm:text-sm text-gray-600 dark:text-gray-400">Assign initial stock to branches (check to enable)</p>
@@ -169,9 +174,10 @@
                 </div>
             </div>
 
+            <!-- Action Buttons -->
             <div class="flex flex-col sm:flex-row gap-3 sticky bottom-0 bg-white dark:bg-[#0a0a0a] py-4 -mx-4 px-4 sm:mx-0 sm:px-0 sm:static sm:justify-end border-t sm:border-t-0 border-gray-200 dark:border-gray-800">
                 <a href="{{ route('admin.products.index') }}"
-                   class="inline-flex items-center justify-center px-6 py-2.5 text-sm font-medium text-red-700 transition bg-red-100 rounded-lg dark:bg-red-900/30 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 order-2 sm:order-1">
+                   class="inline-flex items-center justify-center px-6 py-2.5 text-sm font-medium text-gray-700 transition bg-gray-200 rounded-lg dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 order-2 sm:order-1">
                     Cancel
                 </a>
                 <button type="submit"
