@@ -24,6 +24,23 @@ class TransactionSeeder extends Seeder
             return;
         }
 
+        // CREATE CUSTOMERS FIRST (150 customers)
+        $this->command->info('Creating 150 customers...');
+        $customers = collect();
+
+        for ($i = 0; $i < 150; $i++) {
+            $customers->push(Customer::create([
+                'name' => fake()->name(),
+                'email' => fake()->unique()->safeEmail(),
+                'phone' => fake()->phoneNumber(),
+                'loyalty_id' => 'CUST' . str_pad($i + 1, 6, '0', STR_PAD_LEFT),
+                'total_spend' => 0,
+                'visit_count' => 0,
+                'segment' => 'new',
+            ]));
+        }
+
+        $this->command->info('✅ Created 150 customers!');
         $this->command->info('Generating 500 transactions over 90 days...');
 
         // Payment methods distribution
@@ -51,32 +68,27 @@ class TransactionSeeder extends Seeder
             // Random payment method
             $paymentMethod = $this->weightedRandom($paymentMethods);
 
-            // Create or get random customer (80% have customers)
+            // Get random customer (80% have customers)
             $customer = null;
             if (rand(1, 100) <= 80) {
-                $customer = Customer::inRandomOrder()->first() ?? Customer::create([
-                    'name' => fake()->name(),
-                    'email' => fake()->unique()->safeEmail(),
-                    'phone' => fake()->phoneNumber(),
-                    'loyalty_id' => 'LOY' . str_pad(Customer::count() + 1, 6, '0', STR_PAD_LEFT),
-                ]);
+                $customer = $customers->random();
             }
 
-// Create transaction
+            // Create transaction
             $transaction = Transaction::create([
-                'transaction_code' => 'TXN' . now()->format('Ymd') . str_pad($i + 1, 6, '0', STR_PAD_LEFT),
+                'transaction_code' => 'TXN' . $date->format('Ymd') . str_pad($i + 1, 6, '0', STR_PAD_LEFT),
                 'branch_id' => $branch->id,
                 'customer_id' => $customer?->id,
                 'cashier_id' => $cashier?->id,
-                // 'transaction_date' => $date,  <-- REMOVE THIS LINE (Column doesn't exist)
-                'timestamp' => $date,            // This holds the date/time
+                'timestamp' => $date,
                 'payment_method' => $paymentMethod,
                 'status' => 'completed',
                 'subtotal' => 0,
-                'tax_amount' => 0,       // FIXED: was 'tax'
-                'discount_amount' => 0,  // FIXED: was 'discount'
-                'total_amount' => 0,     // FIXED: was 'total'
+                'tax_amount' => 0,
+                'discount_amount' => 0,
+                'total_amount' => 0,
             ]);
+
             // Add 1-5 random products
             $itemCount = rand(1, 5);
             $subtotal = 0;
@@ -85,7 +97,7 @@ class TransactionSeeder extends Seeder
                 $product = $products->random();
                 $quantity = rand(1, 3);
                 $unitPrice = $product->price;
-                $discount = rand(0, 1) ? rand(0, 50) : 0; // 50% chance of discount
+                $discount = rand(0, 1) ? rand(0, 50) : 0;
                 $itemSubtotal = ($quantity * $unitPrice) - $discount;
 
                 TransactionItem::create([
@@ -103,14 +115,14 @@ class TransactionSeeder extends Seeder
             }
 
             // Calculate tax and total
-            $tax = $subtotal * 0.12; // 12% VAT
+            $tax = $subtotal * 0.12;
             $total = $subtotal + $tax;
 
-// Update transaction totals
+            // Update transaction totals
             $transaction->update([
                 'subtotal' => $subtotal,
-                'tax_amount' => $tax,       // FIXED: was 'tax'
-                'total_amount' => $total,   // FIXED: was 'total'
+                'tax_amount' => $tax,
+                'total_amount' => $total,
             ]);
 
             if ($i % 50 == 0) {
@@ -140,12 +152,14 @@ class TransactionSeeder extends Seeder
 
         $customers = Customer::all();
         foreach ($customers as $customer) {
-            $transactions = Transaction::where('customer_id', $customer->id)->get();
+            $transactions = Transaction::where('customer_id', $customer->id)
+                ->where('status', 'completed')
+                ->get();
 
             $customer->update([
-                'total_spend' => $transactions->sum('total'),
+                'total_spend' => $transactions->sum('total_amount'),
                 'visit_count' => $transactions->count(),
-                'last_purchase_at' => $transactions->max('transaction_date'),
+                'last_purchase_at' => $transactions->max('timestamp'),
             ]);
         }
 

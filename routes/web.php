@@ -23,6 +23,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/analytics/sales/heatmap-detail', [\App\Http\Controllers\Analytics\SalesAnalyticsController::class, 'getHeatmapDetail'])
         ->name('analytics.sales.heatmap-detail');
 
+        
+
     // Customer Analytics Routes
     Route::get('/analytics/customers', [\App\Http\Controllers\Analytics\CustomerAnalyticsController::class, 'index'])
         ->name('analytics.customers');
