@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Transaction;
 use App\Models\Customer;
 use App\Models\Product;
+use App\Models\ActivityLog; // ✅ ADD THIS IMPORT
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -199,6 +200,72 @@ class ExportController extends Controller
                     $customer->getRecencyScore(),
                     $customer->getFrequencyScore(),
                     $customer->getMonetaryScore()
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    // ✅ Export Activity Logs to CSV
+    public function activityLogsCsv(Request $request)
+    {
+        // Apply the same filters as your index method
+        $query = ActivityLog::with('user')
+            ->when($request->search, function ($query, $search) {
+                $query->where('description', 'like', "%{$search}%");
+            })
+            ->when($request->action, function ($query, $action) {
+                $query->where('action', $action);
+            })
+            ->when($request->model_type, function ($query, $modelType) {
+                $query->where('model_type', $modelType);
+            })
+            ->when($request->ip_address, function ($query, $ip) {
+                $query->where('ip_address', 'like', "%{$ip}%");
+            })
+            ->orderBy('created_at', 'desc');
+
+        // Get all filtered results (not paginated)
+        $logs = $query->get();
+
+        $filename = 'activity-logs_' . now()->format('Y-m-d_His') . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ];
+
+        $callback = function() use ($logs) {
+            $file = fopen('php://output', 'w');
+
+            // CSV Headers
+            fputcsv($file, [
+                'Time',
+                'User',
+                'Email',
+                'Action',
+                'Model',
+                'Model ID',
+                'IP Address',
+                'Browser',
+                'Device'
+            ]);
+
+            // CSV Data
+            foreach ($logs as $log) {
+                fputcsv($file, [
+                    $log->created_at->format('M d, Y H:i:s'),
+                    $log->user->name ?? 'Unknown',
+                    $log->user->email ?? 'N/A',
+                    ucfirst(str_replace('_', ' ', $log->action)),
+                    $log->model_type ? class_basename($log->model_type) : '-',
+                    $log->model_id ?? '-',
+                    $log->ip_address ?? '-',
+                    $log->browser ?? '-',
+                    $log->device ?? '-',
                 ]);
             }
 

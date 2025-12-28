@@ -121,6 +121,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Activity Logs
         Route::get('activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
+
     });
 
     // Branch Manager Routes
