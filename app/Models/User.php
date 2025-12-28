@@ -54,6 +54,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(ActivityLog::class);
     }
 
+    public function customReports()
+    {
+    return $this->hasMany(CustomReport::class);
+    }
+
     // Helper methods
     public function isAdmin(): bool
     {
@@ -89,4 +94,5 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->isAdmin() || $this->isAnalyst();
     }
+
 }

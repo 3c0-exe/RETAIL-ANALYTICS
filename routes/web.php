@@ -128,6 +128,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware(['role:branch_manager', 'branch.access'])->prefix('branch')->name('branch.')->group(function () {
         // Branch-specific routes will go here
     });
+
+Route::prefix('reports')->name('reports.')->group(function () {
+    Route::get('/custom-builder', [\App\Http\Controllers\CustomReportController::class, 'index'])
+        ->name('custom-builder');
+    Route::get('/list', [\App\Http\Controllers\CustomReportController::class, 'list'])  // ADD THIS LINE
+        ->name('list');
+    Route::post('/generate', [\App\Http\Controllers\CustomReportController::class, 'generate'])
+        ->name('generate');
+    Route::post('/save', [\App\Http\Controllers\CustomReportController::class, 'store'])
+        ->name('save');
+    Route::get('/saved/{report}', [\App\Http\Controllers\CustomReportController::class, 'show'])
+        ->name('show');
+    Route::delete('/saved/{report}', [\App\Http\Controllers\CustomReportController::class, 'destroy'])
+        ->name('delete');
+});
 });
 
 require __DIR__.'/auth.php';
