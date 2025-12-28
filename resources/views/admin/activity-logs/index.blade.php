@@ -257,18 +257,29 @@
 
     <script>
         function exportCSV() {
-            // Build URL with current filters
-            const params = new URLSearchParams(window.location.search);
-            params.set('export', 'csv');
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{{ route("admin.activity-logs.export") }}';
+            form.style.display = 'none';
 
-            // Create temporary link and trigger download
-            const url = '{{ route("admin.activity-logs.index") }}?' + params.toString();
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = 'activity-logs.csv';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_token';
+            csrfInput.value = '{{ csrf_token() }}';
+            form.appendChild(csrfInput);
+
+            const params = new URLSearchParams(window.location.search);
+            for (const [key, value] of params) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = value;
+                form.appendChild(input);
+            }
+
+            document.body.appendChild(form);
+            form.submit();
+            document.body.removeChild(form);
         }
-    </script>
+     </script>
 </x-app-layout>

@@ -12,9 +12,9 @@ class ActivityLogController extends Controller
     {
         $query = ActivityLog::with('user')->latest('created_at');
 
-        // Filter by user
-        if ($request->filled('user_id')) {
-            $query->where('user_id', $request->user_id);
+        // ✅ FIXED: Search filter (matches blade file)
+        if ($request->filled('search')) {
+            $query->where('description', 'like', "%{$request->search}%");
         }
 
         // Filter by action
@@ -27,7 +27,12 @@ class ActivityLogController extends Controller
             $query->where('model_type', $request->model_type);
         }
 
-        // Filter by date range
+        // ✅ FIXED: IP address filter (matches blade file)
+        if ($request->filled('ip_address')) {
+            $query->where('ip_address', 'like', "%{$request->ip_address}%");
+        }
+
+        // ✅ KEPT: Date filters (useful for future)
         if ($request->filled('date_from')) {
             $query->whereDate('created_at', '>=', $request->date_from);
         }

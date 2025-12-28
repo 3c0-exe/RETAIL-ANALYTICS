@@ -119,8 +119,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('imports/{import}/export-errors', [\App\Http\Controllers\Admin\ImportController::class, 'exportErrors'])->name('imports.export-errors');
         Route::delete('imports/{import}', [\App\Http\Controllers\Admin\ImportController::class, 'destroy'])->name('imports.destroy');
 
-        // Activity Logs
-        Route::get('activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
+      // Activity Logs
+        Route::get('activity-logs', [ActivityLogController::class, 'index'])
+            ->name('activity-logs.index');
+
+        // ✅ ADD THIS
+        Route::post('activity-logs/export', [\App\Http\Controllers\ExportController::class, 'activityLogsCsv'])
+            ->name('activity-logs.export')
+            ->middleware(['throttle:exports']);
 
     });
 
