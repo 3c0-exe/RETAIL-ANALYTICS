@@ -36,8 +36,11 @@ use Illuminate\Support\Facades\Storage;
                  style="display: none;"></div>
 
             <!-- Sidebar -->
-            <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
-                   class="fixed inset-y-0 left-0 z-50 flex flex-col w-64 transition-transform duration-300 ease-in-out transform border-r border-gray-200 lg:translate-x-0 lg:static lg:inset-auto dark:border-gray-800 bg-gray-50 dark:bg-[#171717]">
+            <aside class="fixed inset-y-0 left-0 z-50 flex flex-col w-64 border-r border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#171717] lg:static lg:z-auto"
+                   :class="{ 'translate-x-0': sidebarOpen, '-translate-x-full': !sidebarOpen }"
+                   x-bind:class="window.innerWidth >= 1024 ? '' : (sidebarOpen ? 'translate-x-0' : '-translate-x-full')"
+                   style="transition: transform 0.3s ease-in-out;"
+                   x-cloak>
 
                 <!-- Logo - Fixed at top -->
                 <div class="flex items-center justify-between flex-shrink-0 h-16 px-6 border-b border-gray-200 dark:border-gray-800">
@@ -261,5 +264,16 @@ use Illuminate\Support\Facades\Storage;
                 </main>
             </div>
         </div>
+
+        <style>
+            [x-cloak] { display: none !important; }
+
+            @media (min-width: 1024px) {
+                aside {
+                    transform: none !important;
+                    transition: none !important;
+                }
+            }
+        </style>
     </body>
 </html>
