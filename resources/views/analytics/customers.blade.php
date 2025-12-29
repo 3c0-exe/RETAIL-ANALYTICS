@@ -294,7 +294,9 @@
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200 dark:bg-[#171717] dark:divide-gray-800">
                                 @forelse($topCustomers as $index => $customer)
-                                <tr class="customer-row hover:bg-gray-50 dark:hover:bg-gray-800/50" data-index="{{ $index }}">
+                                <tr class="customer-row hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors"
+                                    data-index="{{ $index }}"
+                                    onclick="window.location.href='{{ route('analytics.customers.show', $customer->id) }}'">
                                     <!-- Rank Column - Sticky & Centered -->
                                     <td class="sticky left-0 z-10 w-12 px-2 py-3 text-sm font-bold text-center text-gray-900 bg-white sm:w-16 sm:px-3 dark:bg-[#171717] dark:text-gray-100">
                                         @if($index === 0) 🥇
@@ -1594,4 +1596,14 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         </script>
     </div>
+
+    <style>
+        .customer-row:hover {
+            background-color: rgba(139, 92, 246, 0.1) !important;
+            transform: scale(1.01);
+        }
+        .customer-row:active {
+            transform: scale(0.99);
+        }
+    </style>
 </x-app-layout>

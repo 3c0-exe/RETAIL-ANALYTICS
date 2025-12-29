@@ -213,7 +213,13 @@
                     Sales Trend ({{ ucfirst(str_replace('_', ' ', $dateRange)) }})
                 </h3>
                 <div class="relative" style="height: 250px;">
-                    <canvas id="salesTrendChart"></canvas>
+                    <!-- Loading skeleton -->
+                    <div id="salesTrendSkeleton" class="absolute inset-0">
+                        <x-chart-skeleton />
+                    </div>
+
+                    <!-- Actual chart (hidden initially) -->
+                    <canvas id="salesTrendChart" class="opacity-0 transition-opacity duration-300"></canvas>
                 </div>
             </div>
 
@@ -223,8 +229,14 @@
                     Top 5 Products ({{ ucfirst(str_replace('_', ' ', $dateRange)) }})
                 </h3>
                 <div class="relative" style="height: 250px;">
-                    <canvas id="topProductsChart"></canvas>
+                <!-- Loading skeleton -->
+                <div id="topProductsChartSkeleton" class="absolute inset-0">
+                    <x-chart-skeleton />
                 </div>
+
+                <!-- Actual chart (hidden initially) -->
+                <canvas id="topProductsChart" class="opacity-0 transition-opacity duration-300"></canvas>
+            </div>
             </div>
         </div>
 
@@ -235,7 +247,13 @@
                     Payment Methods ({{ ucfirst(str_replace('_', ' ', $dateRange)) }})
                 </h3>
                 <div class="relative" style="height: 250px;">
-                    <canvas id="paymentMethodsChart"></canvas>
+                    <!-- Loading skeleton -->
+                    <div id="paymentMethodsChartSkeleton" class="absolute inset-0">
+                        <x-chart-skeleton />
+                    </div>
+
+                    <!-- Actual chart (hidden initially) -->
+                    <canvas id="paymentMethodsChart" class="opacity-0 transition-opacity duration-300"></canvas>
                 </div>
             </div>
 
@@ -381,6 +399,38 @@
                 });
             }
 
+            // ====================================
+            // DRILL-DOWN NAVIGATION FEATURE
+            // Phase 10.2 - Click charts to filter analytics
+            // ====================================
+
+            function drillDownToSales(filter) {
+                // Build URL with filters
+                let url = '/analytics/sales?';
+                const params = new URLSearchParams();
+
+                if (filter.type === 'date') {
+                    params.append('start_date', filter.date);
+                    params.append('end_date', filter.date);
+                } else if (filter.type === 'product') {
+                    params.append('product_id', filter.productId);
+                    // Preserve current date range
+                    const startDate = document.querySelector('input[name="start_date"]')?.value;
+                    const endDate = document.querySelector('input[name="end_date"]')?.value;
+                    if (startDate) params.append('start_date', startDate);
+                    if (endDate) params.append('end_date', endDate);
+                } else if (filter.type === 'category') {
+                    params.append('category_id', filter.categoryId);
+                }
+
+                window.location.href = url + params.toString();
+            }
+
+            function drillDownToCustomers(segmentFilter) {
+                const url = `/analytics/customers?segment=${segmentFilter}`;
+                window.location.href = url;
+            }
+
             // Initialize charts (call this where your current chart code is)
             function initializeCharts() {
                 const colors = getThemeColors();
@@ -461,7 +511,21 @@
                             interaction: {
                                 mode: 'index',
                                 intersect: false,
+                                 onClick: (event, activeElements) => {
+                                        if (activeElements.length > 0) {
+                                            const index = activeElements[0].index;
+                                            const clickedDate = salesData[index].date;
+                                            drillDownToSales({ type: 'date', date: clickedDate });
+                                        }
+                                    }
+
                             },
+
+                            interaction: {
+                                    mode: 'index',
+                                    intersect: false,
+                                },
+
                             plugins: {
                                 legend: { display: false },
                                 // EXISTING tooltip code - REPLACE with this enhanced version
@@ -506,6 +570,12 @@
                             }
                         }
                     });
+
+                    // After salesTrendChart = new Chart(...)
+                    document.getElementById('salesTrendSkeleton')?.remove();
+                    document.getElementById('salesTrendChart').classList.remove('opacity-0');
+
+                    // Repeat for topProductsChart, paymentMethodsChart
                 }
 
                 // 2. Top Products Chart
@@ -561,8 +631,20 @@
                                             return '';
                                         }
                                     }
+
+
                                 }
                             },
+
+                            onClick: (event, activeElements) => {
+                                if (activeElements.length > 0) {
+                                    const index = activeElements[0].index;
+                                    const productName = productsData[index].product_name;
+                                    // Show alert for now (you can enhance this)
+                                    alert(`Clicked: ${productName}\n\nIn a full implementation, this would drill down to product details.`);
+                                }
+                            },
+
                             scales: isMobile ? {
                                 x: {
                                     ...responsiveScales.y,
@@ -584,6 +666,11 @@
                             }
                         }
                     });
+
+                    document.getElementById('topProductsChartSkeleton')?.remove();
+                    document.getElementById('topProductsChart').classList.remove('opacity-0');
+
+                    // Repeat for topProductsChart,
                 }
 
                 // 3. Payment Methods Chart
@@ -646,6 +733,12 @@
                             }
                         }
                     });
+
+                    // After salesTrendChart = new Chart(...)
+                    document.getElementById('paymentMethodsChartSkeleton')?.remove();
+                    document.getElementById('paymentMethodsChart').classList.remove('opacity-0');
+
+
                 }
             }
 
