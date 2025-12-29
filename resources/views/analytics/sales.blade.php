@@ -233,29 +233,47 @@
             </div>
         </div>
 
-        <!-- 3. TOP 20 PRODUCTS -->
+       <!-- TOP 20 PRODUCTS -->
         <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-4 sm:p-6 mb-6">
-            <h2 class="mb-4 text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100">Top 20 Products</h2>
+            <!-- Header with Column Toggle -->
+            <div class="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between">
+                <h2 class="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100">
+                    Top 20 Products
+                </h2>
+
+                <!-- Column Toggle -->
+                <x-column-toggle
+                    table-id="products-table"
+                    :columns="[
+                        ['key' => 'product', 'label' => 'Product', 'visible' => true, 'locked' => true],
+                        ['key' => 'category', 'label' => 'Category', 'visible' => true, 'locked' => false],
+                        ['key' => 'units', 'label' => 'Units Sold', 'visible' => true, 'locked' => false],
+                        ['key' => 'revenue', 'label' => 'Revenue', 'visible' => true, 'locked' => false],
+                        ['key' => 'margin', 'label' => 'Margin', 'visible' => true, 'locked' => false],
+                    ]"
+                />
+            </div>
+
             <div class="overflow-x-auto -mx-4 sm:mx-0">
                 <div class="inline-block min-w-full align-middle">
                     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
                         <thead>
                             <tr>
-                                <th class="px-3 sm:px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">Product</th>
-                                <th class="px-3 sm:px-4 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase dark:text-gray-400 hidden lg:table-cell">Category</th>
-                                <th class="px-3 sm:px-4 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase dark:text-gray-400">Units</th>
-                                <th class="px-3 sm:px-4 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase dark:text-gray-400">Revenue</th>
-                                <th class="px-3 sm:px-4 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase dark:text-gray-400 hidden md:table-cell">Margin</th>
+                                <th data-column="product" class="px-3 sm:px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">Product</th>
+                                <th data-column="category" class="px-3 sm:px-4 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase dark:text-gray-400 hidden lg:table-cell">Category</th>
+                                <th data-column="units" class="px-3 sm:px-4 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase dark:text-gray-400">Units</th>
+                                <th data-column="revenue" class="px-3 sm:px-4 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase dark:text-gray-400">Revenue</th>
+                                <th data-column="margin" class="px-3 sm:px-4 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase dark:text-gray-400 hidden md:table-cell">Margin</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
                             @forelse($topProducts as $product)
                             <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                                <td class="px-3 sm:px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{{ Str::limit($product->product_name, 30) }}</td>
-                                <td class="px-3 sm:px-4 py-3 text-sm text-gray-600 dark:text-gray-400 text-right hidden lg:table-cell">{{ $product->category_name }}</td>
-                                <td class="px-3 sm:px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400">{{ number_format($product->units_sold) }}</td>
-                                <td class="px-3 sm:px-4 py-3 text-sm font-medium text-right text-gray-900 dark:text-gray-100">₱{{ number_format($product->revenue, 0) }}</td>
-                                <td class="px-3 sm:px-4 py-3 text-sm text-right hidden md:table-cell">
+                                <td data-column="product" class="px-3 sm:px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{{ Str::limit($product->product_name, 30) }}</td>
+                                <td data-column="category" class="px-3 sm:px-4 py-3 text-sm text-gray-600 dark:text-gray-400 text-right hidden lg:table-cell">{{ $product->category_name }}</td>
+                                <td data-column="units" class="px-3 sm:px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400">{{ number_format($product->units_sold) }}</td>
+                                <td data-column="revenue" class="px-3 sm:px-4 py-3 text-sm font-medium text-right text-gray-900 dark:text-gray-100">₱{{ number_format($product->revenue, 0) }}</td>
+                                <td data-column="margin" class="px-3 sm:px-4 py-3 text-sm text-right hidden md:table-cell">
                                     <span class="px-2 py-1 rounded-full text-xs font-medium {{ $product->avg_margin > 0 ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400' }}">
                                         ₱{{ number_format($product->avg_margin, 2) }}
                                     </span>

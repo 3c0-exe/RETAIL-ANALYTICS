@@ -251,7 +251,7 @@
             </div>
         </div>
 
-        <!-- Top Customers Section - Mobile Optimized -->
+       <!-- Top Customers Section - Mobile Optimized -->
         <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-4 sm:p-6 mb-6">
             <!-- Header with Entries Selector -->
             <div class="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
@@ -259,53 +259,86 @@
                     Top Customers
                 </h2>
 
-                <!-- Entries Per Page Selector - Compact Mobile Layout -->
-                <div class="flex items-center gap-2 sm:gap-3">
-                    <label class="text-xs text-gray-600 sm:text-sm dark:text-gray-400">Show:</label>
-                    <select id="entriesPerPage" onchange="updateTableEntries()"
-                            class="px-2.5 py-1.5 text-xs sm:text-sm text-gray-900 bg-white border border-gray-300 rounded-md dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 min-w-[60px] sm:min-w-[70px]">
-                        <option value="5">5</option>
-                        <option value="10" selected>10</option>
-                        <option value="20">20</option>
-                        <option value="50">50</option>
-                    </select>
-                    <span class="text-xs text-gray-600 sm:text-sm dark:text-gray-400">entries</span>
+                <!-- RIGHT SIDE: Controls -->
+                <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+                    <!-- Column Toggle Component -->
+                    <x-column-toggle
+                        table-id="customers-table"
+                        :columns="[
+                            ['key' => 'rank', 'label' => 'Rank', 'visible' => true, 'locked' => true],
+                            ['key' => 'customer', 'label' => 'Customer', 'visible' => true, 'locked' => true],
+                            ['key' => 'segment', 'label' => 'Segment', 'visible' => true, 'locked' => false],
+                            ['key' => 'spent', 'label' => 'Total Spent', 'visible' => true, 'locked' => false],
+                            ['key' => 'visits', 'label' => 'Visits', 'visible' => true, 'locked' => false],
+                            ['key' => 'rfm', 'label' => 'RFM Scores', 'visible' => true, 'locked' => false],
+                            ['key' => 'last_visit', 'label' => 'Last Visit', 'visible' => true, 'locked' => false],
+                        ]"
+                    />
+
+                    <!-- Entries Per Page Selector -->
+                    <div class="flex items-center gap-2 sm:gap-3">
+                        <label class="text-xs text-gray-600 sm:text-sm dark:text-gray-400">Show:</label>
+                        <select id="entriesPerPage" onchange="updateTableEntries()"
+                                class="px-2.5 py-1.5 text-xs sm:text-sm text-gray-900 bg-white border border-gray-300 rounded-md dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 min-w-[60px] sm:min-w-[70px]">
+                            <option value="5">5</option>
+                            <option value="10" selected>10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                        </select>
+                        <span class="text-xs text-gray-600 sm:text-sm dark:text-gray-400">entries</span>
+                    </div>
                 </div>
             </div>
 
             <!-- Table Container - Improved Mobile Scroll -->
             <div class="-mx-4 overflow-x-auto sm:mx-0">
+                <!-- Swipe Indicator - Mobile Only -->
+                <div class="sticky left-0 z-30 flex items-center justify-center py-2 bg-gradient-to-r from-purple-50 to-transparent dark:from-purple-900/10 sm:hidden"
+                    x-data="{ show: true }"
+                    x-show="show"
+                    x-transition
+                    @scroll.window="show = false">
+                    <div class="flex items-center gap-2 px-4 py-2 text-xs font-medium text-purple-700 bg-white border border-purple-200 rounded-full shadow-sm dark:bg-gray-800 dark:text-purple-300 dark:border-purple-800 animate-pulse">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path>
+                        </svg>
+                        <span>Swipe to see more columns</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path>
+                        </svg>
+                    </div>
+                </div>
                 <div class="inline-block min-w-full align-middle">
                     <div class="overflow-hidden">
                         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
                             <thead class="bg-gray-50 dark:bg-gray-900">
                                 <tr>
-                                    <!-- Rank - Sticky on Mobile -->
-                                    <th class="sticky left-0 z-20 px-3 py-3 text-xs font-medium text-left text-gray-500 uppercase bg-gray-50 sm:px-4 dark:bg-gray-900 dark:text-gray-400">
+                                    <!-- Rank -->
+                                    <th data-column="rank" class="sticky left-0 z-20 px-3 py-3 text-xs font-medium text-left text-gray-500 uppercase bg-gray-50 sm:px-4 dark:bg-gray-900 dark:text-gray-400">
                                         Rank
                                     </th>
                                     <!-- Customer Info -->
-                                    <th class="px-3 py-3 text-xs font-medium text-left text-gray-500 uppercase whitespace-nowrap sm:px-4 dark:text-gray-400">
+                                    <th data-column="customer" class="px-3 py-3 text-xs font-medium text-left text-gray-500 uppercase whitespace-nowrap sm:px-4 dark:text-gray-400">
                                         Customer
                                     </th>
                                     <!-- Segment - Hidden on Mobile -->
-                                    <th class="hidden px-3 py-3 text-xs font-medium text-left text-gray-500 uppercase md:table-cell sm:px-4 dark:text-gray-400">
+                                    <th data-column="segment" class="hidden px-3 py-3 text-xs font-medium text-left text-gray-500 uppercase md:table-cell sm:px-4 dark:text-gray-400">
                                         Segment
                                     </th>
                                     <!-- Spent -->
-                                    <th class="px-3 py-3 text-xs font-medium text-right text-gray-500 uppercase whitespace-nowrap sm:px-4 dark:text-gray-400">
+                                    <th data-column="spent" class="px-3 py-3 text-xs font-medium text-right text-gray-500 uppercase whitespace-nowrap sm:px-4 dark:text-gray-400">
                                         Spent
                                     </th>
                                     <!-- Visits - Hidden on Small Mobile -->
-                                    <th class="hidden px-3 py-3 text-xs font-medium text-right text-gray-500 uppercase sm:table-cell sm:px-4 dark:text-gray-400">
+                                    <th data-column="visits" class="hidden px-3 py-3 text-xs font-medium text-right text-gray-500 uppercase sm:table-cell sm:px-4 dark:text-gray-400">
                                         Visits
                                     </th>
                                     <!-- RFM - Hidden on Mobile/Tablet -->
-                                    <th class="hidden px-3 py-3 text-xs font-medium text-center text-gray-500 uppercase lg:table-cell whitespace-nowrap sm:px-4 dark:text-gray-400">
+                                    <th data-column="rfm" class="hidden px-3 py-3 text-xs font-medium text-center text-gray-500 uppercase lg:table-cell whitespace-nowrap sm:px-4 dark:text-gray-400">
                                         RFM
                                     </th>
                                     <!-- Last Visit - Hidden on Mobile/Tablet -->
-                                    <th class="hidden px-3 py-3 text-xs font-medium text-left text-gray-500 uppercase xl:table-cell whitespace-nowrap sm:px-4 dark:text-gray-400">
+                                    <th data-column="last_visit" class="hidden px-3 py-3 text-xs font-medium text-left text-gray-500 uppercase xl:table-cell whitespace-nowrap sm:px-4 dark:text-gray-400">
                                         Last Visit
                                     </th>
                                 </tr>
@@ -315,8 +348,9 @@
                                 <tr class="customer-row hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors"
                                     data-index="{{ $index }}"
                                     onclick="window.location.href='{{ route('analytics.customers.show', $customer->id) }}'">
-                                    <!-- Rank Column - Sticky & Centered -->
-                                    <td class="sticky left-0 z-10 w-12 px-2 py-3 text-sm font-bold text-center text-gray-900 bg-white sm:w-16 sm:px-3 dark:bg-[#171717] dark:text-gray-100">
+
+                                    <!-- Rank Column -->
+                                    <td data-column="rank" class="sticky left-0 z-10 w-12 px-2 py-3 text-sm font-bold text-center text-gray-900 bg-white sm:w-16 sm:px-3 dark:bg-[#171717] dark:text-gray-100">
                                         @if($index === 0) 🥇
                                         @elseif($index === 1) 🥈
                                         @elseif($index === 2) 🥉
@@ -325,13 +359,11 @@
                                     </td>
 
                                     <!-- Customer Info -->
-                                    <td class="px-3 py-3 sm:px-4">
+                                    <td data-column="customer" class="px-3 py-3 sm:px-4">
                                         <div class="flex flex-col gap-1">
-                                            <!-- Name - Responsive truncation -->
                                             <div class="text-xs font-medium text-gray-900 sm:text-sm dark:text-gray-100">
                                                 {{ Str::limit($customer->name, 25) }}
                                             </div>
-                                            <!-- Email - More truncation on mobile -->
                                             <div class="text-xs text-gray-500 dark:text-gray-400">
                                                 <span class="inline sm:hidden">{{ Str::limit($customer->email, 20) }}</span>
                                                 <span class="hidden sm:inline">{{ Str::limit($customer->email, 30) }}</span>
@@ -357,16 +389,8 @@
                                     </td>
 
                                     <!-- Segment - Desktop Only -->
-                                    <td class="hidden px-3 py-3 md:table-cell sm:px-4">
+                                    <td data-column="segment" class="hidden px-3 py-3 md:table-cell sm:px-4">
                                         @php
-                                            $segmentColors = [
-                                                'vip' => 'purple',
-                                                'loyal' => 'green',
-                                                'regular' => 'blue',
-                                                'at_risk' => 'orange',
-                                                'new' => 'cyan',
-                                                'dormant' => 'gray'
-                                            ];
                                             $badgeColor = $segmentColors[$customer->segment] ?? 'gray';
                                         @endphp
                                         <span class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-full whitespace-nowrap bg-{{ $badgeColor }}-100 dark:bg-{{ $badgeColor }}-900/20 text-{{ $badgeColor }}-700 dark:text-{{ $badgeColor }}-300">
@@ -375,10 +399,9 @@
                                     </td>
 
                                     <!-- Spent -->
-                                    <td class="px-3 py-3 text-xs font-semibold text-right text-gray-900 whitespace-nowrap sm:px-4 sm:text-sm dark:text-gray-100">
+                                    <td data-column="spent" class="px-3 py-3 text-xs font-semibold text-right text-gray-900 whitespace-nowrap sm:px-4 sm:text-sm dark:text-gray-100">
                                         <div class="flex flex-col gap-1">
                                             <span>₱{{ number_format($customer->total_spent, 0) }}</span>
-                                            <!-- Show visits on small mobile -->
                                             <span class="text-xs font-normal text-gray-500 sm:hidden dark:text-gray-400">
                                                 {{ number_format($customer->visit_count) }} visits
                                             </span>
@@ -386,12 +409,12 @@
                                     </td>
 
                                     <!-- Visits - Hidden on Small Mobile -->
-                                    <td class="hidden px-3 py-3 text-xs text-right text-gray-600 sm:table-cell sm:px-4 sm:text-sm dark:text-gray-400">
+                                    <td data-column="visits" class="hidden px-3 py-3 text-xs text-right text-gray-600 sm:table-cell sm:px-4 sm:text-sm dark:text-gray-400">
                                         {{ number_format($customer->visit_count) }}
                                     </td>
 
                                     <!-- RFM Scores - Desktop Only -->
-                                    <td class="hidden px-3 py-3 text-center lg:table-cell sm:px-4">
+                                    <td data-column="rfm" class="hidden px-3 py-3 text-center lg:table-cell sm:px-4">
                                         <div class="flex items-center justify-center gap-1 text-xs">
                                             <span class="px-1.5 py-0.5 bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300 rounded whitespace-nowrap font-medium">
                                                 R:{{ $customer->getRecencyScore() }}
@@ -406,7 +429,7 @@
                                     </td>
 
                                     <!-- Last Visit - Large Desktop Only -->
-                                    <td class="hidden px-3 py-3 text-xs text-gray-600 xl:table-cell whitespace-nowrap sm:px-4 sm:text-sm dark:text-gray-400">
+                                    <td data-column="last_visit" class="hidden px-3 py-3 text-xs text-gray-600 xl:table-cell whitespace-nowrap sm:px-4 sm:text-sm dark:text-gray-400">
                                         {{ $customer->last_visit_date ? $customer->last_visit_date->format('M d, Y') : 'N/A' }}
                                     </td>
                                 </tr>
@@ -1615,7 +1638,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </script>
     </div>
 
-    <style>
+    {{-- <style>
         .customer-row:hover {
             background-color: rgba(139, 92, 246, 0.1) !important;
             transform: scale(1.01);
@@ -1623,5 +1646,69 @@ document.addEventListener('DOMContentLoaded', function() {
         .customer-row:active {
             transform: scale(0.99);
         }
-    </style>
+    </style> --}}
+
+        <style>
+        /* Smooth row click feedback */
+        .customer-row {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .customer-row:hover {
+            background-color: rgba(139, 92, 246, 0.08) !important;
+            transform: translateX(2px);
+        }
+
+        .customer-row:active {
+            transform: scale(0.99);
+            background-color: rgba(139, 92, 246, 0.15) !important;
+        }
+
+        /* Add ripple effect on click (optional) */
+        .customer-row {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .customer-row::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(139, 92, 246, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .customer-row:active::after {
+            width: 300px;
+            height: 300px;
+        }
+
+        /* Smooth column visibility transitions */
+        [data-column] {
+            transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+        }
+
+        [data-column].hidden {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+
+        /* Swipe indicator animation */
+        @keyframes swipe-hint {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(8px); }
+        }
+
+        .animate-swipe {
+            animation: swipe-hint 1.5s ease-in-out infinite;
+        }
+        </style>
+
+
 </x-app-layout>
