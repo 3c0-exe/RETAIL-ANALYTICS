@@ -1,5 +1,7 @@
 <x-app-layout>
+
     <x-slot name="header">
+
         <h2 class="text-lg font-semibold leading-tight text-gray-800 sm:text-xl dark:text-gray-200">
             {{ __('Sales Forecasting') }}
         </h2>
@@ -7,6 +9,24 @@
 
     <!-- Header Section - Mobile First -->
     <div class="px-4 py-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+
+        <nav class="mb-4 flex" aria-label="Breadcrumb">
+    <ol class="inline-flex items-center space-x-1 md:space-x-3">
+        <li class="inline-flex items-center">
+            <a href="{{ route('dashboard') }}" class="text-sm text-gray-700 hover:text-purple-600 dark:text-gray-400">
+                Dashboard
+            </a>
+        </li>
+        <li>
+            <div class="flex items-center">
+                <svg class="w-3 h-3 mx-1 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"></path>
+                </svg>
+                <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Forecasting</span>
+            </div>
+        </li>
+    </ol>
+</nav>
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <h1 class="text-xl font-bold text-gray-900 sm:text-2xl lg:text-3xl dark:text-gray-100">
