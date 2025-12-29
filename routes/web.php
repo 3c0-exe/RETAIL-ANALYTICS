@@ -72,7 +72,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Profile Management
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'updateProfile'])->name('profile.update');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.patch');
     Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar.update');
     Route::delete('/profile/avatar', [ProfileController::class, 'deleteAvatar'])->name('profile.avatar.delete');
 
@@ -135,20 +135,40 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Branch-specific routes will go here
     });
 
-Route::prefix('reports')->name('reports.')->group(function () {
-    Route::get('/custom-builder', [\App\Http\Controllers\CustomReportController::class, 'index'])
-        ->name('custom-builder');
-    Route::get('/list', [\App\Http\Controllers\CustomReportController::class, 'list'])  // ADD THIS LINE
-        ->name('list');
-    Route::post('/generate', [\App\Http\Controllers\CustomReportController::class, 'generate'])
-        ->name('generate');
-    Route::post('/save', [\App\Http\Controllers\CustomReportController::class, 'store'])
-        ->name('save');
-    Route::get('/saved/{report}', [\App\Http\Controllers\CustomReportController::class, 'show'])
-        ->name('show');
-    Route::delete('/saved/{report}', [\App\Http\Controllers\CustomReportController::class, 'destroy'])
-        ->name('delete');
-});
+      Route::prefix('reports')->name('reports.')->group(function () {
+        Route::get('/custom-builder', [\App\Http\Controllers\CustomReportController::class, 'index'])
+            ->name('custom-builder');
+        Route::get('/list', [\App\Http\Controllers\CustomReportController::class, 'list'])  // ADD THIS LINE
+            ->name('list');
+        Route::post('/generate', [\App\Http\Controllers\CustomReportController::class, 'generate'])
+            ->name('generate');
+        Route::post('/save', [\App\Http\Controllers\CustomReportController::class, 'store'])
+            ->name('save');
+        Route::get('/saved/{report}', [\App\Http\Controllers\CustomReportController::class, 'show'])
+            ->name('show');
+        Route::delete('/saved/{report}', [\App\Http\Controllers\CustomReportController::class, 'destroy'])
+            ->name('delete');
+    });
+
+        // Scheduled Reports Routes
+        Route::prefix('reports/scheduled')->name('reports.scheduled.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\ScheduledReportController::class, 'index'])
+            ->name('index');
+        Route::post('/', [\App\Http\Controllers\ScheduledReportController::class, 'store'])
+            ->name('store');
+        Route::put('/{scheduledReport}', [\App\Http\Controllers\ScheduledReportController::class, 'update'])
+            ->name('update');
+        Route::delete('/{scheduledReport}', [\App\Http\Controllers\ScheduledReportController::class, 'destroy'])
+            ->name('destroy');
+        Route::post('/{scheduledReport}/toggle', [\App\Http\Controllers\ScheduledReportController::class, 'toggle'])
+            ->name('toggle');
+        Route::get('/{scheduledReport}/logs', [\App\Http\Controllers\ScheduledReportController::class, 'logs'])
+            ->name('logs');
+        Route::post('/{scheduledReport}/send-now', [\App\Http\Controllers\ScheduledReportController::class, 'sendNow'])
+            ->name('send-now');
+    });
+
+
 });
 
 require __DIR__.'/auth.php';

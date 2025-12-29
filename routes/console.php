@@ -4,6 +4,7 @@ use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
 
+
 /*
 |--------------------------------------------------------------------------
 | Console Routes
@@ -18,6 +19,7 @@ use Illuminate\Support\Facades\Schedule;
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
+
 
 /*
 |--------------------------------------------------------------------------
@@ -36,3 +38,10 @@ Schedule::command('alerts:check-low-stock')->daily();
 
 // Check sales drops daily at 9 AM (future feature)
 Schedule::command('alerts:check-sales-drop')->dailyAt('09:00');
+
+
+// Schedule the report sending command to run every minute
+Schedule::command('reports:send-scheduled')
+    ->everyMinute()
+    ->withoutOverlapping()
+    ->runInBackground();

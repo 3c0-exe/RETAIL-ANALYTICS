@@ -58,6 +58,11 @@ class User extends Authenticatable implements MustVerifyEmail
     {
     return $this->hasMany(CustomReport::class);
     }
+    
+    public function scheduledReports()
+    {
+        return $this->hasMany(ScheduledReport::class);
+    }
 
     // Helper methods
     public function isAdmin(): bool
