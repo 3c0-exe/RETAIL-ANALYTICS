@@ -464,17 +464,35 @@
                             },
                             plugins: {
                                 legend: { display: false },
-                                tooltip: {
-                                    backgroundColor: colors.tooltipBg,
-                                    titleColor: colors.text,
-                                    bodyColor: colors.text,
-                                    borderColor: colors.tooltipBorder,
-                                    borderWidth: 1,
-                                    padding: isMobile ? 12 : 10,
-                                    callbacks: {
-                                        label: (context) => `₱${context.parsed.y.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+                                // EXISTING tooltip code - REPLACE with this enhanced version
+                            tooltip: {
+                                backgroundColor: colors.tooltipBg,
+                                titleColor: colors.text,
+                                bodyColor: colors.text,
+                                borderColor: colors.tooltipBorder,
+                                borderWidth: 1,
+                                padding: isMobile ? 12 : 15,
+                                displayColors: true,
+                                boxPadding: 6,
+                                usePointStyle: true,
+                                callbacks: {
+                                    label: (context) => {
+                                        return `Daily Sales: â‚±${context.parsed.y.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+                                    },
+                                    footer: (tooltipItems) => {
+                                        // Add growth comparison to previous day
+                                        const currentIndex = tooltipItems[0].dataIndex;
+                                        if (currentIndex > 0) {
+                                            const current = tooltipItems[0].parsed.y;
+                                            const previous = tooltipItems[0].chart.data.datasets[0].data[currentIndex - 1];
+                                            const change = ((current - previous) / previous * 100).toFixed(1);
+                                            const arrow = change >= 0 ? '↑' : '↓';
+                                            return `${arrow} ${Math.abs(change)}% vs yesterday`;
+                                        }
+                                        return '';
                                     }
                                 }
+                            }
                             },
                             scales: {
                                 y: {
@@ -515,14 +533,33 @@
                             indexAxis: isMobile ? 'y' : 'x',
                             plugins: {
                                 legend: { display: false },
+                                // EXISTING tooltip code - REPLACE with this enhanced version
                                 tooltip: {
                                     backgroundColor: colors.tooltipBg,
                                     titleColor: colors.text,
                                     bodyColor: colors.text,
                                     borderColor: colors.tooltipBorder,
                                     borderWidth: 1,
+                                    padding: isMobile ? 12 : 15,
+                                    displayColors: true,
+                                    boxPadding: 6,
+                                    usePointStyle: true,
                                     callbacks: {
-                                        label: (context) => `₱${context.parsed.x || context.parsed.y.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+                                        label: (context) => {
+                                            return `Daily Sales: â‚±${context.parsed.y.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+                                        },
+                                        footer: (tooltipItems) => {
+                                            // Add growth comparison to previous day
+                                            const currentIndex = tooltipItems[0].dataIndex;
+                                            if (currentIndex > 0) {
+                                                const current = tooltipItems[0].parsed.y;
+                                                const previous = tooltipItems[0].chart.data.datasets[0].data[currentIndex - 1];
+                                                const change = ((current - previous) / previous * 100).toFixed(1);
+                                                const arrow = change >= 0 ? '↑' : '↓';
+                                                return `${arrow} ${Math.abs(change)}% vs yesterday`;
+                                            }
+                                            return '';
+                                        }
                                     }
                                 }
                             },
@@ -577,20 +614,35 @@
                                         color: colors.text,
                                     }
                                 },
-                                tooltip: {
-                                    backgroundColor: colors.tooltipBg,
-                                    titleColor: colors.text,
-                                    bodyColor: colors.text,
-                                    borderColor: colors.tooltipBorder,
-                                    borderWidth: 1,
-                                    callbacks: {
-                                        label: (context) => {
-                                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                            const percentage = ((context.parsed / total) * 100).toFixed(1);
-                                            return `${context.label}: ₱${context.parsed.toLocaleString('en-US', { minimumFractionDigits: 2 })} (${percentage}%)`;
-                                        }
+                                // EXISTING tooltip code - REPLACE with this enhanced version
+                        tooltip: {
+                            backgroundColor: colors.tooltipBg,
+                            titleColor: colors.text,
+                            bodyColor: colors.text,
+                            borderColor: colors.tooltipBorder,
+                            borderWidth: 1,
+                            padding: isMobile ? 12 : 15,
+                            displayColors: true,
+                            boxPadding: 6,
+                            usePointStyle: true,
+                            callbacks: {
+                                label: (context) => {
+                                    return `Daily Sales: â‚±${context.parsed.y.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+                                },
+                                footer: (tooltipItems) => {
+                                    // Add growth comparison to previous day
+                                    const currentIndex = tooltipItems[0].dataIndex;
+                                    if (currentIndex > 0) {
+                                        const current = tooltipItems[0].parsed.y;
+                                        const previous = tooltipItems[0].chart.data.datasets[0].data[currentIndex - 1];
+                                        const change = ((current - previous) / previous * 100).toFixed(1);
+                                        const arrow = change >= 0 ? '↑' : '↓';
+                                        return `${arrow} ${Math.abs(change)}% vs yesterday`;
                                     }
+                                    return '';
                                 }
+                            }
+                        }
                             }
                         }
                     });
@@ -624,27 +676,7 @@
             });
         </script>
 
-        <!-- Role Info - Moved to bottom -->
-        <div class="p-6 mt-8 border border-purple-200 rounded-lg bg-purple-50 dark:bg-purple-900/10 dark:border-purple-800">
-            <div class="flex items-start gap-3">
-                <svg class="w-5 h-5 text-purple-600 dark:text-purple-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-                <div>
-                    <h3 class="text-sm font-semibold text-purple-900 dark:text-purple-100">Your Role: {{ ucfirst(str_replace('_', ' ', auth()->user()->role)) }}</h3>
-                    <p class="mt-1 text-sm text-purple-700 dark:text-purple-300">
-                        @if(auth()->user()->isAdmin())
-                            You have full access to all features including branch and user management.
-                        @elseif(auth()->user()->isBranchManager())
-                            You can manage your branch ({{ auth()->user()->branch->name }}) and view branch-specific reports.
-                        @elseif(auth()->user()->isAnalyst())
-                            You can view analytics and reports across all branches.
-                        @else
-                            You can view reports for {{ auth()->user()->branch->name }}.
-                        @endif
-                    </p>
-                </div>
-            </div>
+
         </div>
     </div>
 </x-app-layout>
