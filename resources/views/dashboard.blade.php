@@ -767,6 +767,12 @@
                 clearTimeout(resizeTimer);
                 resizeTimer = setTimeout(initializeCharts, 250);
             });
+
+            // In dashboard.blade.php, after all charts load:
+            document.addEventListener('DOMContentLoaded', function() {
+                initializeCharts();
+                showToast('Dashboard loaded with live data', 'success');
+            });
         </script>
 
 

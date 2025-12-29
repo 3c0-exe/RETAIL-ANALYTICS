@@ -21,6 +21,68 @@ use Illuminate\Support\Facades\Storage;
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
+
+
+            <!-- Toast Notification Container -->
+        <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+        <script>
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            const bgColor = {
+                'success': 'bg-green-600',
+                'error': 'bg-red-600',
+                'info': 'bg-blue-600',
+                'warning': 'bg-yellow-600'
+            }[type] || 'bg-gray-600';
+
+            toast.className = `${bgColor} text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 animate-slide-in-right max-w-sm`;
+            toast.innerHTML = `
+                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    ${type === 'success' ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>' :
+                    type === 'error' ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>' :
+                    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>'}
+                </svg>
+                <span class="text-sm font-medium">${message}</span>
+            `;
+
+            document.getElementById('toast-container').appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('animate-fade-out');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Example usage (call this when chart finishes loading):
+        // showToast('Charts loaded successfully!', 'success');
+        </script>
+
+        <style>
+        @keyframes slide-in-right {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        @keyframes fade-out {
+            to {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+        }
+        .animate-slide-in-right {
+            animation: slide-in-right 0.3s ease-out;
+        }
+        .animate-fade-out {
+            animation: fade-out 0.3s ease-in;
+        }
+        </style>
+
     <body class="font-sans antialiased bg-white dark:bg-[#0a0a0a] text-gray-900 dark:text-gray-100">
         <div class="flex h-screen overflow-hidden">
             <!-- Mobile Sidebar Overlay -->
