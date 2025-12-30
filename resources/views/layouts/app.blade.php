@@ -24,7 +24,7 @@ use Illuminate\Support\Facades\Storage;
 
 
             <!-- Toast Notification Container -->
-        <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+        {{-- <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
 
         <script>
         function showToast(message, type = 'success') {
@@ -54,8 +54,7 @@ use Illuminate\Support\Facades\Storage;
             }, 3000);
         }
 
-        // Example usage (call this when chart finishes loading):
-        // showToast('Charts loaded successfully!', 'success');
+
         </script>
 
         <style>
@@ -81,7 +80,10 @@ use Illuminate\Support\Facades\Storage;
         .animate-fade-out {
             animation: fade-out 0.3s ease-in;
         }
-        </style>
+        </style> --}}
+
+
+ <x-toast-container />
 
     <body class="font-sans antialiased bg-white dark:bg-[#0a0a0a] text-gray-900 dark:text-gray-100">
         <div class="flex h-screen overflow-hidden">

@@ -147,9 +147,18 @@
             </div>
         </div>
         @else
-        <div class="p-8 mb-4 text-base text-center text-gray-500 bg-white rounded-xl sm:mb-6 dark:bg-gray-800">
-            No forecasts available yet
-        </div>
+         <div class="mb-4 overflow-hidden bg-white shadow-sm sm:mb-6 dark:bg-gray-800 rounded-xl">
+                <div class="p-5 sm:p-6">
+                    <x-empty-state
+                        icon="chart"
+                        title="No forecasts generated yet"
+                        description="Click the button below to generate sales predictions based on your historical data. You need at least 7 days of sales history."
+                        actionText="Generate Forecast"
+                        actionRoute="{{ route('forecasts.regenerate') }}"
+                        size="large"
+                    />
+                </div>
+            </div>
         @endif
 
         <!-- Forecast vs Actual Chart -->
@@ -226,6 +235,18 @@
                 </div>
             </div>
         </div>
+        @else
+            <div class="overflow-hidden bg-white shadow-sm dark:bg-gray-800 rounded-xl">
+                <div class="p-5 sm:p-6">
+                    <x-empty-state
+                        icon="trending-up"
+                        title="No product forecasts available"
+                        description="Generate forecasts to see AI-powered predictions for your top-selling products."
+                        actionText="Generate Forecast"
+                        actionRoute="{{ route('forecasts.regenerate') }}"
+                    />
+                </div>
+            </div>
         @endif
 
     </div>

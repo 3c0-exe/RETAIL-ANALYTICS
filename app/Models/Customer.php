@@ -27,10 +27,13 @@ class Customer extends Model
     ];
 
     protected $casts = [
-        'total_spent' => 'decimal:2',
-        'last_visit_date' => 'date',
-        'rfm_score' => 'array'
-    ];
+    'total_spent' => 'decimal:2',
+    'last_visit_date' => 'datetime',  // ← Changed from 'date' to 'datetime'
+    'last_purchase_at' => 'datetime', // ← Add this if column exists
+    'rfm_score' => 'array',
+    'created_at' => 'datetime',
+    'updated_at' => 'datetime',
+];
 
     // Relationships
     public function transactions()
@@ -49,7 +52,10 @@ class Customer extends Model
     {
         $this->total_spent = $this->transactions()->sum('total_amount');
         $this->visit_count = $this->transactions()->count();
-        $this->last_visit_date = $this->transactions()->latest('timestamp')->first()?->timestamp;
+
+        $lastTransaction = $this->transactions()->latest('timestamp')->first();
+        $this->last_visit_date = $lastTransaction ? Carbon::parse($lastTransaction->timestamp) : null;
+
         $this->save();
     }
 

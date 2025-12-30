@@ -187,7 +187,18 @@
                                 </td>
                             </tr>
                             @empty
-                            <tr><td colspan="5" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">No sales data for selected period</td></tr>
+                               <tr>
+                                    <td colspan="5" class="px-4 py-8">
+                                        <x-empty-state
+                                            icon="database"
+                                            title="No branch sales data"
+                                            description="Sales data will appear here once transactions are imported for the selected period."
+                                            actionText="Import Transactions"
+                                            actionRoute="{{ route('imports.create') }}"
+                                            size="default"
+                                        />
+                                    </td>
+                                </tr>
                             @endforelse
                         </tbody>
                     </table>
@@ -223,7 +234,18 @@
                                     <td class="px-3 sm:px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400">{{ number_format($category->percentage, 1) }}%</td>
                                 </tr>
                                 @empty
-                                <tr><td colspan="4" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">No category data available</td></tr>
+                                <tr>
+                                    <td colspan="4" class="px-4 py-8">
+                                        <x-empty-state
+                                            icon="folder"
+                                            title="No category data"
+                                            description="Categorize your products to see sales breakdown by category."
+                                            actionText="Manage Products"
+                                            actionRoute="{{ route('products.index') }}"
+                                            size="small"
+                                        />
+                                    </td>
+                                </tr>
                                 @endforelse
                             </tbody>
                         </table>
@@ -280,7 +302,19 @@
                                 </td>
                             </tr>
                             @empty
-                            <tr><td colspan="5" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">No product data available</td></tr>
+                            <tr>
+                                <td colspan="5" class="px-4 py-8">
+                                    <x-empty-state
+                                        icon="box"
+                                        title="No product sales yet"
+                                        description="Your best-selling products will appear here once you start recording sales."
+                                        actionText="View Products"
+                                        actionRoute="{{ route('products.index') }}"
+                                        secondaryText="Import Data"
+                                        secondaryRoute="{{ route('imports.create') }}"
+                                    />
+                                </td>
+                            </tr>
                             @endforelse
                         </tbody>
                     </table>
@@ -385,7 +419,16 @@
                                 <td class="px-3 sm:px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400 hidden md:table-cell">₱{{ number_format($cashier->avg_transaction, 2) }}</td>
                             </tr>
                             @empty
-                            <tr><td colspan="5" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">No cashier data available</td></tr>
+                             <tr>
+                                <td colspan="5" class="px-4 py-8">
+                                    <x-empty-state
+                                        icon="users"
+                                        title="No cashier performance data"
+                                        description="Track your team's performance once transactions are assigned to cashiers."
+                                        size="small"
+                                    />
+                                </td>
+                            </tr>
                             @endforelse
                         </tbody>
                     </table>

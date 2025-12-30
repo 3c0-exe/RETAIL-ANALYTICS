@@ -65,6 +65,16 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Add loading indicator -->
+                <span id="filterLoadingIndicator" class="hidden items-center gap-2 mt-2">
+                    <svg class="w-4 h-4 animate-spin text-purple-600" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span class="text-xs text-gray-500">Updating...</span>
+                </span>
+
             </form>
         </div>
 
@@ -264,6 +274,11 @@
                 </h3>
                 <div class="overflow-x-auto -mx-4 sm:mx-0">
                     <div class="inline-block min-w-full align-middle">
+
+                        <div id="topProductsTableSkeleton">
+                            <x-table-skeleton :rows="5" :columns="3" />
+                        </div>
+
                         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
                             <thead>
                                 <tr>
@@ -292,11 +307,16 @@
                                     </td>
                                 </tr>
                                 @empty
-                                <tr>
-                                    <td colspan="3" class="px-3 py-8 text-xs text-center text-gray-500 sm:text-sm dark:text-gray-400">
-                                        No sales data for selected period. Try a different date range.
-                                    </td>
-                                </tr>
+                                    <tr>
+                                        <td colspan="3" class="px-4 py-8">
+                                            <x-empty-state
+                                                icon="chart"
+                                                title="No sales data yet"
+                                                description="Start importing transactions to see your top-performing products here."
+                                                size="small"
+                                            />
+                                        </td>
+                                    </tr>
                                 @endforelse
                             </tbody>
                         </table>
@@ -398,6 +418,8 @@
                     chart.update('none'); // 'none' for instant update without animation
                 });
             }
+
+
 
             // ====================================
             // DRILL-DOWN NAVIGATION FEATURE
@@ -671,6 +693,12 @@
                     document.getElementById('topProductsChart').classList.remove('opacity-0');
 
                     // Repeat for topProductsChart,
+
+                    // Show table after data loads
+                    setTimeout(() => {
+                        document.getElementById('topProductsTableSkeleton')?.remove();
+                        document.getElementById('topProductsTable')?.classList.remove('opacity-0');
+                    }, 300);
                 }
 
                 // 3. Payment Methods Chart
@@ -774,6 +802,21 @@
                 showToast('Dashboard loaded with live data', 'success');
             });
         </script>
+
+
+        <script>
+        function handleFilterChange(form) {
+            const indicator = document.getElementById('filterLoadingIndicator');
+            const selects = form.querySelectorAll('select');
+
+            indicator.classList.remove('hidden');
+            indicator.classList.add('flex');
+            selects.forEach(select => select.disabled = true);
+
+            form.submit();
+        }
+        </script>
+
 
 
         </div>

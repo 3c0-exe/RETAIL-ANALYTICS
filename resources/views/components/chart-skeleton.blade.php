@@ -1,20 +1,23 @@
-<div class="animate-pulse space-y-3">
-    <!-- Title skeleton -->
-    <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
+{{-- resources/views/components/chart-skeleton.blade.php --}}
+@props(['height' => '250px'])
 
-    <!-- Chart area skeleton -->
-    <div class="relative" style="height: 250px;">
-        <div class="absolute inset-0 flex items-end justify-around px-4 pb-4">
-            @for($i = 0; $i < 7; $i++)
-                <div class="w-full mx-1 bg-gray-200 dark:bg-gray-700 rounded-t"
-                     style="height: {{ rand(30, 90) }}%;"></div>
-            @endfor
-        </div>
+<div class="animate-pulse" style="height: {{ $height }}">
+    <!-- Simulated chart bars/lines -->
+    <div class="flex items-end justify-around h-full gap-2 p-4">
+        <div class="w-full bg-gray-200 rounded-t dark:bg-gray-700" style="height: 60%"></div>
+        <div class="w-full bg-gray-200 rounded-t dark:bg-gray-700" style="height: 85%"></div>
+        <div class="w-full bg-gray-200 rounded-t dark:bg-gray-700" style="height: 45%"></div>
+        <div class="w-full bg-gray-200 rounded-t dark:bg-gray-700" style="height: 70%"></div>
+        <div class="w-full bg-gray-200 rounded-t dark:bg-gray-700" style="height: 55%"></div>
+        <div class="w-full bg-gray-200 rounded-t dark:bg-gray-700" style="height: 90%"></div>
+        <div class="w-full bg-gray-200 rounded-t dark:bg-gray-700" style="height: 40%"></div>
     </div>
 
-    <!-- Legend skeleton -->
-    <div class="flex gap-4">
-        <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-20"></div>
-        <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
+    <!-- Simulated axis labels -->
+    <div class="flex justify-around px-4 mt-2">
+        <div class="w-8 h-2 bg-gray-200 rounded dark:bg-gray-700"></div>
+        <div class="w-8 h-2 bg-gray-200 rounded dark:bg-gray-700"></div>
+        <div class="w-8 h-2 bg-gray-200 rounded dark:bg-gray-700"></div>
+        <div class="w-8 h-2 bg-gray-200 rounded dark:bg-gray-700"></div>
     </div>
 </div>

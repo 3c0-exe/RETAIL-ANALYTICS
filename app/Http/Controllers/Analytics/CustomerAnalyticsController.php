@@ -293,11 +293,23 @@ class CustomerAnalyticsController extends Controller
 
         // Calculate additional metrics
         $avgOrderValue = $customer->transactions()->avg('total_amount') ?? 0;
-        $lastPurchase = $customer->transactions()->max('timestamp');
-        $daysSinceLastPurchase = $lastPurchase
-            ? Carbon::parse($lastPurchase)->diffInDays(now())
-            : null;
 
+        // Get last purchase timestamp
+        $lastPurchase = $customer->transactions()->max('timestamp');
+
+        // Calculate days since last purchase
+        if ($lastPurchase) {
+            $daysSinceLastPurchase = Carbon::parse($lastPurchase)->diffInDays(now());
+        } elseif ($customer->last_visit_date) {
+            $daysSinceLastPurchase = $customer->last_visit_date->diffInDays(now());
+        } else {
+            $daysSinceLastPurchase = null;
+        }
+
+        // Ensure last_visit_date is properly loaded
+        if ($customer->last_visit_date && !($customer->last_visit_date instanceof Carbon)) {
+            $customer->last_visit_date = Carbon::parse($customer->last_visit_date);
+        }
         // Monthly purchase trend
         $monthlyTrend = $customer->transactions()
             ->select(

@@ -430,19 +430,25 @@
 
                                     <!-- Last Visit - Large Desktop Only -->
                                     <td data-column="last_visit" class="hidden px-3 py-3 text-xs text-gray-600 xl:table-cell whitespace-nowrap sm:px-4 sm:text-sm dark:text-gray-400">
-                                        {{ $customer->last_visit_date ? $customer->last_visit_date->format('M d, Y') : 'N/A' }}
+                                        @if($customer->last_visit_date)
+                                            {{ \Carbon\Carbon::parse($customer->last_visit_date)->format('M d, Y') }}
+                                        @else
+                                            N/A
+                                        @endif
                                     </td>
                                 </tr>
                                 @empty
-                                <tr>
-                                    <td colspan="7" class="px-4 py-12 text-sm text-center text-gray-500 dark:text-gray-400">
-                                        <div class="flex flex-col items-center gap-2">
-                                            <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                                            </svg>
-                                            <p class="font-medium">No customers found</p>
-                                            <p class="text-xs text-gray-400">Try adjusting your filters</p>
-                                        </div>
+                                  <tr>
+                                    <td colspan="7" class="px-4 py-12">
+                                        <x-empty-state
+                                            icon="users"
+                                            title="No customers found"
+                                            description="Your customer base will grow as you import more transaction data. Try adjusting your filters or import new data."
+                                            actionText="Import Transactions"
+                                            actionRoute="{{ route('imports.create') }}"
+                                            secondaryText="Reset Filters"
+                                            secondaryRoute="{{ route('analytics.customers') }}"
+                                        />
                                     </td>
                                 </tr>
                                 @endforelse
@@ -535,8 +541,15 @@
                                         </td>
                                     </tr>
                                     @empty
-                                    <tr>
-                                        <td colspan="4" class="px-4 py-8 text-sm text-center text-gray-500 dark:text-gray-400">No branch data available</td>
+                                     <tr>
+                                        <td colspan="4" class="px-4 py-8">
+                                            <x-empty-state
+                                                icon="database"
+                                                title="No branch data available"
+                                                description="Branch performance metrics will appear here once you have transaction data."
+                                                size="small"
+                                            />
+                                        </td>
                                     </tr>
                                     @endforelse
                                 </tbody>
@@ -597,8 +610,15 @@
                                     </td>
                                 </tr>
                                 @empty
-                                <tr>
-                                    <td colspan="4" class="px-4 py-8 text-sm text-center text-gray-500 dark:text-gray-400">No age data available</td>
+                                 <tr>
+                                    <td colspan="4" class="px-4 py-8">
+                                        <x-empty-state
+                                            icon="calendar"
+                                            title="No age demographics data"
+                                            description="Age group insights will be available once customer profiles include age information."
+                                            size="small"
+                                        />
+                                    </td>
                                 </tr>
                                 @endforelse
                             </tbody>

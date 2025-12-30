@@ -87,12 +87,11 @@
                     @endif
                 </p>
                 @if($customer->last_visit_date)
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    {{ $customer->last_visit_date->format('M d, Y') }}
-                </p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        {{ \Carbon\Carbon::parse($customer->last_visit_date)->format('M d, Y') }}
+                    </p>
                 @endif
             </div>
-        </div>
 
         <!-- RFM Score Card -->
         <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-6 mb-6">
