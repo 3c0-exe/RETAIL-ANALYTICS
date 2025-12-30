@@ -68,7 +68,7 @@
                                 <td class="px-4 py-3">
                                     <div class="font-medium text-gray-900 dark:text-gray-100 text-sm">{{ $import->file_name }}</div>
                                     <div class="text-xs text-gray-500 dark:text-gray-400 lg:hidden">
-                                        {{ $import->user->name }} • {{ $import->created_at->format('M d, Y') }}
+                                        {{ $import->user->name }} • {{ $import->created_at?->format('M d, Y') ?? '-' }}
                                     </div>
                                 </td>
                                 <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
@@ -98,7 +98,7 @@
                                     @endif
                                 </td>
                                 <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 hidden lg:table-cell">
-                                    {{ $import->user->name }}
+                                    {{ $import->user->name ?? 'Unknown User' }}
                                 </td>
                                 <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 hidden xl:table-cell">
                                     {{ $import->created_at->format('M d, Y H:i') }}
