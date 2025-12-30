@@ -1,7 +1,76 @@
 <x-app-layout>
     <div class="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
 
-        <nav class="mb-4 flex" aria-label="Breadcrumb">
+       {{-- ============================================================== --}}
+        {{-- 1. FULL PAGE SKELETON (Visible on Load)                        --}}
+        {{-- ============================================================== --}}
+        <div id="PageSkeleton" class="animate-pulse space-y-6">
+
+            <div class="flex items-center space-x-2 mb-4">
+                <div class="h-3 bg-gray-200 rounded dark:bg-gray-700 w-16"></div>
+                <div class="h-3 bg-gray-200 rounded dark:bg-gray-700 w-4"></div>
+                <div class="h-3 bg-gray-200 rounded dark:bg-gray-700 w-24"></div>
+            </div>
+
+            <div class="flex flex-col gap-4 mb-6 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <div class="h-8 bg-gray-200 rounded dark:bg-gray-700 w-48 mb-2"></div>
+                    <div class="h-4 bg-gray-200 rounded dark:bg-gray-700 w-80"></div>
+                </div>
+                <div class="h-10 bg-gray-200 rounded-md dark:bg-gray-700 w-full sm:w-32"></div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-4 sm:gap-6">
+                @for($i=0; $i<4; $i++)
+                <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-6">
+                    <div class="flex justify-between items-start">
+                        <div class="space-y-2">
+                            <div class="h-4 bg-gray-200 rounded dark:bg-gray-700 w-24"></div>
+                            <div class="h-8 bg-gray-200 rounded dark:bg-gray-700 w-16"></div>
+                        </div>
+                        <div class="h-10 w-10 bg-gray-200 rounded dark:bg-gray-700"></div>
+                    </div>
+                </div>
+                @endfor
+            </div>
+
+            <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-6 space-y-4">
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    <div class="h-16 bg-gray-200 rounded dark:bg-gray-700"></div>
+                    <div class="h-16 bg-gray-200 rounded dark:bg-gray-700"></div>
+                    <div class="h-16 bg-gray-200 rounded dark:bg-gray-700"></div>
+                </div>
+                <div class="flex gap-3">
+                    <div class="h-10 bg-gray-200 rounded dark:bg-gray-700 w-32"></div>
+                    <div class="h-10 bg-gray-200 rounded dark:bg-gray-700 w-24"></div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 mb-6 sm:gap-6 lg:grid-cols-2">
+                <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-6 h-96">
+                    <div class="h-6 bg-gray-200 rounded dark:bg-gray-700 w-48 mb-6"></div>
+                    <div class="h-64 bg-gray-200 rounded dark:bg-gray-700 w-full"></div>
+                </div>
+                <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-6 h-96">
+                    <div class="h-6 bg-gray-200 rounded dark:bg-gray-700 w-48 mb-6"></div>
+                    <div class="h-64 bg-gray-200 rounded dark:bg-gray-700 w-full"></div>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-6">
+                <div class="flex justify-between mb-4">
+                    <div class="h-6 bg-gray-200 rounded dark:bg-gray-700 w-40"></div>
+                    <div class="h-8 bg-gray-200 rounded dark:bg-gray-700 w-32"></div>
+                </div>
+                <x-table-skeleton :rows="5" :columns="6" :headers="true" />
+            </div>
+        </div>
+
+        {{-- ============================================================== --}}
+        {{-- 2. REAL PAGE CONTENT (Hidden Initially)                        --}}
+        {{-- ============================================================== --}}
+        <div id="RealPageContent" class="hidden opacity-0 transition-opacity duration-500">
+             <nav class="mb-4 flex" aria-label="Breadcrumb">
             <ol class="inline-flex items-center space-x-1 md:space-x-3">
                 <li class="inline-flex items-center">
                     <a href="{{ route('dashboard') }}" class="text-sm text-gray-700 hover:text-purple-600 dark:text-gray-400">
@@ -1729,6 +1798,44 @@ document.addEventListener('DOMContentLoaded', function() {
             animation: swipe-hint 1.5s ease-in-out infinite;
         }
         </style>
+        </div>
 
+{{-- ============================================================== --}}
+    {{-- 3. JAVASCRIPT LOGIC                                            --}}
+    {{-- ============================================================== --}}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                const pageSkeleton = document.getElementById('PageSkeleton');
+                const realContent = document.getElementById('RealPageContent');
+                if(pageSkeleton) pageSkeleton.remove();
+                if(realContent) {
+                    realContent.classList.remove('hidden');
+                    setTimeout(() => realContent.classList.remove('opacity-0'), 10);
+
+                    // Initialize Chart Scripts that depend on the DOM being visible
+                    if (typeof loadProductCombinations === 'function') loadProductCombinations();
+                    if (typeof loadCohortRetention === 'function') loadCohortRetention();
+                }
+            }, 500);
+        });
+
+        // 2. Handle Filter Submission
+        window.handleFilter = (form) => {
+            const btn = form.querySelector('button[type="submit"]');
+            showButtonLoading(btn, 'Filtering...');
+        };
+
+        // 3. Handle Export
+        window.handleExport = (form) => {
+            const btn = form.querySelector('button[type="submit"]');
+            showButtonLoading(btn, 'Exporting...');
+
+            // Reset button after download starts
+            setTimeout(() => {
+                hideButtonLoading(btn);
+            }, 2000);
+        };
+    </script>
 
 </x-app-layout>
