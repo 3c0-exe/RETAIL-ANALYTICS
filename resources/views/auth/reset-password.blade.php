@@ -1,4 +1,11 @@
 <x-guest-layout>
+
+    <div class="flex justify-center mb-6">
+                <img src="{{ asset('img/Prisma Logo (2).png') }}"
+                     alt="Logo"
+                     class="h-20 w-auto object-contain">
+            </div>
+
     <form method="POST" action="{{ route('password.store') }}">
         @csrf
 
