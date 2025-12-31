@@ -121,6 +121,39 @@ use Illuminate\Support\Facades\Storage;
                     transition: none !important;
                 }
             }
+            /* === SCROLLBAR CUSTOMIZATION === */
+
+            /* Light Mode Default */
+            ::-webkit-scrollbar {
+                width: 8px; /* Slightly thinner looks cleaner without a track */
+                height: 8px;
+            }
+            ::-webkit-scrollbar-track {
+                background: transparent; /* <--- KEY CHANGE: Transparent track */
+            }
+            ::-webkit-scrollbar-thumb {
+                background: #cbd5e1;
+                border-radius: 4px;
+            }
+
+            /* Dark Mode Overrides */
+            .dark ::-webkit-scrollbar-track {
+                background: transparent; /* <--- KEY CHANGE: Removes the black bar */
+            }
+
+            .dark ::-webkit-scrollbar-thumb {
+                background: #374151; /* Dark Gray Thumb */
+                border-radius: 4px;
+            }
+
+            .dark ::-webkit-scrollbar-thumb:hover {
+                background: #4b5563; /* Lighter on hover */
+            }
+
+            /* Firefox Support */
+            html.dark {
+                scrollbar-color: #374151 transparent; /* Thumb / Track */
+            }
         </style>
     </head>
 
