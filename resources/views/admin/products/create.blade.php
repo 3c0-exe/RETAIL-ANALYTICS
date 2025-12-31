@@ -1,80 +1,80 @@
 <x-app-layout>
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-4xl px-4 mx-auto sm:px-6 lg:px-8">
 
         {{-- ============================================================== --}}
         {{-- 1. FORM SKELETON (Visible on Load)                             --}}
         {{-- ============================================================== --}}
-        <div id="FormSkeleton" class="animate-pulse space-y-6">
+        <div id="FormSkeleton" class="space-y-6 animate-pulse">
 
             <div class="mb-6">
                 <div class="flex items-center gap-3 mb-3">
                     <div>
-                        <div class="h-8 bg-gray-200 rounded dark:bg-gray-700 w-48 mb-2"></div>
-                        <div class="h-4 bg-gray-200 rounded dark:bg-gray-700 w-64"></div>
+                        <div class="w-48 h-8 mb-2 bg-gray-200 rounded dark:bg-gray-700"></div>
+                        <div class="w-64 h-4 bg-gray-200 rounded dark:bg-gray-700"></div>
                     </div>
                 </div>
             </div>
 
             <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-6 space-y-6">
-                <div class="h-5 bg-gray-200 rounded dark:bg-gray-700 w-32 mb-4"></div>
+                <div class="w-32 h-5 mb-4 bg-gray-200 rounded dark:bg-gray-700"></div>
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div class="sm:col-span-2 space-y-2">
-                        <div class="h-4 bg-gray-200 rounded dark:bg-gray-700 w-24"></div>
-                        <div class="h-10 bg-gray-200 rounded dark:bg-gray-700 w-full"></div>
+                    <div class="space-y-2 sm:col-span-2">
+                        <div class="w-24 h-4 bg-gray-200 rounded dark:bg-gray-700"></div>
+                        <div class="w-full h-10 bg-gray-200 rounded dark:bg-gray-700"></div>
                     </div>
                     <div class="space-y-2">
-                        <div class="h-4 bg-gray-200 rounded dark:bg-gray-700 w-20"></div>
-                        <div class="h-10 bg-gray-200 rounded dark:bg-gray-700 w-full"></div>
+                        <div class="w-20 h-4 bg-gray-200 rounded dark:bg-gray-700"></div>
+                        <div class="w-full h-10 bg-gray-200 rounded dark:bg-gray-700"></div>
                     </div>
                     <div class="space-y-2">
-                        <div class="h-4 bg-gray-200 rounded dark:bg-gray-700 w-16"></div>
-                        <div class="h-10 bg-gray-200 rounded dark:bg-gray-700 w-full"></div>
+                        <div class="w-16 h-4 bg-gray-200 rounded dark:bg-gray-700"></div>
+                        <div class="w-full h-10 bg-gray-200 rounded dark:bg-gray-700"></div>
                     </div>
-                    <div class="sm:col-span-2 space-y-2">
-                        <div class="h-4 bg-gray-200 rounded dark:bg-gray-700 w-24"></div>
-                        <div class="h-24 bg-gray-200 rounded dark:bg-gray-700 w-full"></div>
+                    <div class="space-y-2 sm:col-span-2">
+                        <div class="w-24 h-4 bg-gray-200 rounded dark:bg-gray-700"></div>
+                        <div class="w-full h-24 bg-gray-200 rounded dark:bg-gray-700"></div>
                     </div>
                 </div>
             </div>
 
             <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-6 space-y-6">
-                <div class="h-5 bg-gray-200 rounded dark:bg-gray-700 w-24 mb-4"></div>
+                <div class="w-24 h-5 mb-4 bg-gray-200 rounded dark:bg-gray-700"></div>
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div class="space-y-2">
-                        <div class="h-4 bg-gray-200 rounded dark:bg-gray-700 w-20"></div>
-                        <div class="h-10 bg-gray-200 rounded dark:bg-gray-700 w-full"></div>
+                        <div class="w-20 h-4 bg-gray-200 rounded dark:bg-gray-700"></div>
+                        <div class="w-full h-10 bg-gray-200 rounded dark:bg-gray-700"></div>
                     </div>
                     <div class="space-y-2">
-                        <div class="h-4 bg-gray-200 rounded dark:bg-gray-700 w-32"></div>
-                        <div class="h-10 bg-gray-200 rounded dark:bg-gray-700 w-full"></div>
+                        <div class="w-32 h-4 bg-gray-200 rounded dark:bg-gray-700"></div>
+                        <div class="w-full h-10 bg-gray-200 rounded dark:bg-gray-700"></div>
                     </div>
                 </div>
             </div>
 
             <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-6 space-y-4">
-                <div class="h-5 bg-gray-200 rounded dark:bg-gray-700 w-40 mb-4"></div>
-                <div class="flex gap-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                <div class="w-40 h-5 mb-4 bg-gray-200 rounded dark:bg-gray-700"></div>
+                <div class="flex gap-4 p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50">
                     <div class="flex-1 h-10 bg-gray-200 rounded dark:bg-gray-700"></div>
-                    <div class="h-10 bg-gray-200 rounded dark:bg-gray-700 w-24"></div>
-                    <div class="h-10 bg-gray-200 rounded dark:bg-gray-700 w-24"></div>
+                    <div class="w-24 h-10 bg-gray-200 rounded dark:bg-gray-700"></div>
+                    <div class="w-24 h-10 bg-gray-200 rounded dark:bg-gray-700"></div>
                 </div>
             </div>
 
             <div class="flex justify-end gap-3 pt-4">
-                <div class="h-10 bg-gray-200 rounded dark:bg-gray-700 w-24"></div>
-                <div class="h-10 bg-gray-200 rounded dark:bg-gray-700 w-40"></div>
+                <div class="w-24 h-10 bg-gray-200 rounded dark:bg-gray-700"></div>
+                <div class="w-40 h-10 bg-gray-200 rounded dark:bg-gray-700"></div>
             </div>
         </div>
 
         {{-- ============================================================== --}}
         {{-- 2. REAL FORM CONTENT (Hidden Initially)                        --}}
         {{-- ============================================================== --}}
-        <div id="RealFormContent" class="hidden opacity-0 transition-opacity duration-500">
+        <div id="RealFormContent" class="hidden transition-opacity duration-500 opacity-0">
 
             <div class="mb-6">
                 <div class="flex items-center gap-3 mb-3">
                     <div>
-                        <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">Add New Product</h1>
+                        <h1 class="text-2xl font-bold text-gray-900 sm:text-3xl dark:text-gray-100">Add New Product</h1>
                         <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Create a new product and assign inventory to branches</p>
                     </div>
                 </div>
@@ -83,12 +83,11 @@
             <form action="{{ route('admin.products.store') }}"
                   method="POST"
                   enctype="multipart/form-data"
-                  class="space-y-4 sm:space-y-6"
-                  onsubmit="showFormLoading(this)">
+                  class="space-y-4 sm:space-y-6">
                 @csrf
 
                 <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-4 sm:p-6">
-                    <h2 class="mb-4 text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100">Basic Information</h2>
+                    <h2 class="mb-4 text-base font-semibold text-gray-900 sm:text-lg dark:text-gray-100">Basic Information</h2>
 
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div class="sm:col-span-2">
@@ -149,7 +148,7 @@
                 </div>
 
                 <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-4 sm:p-6">
-                    <h2 class="mb-4 text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100">Pricing</h2>
+                    <h2 class="mb-4 text-base font-semibold text-gray-900 sm:text-lg dark:text-gray-100">Pricing</h2>
 
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div>
@@ -187,21 +186,21 @@
                 </div>
 
                 <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-4 sm:p-6">
-                    <h2 class="mb-4 text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100">Product Image</h2>
+                    <h2 class="mb-4 text-base font-semibold text-gray-900 sm:text-lg dark:text-gray-100">Product Image</h2>
 
                     <input type="file"
                            name="image"
                            accept="image/*"
                            class="w-full px-3 py-2.5 text-sm border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-[#0a0a0a] text-gray-900 dark:text-gray-100 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 dark:file:bg-primary-900/20 dark:file:text-primary-400">
-                    <p class="mt-1 text-xs sm:text-sm text-gray-500 dark:text-gray-400">Maximum file size: 2MB</p>
+                    <p class="mt-1 text-xs text-gray-500 sm:text-sm dark:text-gray-400">Maximum file size: 2MB</p>
                     @error('image')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
 
                 <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-4 sm:p-6">
-                    <h2 class="mb-4 text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100">Branch Inventory</h2>
-                    <p class="mb-4 text-xs sm:text-sm text-gray-600 dark:text-gray-400">Assign initial stock to branches (check to enable)</p>
+                    <h2 class="mb-4 text-base font-semibold text-gray-900 sm:text-lg dark:text-gray-100">Branch Inventory</h2>
+                    <p class="mb-4 text-xs text-gray-600 sm:text-sm dark:text-gray-400">Assign initial stock to branches (check to enable)</p>
 
                     <div class="space-y-3">
                         @foreach($branches as $branch)
@@ -211,11 +210,11 @@
                                         <input type="checkbox"
                                                name="branches[{{ $branch->id }}][enabled]"
                                                value="1"
-                                               class="w-4 h-4 text-primary-600 border-gray-300 rounded dark:border-gray-700 focus:ring-primary-500 dark:ring-offset-gray-900">
-                                        <span class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{{ $branch->name }}</span>
+                                               class="w-4 h-4 border-gray-300 rounded text-primary-600 dark:border-gray-700 focus:ring-primary-500 dark:ring-offset-gray-900">
+                                        <span class="ml-2 text-sm font-medium text-gray-900 truncate dark:text-gray-100">{{ $branch->name }}</span>
                                     </label>
                                 </div>
-                                <div class="flex gap-2 sm:gap-3 pl-6 sm:pl-0">
+                                <div class="flex gap-2 pl-6 sm:gap-3 sm:pl-0">
                                     <div class="flex-1 sm:flex-none">
                                         <input type="number"
                                                name="branches[{{ $branch->id }}][quantity]"
