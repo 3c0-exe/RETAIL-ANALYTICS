@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+    <div class="px-4 pt-6 pb-6 mx-auto max-w-7xl sm:px-6 lg:px-8 sm:py-8 min-h-[calc(100vh-4rem)]">
 
         {{-- ============================================================== --}}
         {{-- 1. FULL PAGE SKELETON (Visible on Load)                        --}}
@@ -247,7 +247,7 @@
                 </div>
             </div>
 
-            <div id="reportResults" style="display: none;" class="mt-6 bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-6">
+            <div id="reportResults" style="display: none;" class="mt-6 mb-6 bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-6">
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
                         Report Results
@@ -318,8 +318,18 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
 
     <script>
+        // Fix viewport height for mobile
+        function setViewportHeight() {
+            const vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
+        }
+
         // Page Skeleton Logic
         document.addEventListener('DOMContentLoaded', function() {
+            // Set viewport height
+            setViewportHeight();
+            window.addEventListener('resize', setViewportHeight);
+
             setTimeout(() => {
                 const pageSkeleton = document.getElementById('PageSkeleton');
                 const realContent = document.getElementById('RealPageContent');
@@ -506,6 +516,9 @@
                 }
             });
         }
+
+        // Rest of the functions remain the same...
+        // (displayTable, openSaveModal, closeSaveModal, saveReport, loadSavedReports, loadSavedReport, deleteReport, exportReport, convertToCSV)
 
         // Display Table
         function displayTable(results, config) {
