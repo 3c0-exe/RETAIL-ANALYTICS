@@ -1,5 +1,70 @@
 <x-app-layout>
-    <div class="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+
+    {{-- ============================================================== --}}
+        {{-- 1. PAGE SKELETON (Visible on Load)                             --}}
+        {{-- ============================================================== --}}
+        <div id="PageSkeleton" class="animate-pulse space-y-6">
+
+            <div class="flex items-center gap-2 mb-4">
+                <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-24"></div>
+                <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-4"></div>
+                <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-16"></div>
+            </div>
+
+            <div class="mb-6">
+                <div class="h-8 bg-gray-200 rounded dark:bg-gray-800 w-48 mb-2"></div>
+                <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-96"></div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+
+                <div class="lg:col-span-1 space-y-6">
+                    <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-6 space-y-4">
+                        <div class="h-6 bg-gray-200 rounded dark:bg-gray-800 w-32 mb-4"></div>
+                        <div class="h-10 bg-gray-200 rounded dark:bg-gray-800 w-full"></div>
+                        <div class="h-10 bg-gray-200 rounded dark:bg-gray-800 w-full"></div>
+
+                        <div class="pt-4 border-t border-gray-200 dark:border-gray-800">
+                            <div class="h-5 bg-gray-200 rounded dark:bg-gray-800 w-32 mb-3"></div>
+                            <div class="h-10 bg-gray-200 rounded dark:bg-gray-800 w-full mb-3"></div>
+                            <div class="h-10 bg-gray-200 rounded dark:bg-gray-800 w-full"></div>
+                        </div>
+                    </div>
+
+                    <div class="h-32 bg-blue-50 dark:bg-blue-900/20 rounded-lg w-full"></div>
+                </div>
+
+                <div class="lg:col-span-2">
+                    <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg">
+                        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-800">
+                            <div class="h-6 bg-gray-200 rounded dark:bg-gray-800 w-48"></div>
+                        </div>
+                        <div class="divide-y divide-gray-200 dark:divide-gray-800">
+                            @for($i=0; $i<5; $i++)
+                                <div class="px-6 py-4">
+                                    <div class="flex justify-between items-center">
+                                        <div class="space-y-2 w-2/3">
+                                            <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-1/2"></div>
+                                            <div class="h-3 bg-gray-200 rounded dark:bg-gray-800 w-3/4"></div>
+                                        </div>
+                                        <div class="flex gap-2">
+                                            <div class="h-8 w-8 bg-gray-200 rounded dark:bg-gray-800"></div>
+                                            <div class="h-8 w-8 bg-gray-200 rounded dark:bg-gray-800"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endfor
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- ============================================================== --}}
+        {{-- 2. REAL CONTENT (Hidden Initially)                             --}}
+        {{-- ============================================================== --}}
+        <div id="RealPageContent" class="hidden opacity-0 transition-opacity duration-500 ease-in-out">
+            <div class="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
         <nav class="mb-4 flex" aria-label="Breadcrumb">
                 <ol class="inline-flex items-center space-x-1 md:space-x-3">
                     <li class="inline-flex items-center">
@@ -161,4 +226,24 @@
             </div>
         </div>
     </div>
+        </div>
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const skeleton = document.getElementById('PageSkeleton');
+                const content = document.getElementById('RealPageContent');
+
+                if (skeleton) skeleton.style.display = 'none';
+
+                if (content) {
+                    content.classList.remove('hidden');
+                    setTimeout(() => {
+                        content.classList.remove('opacity-0');
+                    }, 50);
+                }
+            }, 500); // 500ms delay to prevent flicker
+        });
+    </script>
+
+
 </x-app-layout>
