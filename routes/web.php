@@ -91,21 +91,37 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/{sessionId}', [\App\Http\Controllers\SessionController::class, 'destroy'])->name('destroy');
     });
 
-    // Admin Routes (Rate Limited - 60 per minute for imports)
-    Route::middleware(['role:admin'])->prefix('admin')->name('admin.')->group(function () {
-        // Branch Management
+// Replace the ENTIRE admin routes section with this:
+
+Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(function () {
+
+    // Branch Management (admin only via permissions)
+    Route::middleware(['permission:branches.view'])->group(function () {
         Route::resource('branches', \App\Http\Controllers\Admin\BranchController::class);
+    });
 
-        // User Management
+    // User Management (admin only via permissions)
+    Route::middleware(['permission:users.view'])->group(function () {
         Route::resource('users', \App\Http\Controllers\Admin\UserController::class);
+    });
 
-        // Category Management
+    // Role Management (admin only via permissions)
+    Route::middleware(['permission:users.edit'])->group(function () {
+        Route::resource('roles', \App\Http\Controllers\Admin\RoleController::class);
+    });
+
+    // Category Management (admin + branch managers)
+    Route::middleware(['permission:categories.view'])->group(function () {
         Route::resource('categories', \App\Http\Controllers\Admin\CategoryController::class);
+    });
 
-        // Product Management
+    // Product Management (admin + branch managers)
+    Route::middleware(['permission:products.view'])->group(function () {
         Route::resource('products', \App\Http\Controllers\Admin\ProductController::class);
+    });
 
-        // Import routes (Rate Limited)
+    // Import routes (admin only)
+    Route::middleware(['permission:imports.view'])->group(function () {
         Route::get('imports', [\App\Http\Controllers\Admin\ImportController::class, 'index'])->name('imports.index');
         Route::get('imports/create', [\App\Http\Controllers\Admin\ImportController::class, 'create'])->name('imports.create');
         Route::get('imports/download-sample', [\App\Http\Controllers\Admin\ImportController::class, 'downloadSample'])->name('imports.download-sample');
@@ -118,59 +134,49 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('imports/{import}', [\App\Http\Controllers\Admin\ImportController::class, 'show'])->name('imports.show');
         Route::get('imports/{import}/export-errors', [\App\Http\Controllers\Admin\ImportController::class, 'exportErrors'])->name('imports.export-errors');
         Route::delete('imports/{import}', [\App\Http\Controllers\Admin\ImportController::class, 'destroy'])->name('imports.destroy');
+    });
 
-      // Activity Logs
-        Route::get('activity-logs', [ActivityLogController::class, 'index'])
-            ->name('activity-logs.index');
-
-        // ✅ ADD THIS
+    // Activity Logs (admin + analysts)
+    Route::middleware(['permission:activity_logs.view'])->group(function () {
+        Route::get('activity-logs', [\App\Http\Controllers\Admin\ActivityLogController::class, 'index'])->name('activity-logs.index');
         Route::post('activity-logs/export', [\App\Http\Controllers\ExportController::class, 'activityLogsCsv'])
             ->name('activity-logs.export')
             ->middleware(['throttle:exports']);
-
-
- // Settings Routes
-Route::get('settings', [\App\Http\Controllers\Admin\SettingsController::class, 'index'])
-    ->name('settings');
-Route::put('settings', [\App\Http\Controllers\Admin\SettingsController::class, 'update'])
-    ->name('settings.update');
-Route::post('settings/maintenance', [\App\Http\Controllers\Admin\SettingsController::class, 'maintenance'])
-    ->name('settings.maintenance');
-Route::post('settings/clear-cache', [\App\Http\Controllers\Admin\SettingsController::class, 'clearCache'])
-    ->name('settings.clear-cache');
-
-    // Error Logs
-Route::get('error-logs', [\App\Http\Controllers\Admin\ErrorLogController::class, 'index'])
-    ->name('error-logs.index');
-Route::get('error-logs/download', [\App\Http\Controllers\Admin\ErrorLogController::class, 'download'])
-    ->name('error-logs.download');
-Route::post('error-logs/clear', [\App\Http\Controllers\Admin\ErrorLogController::class, 'clear'])
-    ->name('error-logs.clear');
-
-    // Announcements
-Route::resource('announcements', \App\Http\Controllers\Admin\AnnouncementController::class);
-Route::post('announcements/{announcement}/toggle', [\App\Http\Controllers\Admin\AnnouncementController::class, 'toggle'])
-    ->name('announcements.toggle');
-Route::post('announcements/{announcement}/dismiss', [\App\Http\Controllers\Admin\AnnouncementController::class, 'dismiss'])
-    ->name('announcements.dismiss');
-
-    // Backups
-Route::get('backups', [\App\Http\Controllers\Admin\BackupController::class, 'index'])
-    ->name('backups.index');
-Route::post('backups/create', [\App\Http\Controllers\Admin\BackupController::class, 'create'])
-    ->name('backups.create');
-Route::post('backups/create-full', [\App\Http\Controllers\Admin\BackupController::class, 'createFull'])
-    ->name('backups.create-full');
-Route::get('backups/download/{filename}', [\App\Http\Controllers\Admin\BackupController::class, 'download'])
-    ->name('backups.download');
-Route::delete('backups/{filename}', [\App\Http\Controllers\Admin\BackupController::class, 'destroy'])
-    ->name('backups.destroy');
-Route::post('backups/restore', [\App\Http\Controllers\Admin\BackupController::class, 'restore'])
-    ->name('backups.restore');
-Route::post('backups/clean', [\App\Http\Controllers\Admin\BackupController::class, 'clean'])
-    ->name('backups.clean');
-
     });
+
+    // Settings Routes (admin only)
+    Route::middleware(['permission:settings.view'])->group(function () {
+        Route::get('settings', [\App\Http\Controllers\Admin\SettingsController::class, 'index'])->name('settings');
+        Route::put('settings', [\App\Http\Controllers\Admin\SettingsController::class, 'update'])->name('settings.update');
+        Route::post('settings/maintenance', [\App\Http\Controllers\Admin\SettingsController::class, 'maintenance'])->name('settings.maintenance');
+        Route::post('settings/clear-cache', [\App\Http\Controllers\Admin\SettingsController::class, 'clearCache'])->name('settings.clear-cache');
+    });
+
+    // Error Logs (admin only)
+    Route::middleware(['permission:error_logs.view'])->group(function () {
+        Route::get('error-logs', [\App\Http\Controllers\Admin\ErrorLogController::class, 'index'])->name('error-logs.index');
+        Route::get('error-logs/download', [\App\Http\Controllers\Admin\ErrorLogController::class, 'download'])->name('error-logs.download');
+        Route::post('error-logs/clear', [\App\Http\Controllers\Admin\ErrorLogController::class, 'clear'])->name('error-logs.clear');
+    });
+
+    // Announcements (admin only)
+    Route::middleware(['permission:announcements.view'])->group(function () {
+        Route::resource('announcements', \App\Http\Controllers\Admin\AnnouncementController::class);
+        Route::post('announcements/{announcement}/toggle', [\App\Http\Controllers\Admin\AnnouncementController::class, 'toggle'])->name('announcements.toggle');
+        Route::post('announcements/{announcement}/dismiss', [\App\Http\Controllers\Admin\AnnouncementController::class, 'dismiss'])->name('announcements.dismiss');
+    });
+
+    // Backups (admin only)
+    Route::middleware(['permission:backups.view'])->group(function () {
+        Route::get('backups', [\App\Http\Controllers\Admin\BackupController::class, 'index'])->name('backups.index');
+        Route::post('backups/create', [\App\Http\Controllers\Admin\BackupController::class, 'create'])->name('backups.create');
+        Route::post('backups/create-full', [\App\Http\Controllers\Admin\BackupController::class, 'createFull'])->name('backups.create-full');
+        Route::get('backups/download/{filename}', [\App\Http\Controllers\Admin\BackupController::class, 'download'])->name('backups.download');
+        Route::delete('backups/{filename}', [\App\Http\Controllers\Admin\BackupController::class, 'destroy'])->name('backups.destroy');
+        Route::post('backups/restore', [\App\Http\Controllers\Admin\BackupController::class, 'restore'])->name('backups.restore');
+        Route::post('backups/clean', [\App\Http\Controllers\Admin\BackupController::class, 'clean'])->name('backups.clean');
+    });
+});
 
     // Branch Manager Routes
     Route::middleware(['role:branch_manager', 'branch.access'])->prefix('branch')->name('branch.')->group(function () {

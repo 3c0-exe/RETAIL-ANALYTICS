@@ -17,7 +17,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'name',
         'email',
         'password',
-        'role',
+        'role',        // Keep for backwards compatibility
+        'role_id',     // NEW: Link to roles table
         'branch_id',
         'avatar',
         'theme',
@@ -56,48 +57,133 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function customReports()
     {
-    return $this->hasMany(CustomReport::class);
+        return $this->hasMany(CustomReport::class);
     }
-    
+
     public function scheduledReports()
     {
         return $this->hasMany(ScheduledReport::class);
     }
 
-    // Helper methods
+    // NEW: Role & Permission relationships
+    public function roleModel()
+    {
+        return $this->belongsTo(Role::class, 'role_id');
+    }
+
+    public function permissionOverrides()
+    {
+        return $this->belongsToMany(Permission::class, 'user_permissions')
+            ->withPivot('granted')
+            ->withTimestamps();
+    }
+
+    // Permission checking methods
+    public function hasPermission(string $permissionName): bool
+    {
+        // Check if permission is explicitly denied at user level
+        $override = $this->permissionOverrides()
+            ->where('permissions.name', $permissionName)
+            ->first();
+
+        if ($override) {
+            return (bool) $override->pivot->granted;
+        }
+
+        // Check role permissions
+        if ($this->roleModel) {
+            return $this->roleModel->hasPermission($permissionName);
+        }
+
+        // Fallback to old role system for backwards compatibility
+        return $this->hasLegacyPermission($permissionName);
+    }
+
+    public function can($ability, $arguments = [])
+    {
+        // Override Laravel's default can() to use our permission system
+        if (is_string($ability) && strpos($ability, '.') !== false) {
+            return $this->hasPermission($ability);
+        }
+        return parent::can($ability, $arguments);
+    }
+
+    // Grant/revoke permissions at user level
+    public function grantPermission(Permission $permission): void
+    {
+        $this->permissionOverrides()->syncWithoutDetaching([
+            $permission->id => ['granted' => true]
+        ]);
+    }
+
+    public function revokePermission(Permission $permission): void
+    {
+        $this->permissionOverrides()->syncWithoutDetaching([
+            $permission->id => ['granted' => false]
+        ]);
+    }
+
+    // Helper methods (keep existing)
     public function isAdmin(): bool
     {
-        return $this->role === 'admin';
+        return $this->role === 'admin' || ($this->roleModel && $this->roleModel->name === 'admin');
     }
 
     public function isBranchManager(): bool
     {
-        return $this->role === 'branch_manager';
+        return $this->role === 'branch_manager' || ($this->roleModel && $this->roleModel->name === 'branch_manager');
     }
 
     public function isAnalyst(): bool
     {
-        return $this->role === 'analyst';
+        return $this->role === 'analyst' || ($this->roleModel && $this->roleModel->name === 'analyst');
     }
 
     public function isViewer(): bool
     {
-        return $this->role === 'viewer';
+        return $this->role === 'viewer' || ($this->roleModel && $this->roleModel->name === 'viewer');
     }
 
     public function canManageBranches(): bool
     {
-        return $this->isAdmin();
+        return $this->hasPermission('branches.edit') || $this->isAdmin();
     }
 
     public function canManageUsers(): bool
     {
-        return $this->isAdmin();
+        return $this->hasPermission('users.edit') || $this->isAdmin();
     }
 
     public function canViewAllBranches(): bool
     {
-        return $this->isAdmin() || $this->isAnalyst();
+        return $this->hasPermission('branches.view') || $this->isAdmin() || $this->isAnalyst();
     }
 
+    // Legacy permission check for backwards compatibility
+    private function hasLegacyPermission(string $permissionName): bool
+    {
+        // Admin has all permissions
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        // Branch managers have limited permissions
+        if ($this->isBranchManager()) {
+            $allowed = ['products.view', 'products.edit', 'sales_analytics.view', 'forecasting.view'];
+            return in_array($permissionName, $allowed);
+        }
+
+        // Analysts can view most things
+        if ($this->isAnalyst()) {
+            return str_contains($permissionName, '.view');
+        }
+
+        // Viewers can only view
+        if ($this->isViewer()) {
+            $allowed = ['sales_analytics.view', 'customer_analytics.view', 'forecasting.view'];
+            return in_array($permissionName, $allowed);
+        }
+
+        return false;
+    }
 }

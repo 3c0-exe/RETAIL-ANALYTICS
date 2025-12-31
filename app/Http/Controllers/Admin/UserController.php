@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Branch;
+use App\Models\Role;
 use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -15,7 +16,7 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
-        $query = User::with('branch');
+        $query = User::with('branch', 'roleModel');
 
         // Filters
         if ($request->filled('role')) {
@@ -44,8 +45,9 @@ class UserController extends Controller
     public function create()
     {
         $branches = Branch::where('status', 'active')->orderBy('name')->get();
+        $roles = Role::orderBy('display_name')->get();
 
-        return view('admin.users.create', compact('branches'));
+        return view('admin.users.create', compact('branches', 'roles'));
     }
 
     public function store(Request $request)
@@ -54,13 +56,14 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'role' => 'required|in:admin,branch_manager,analyst,viewer',
+            'role_id' => 'required|exists:roles,id',
             'branch_id' => 'nullable|exists:branches,id',
             'theme' => 'required|in:light,dark',
         ]);
 
-        // Validate branch assignment rules
-        if (in_array($validated['role'], ['branch_manager', 'viewer'])) {
+        $role = Role::find($validated['role_id']);
+
+        if (in_array($role->name, ['branch_manager', 'viewer'])) {
             if (!$validated['branch_id']) {
                 return back()
                     ->withErrors(['branch_id' => 'Branch is required for this role.'])
@@ -70,11 +73,11 @@ class UserController extends Controller
 
         $validated['password'] = Hash::make($validated['password']);
         $validated['email_verified_at'] = now();
+        $validated['role'] = $role->name;
 
         $user = User::create($validated);
 
-        // Fixed: Pass model type, model ID, then changes array
-        ActivityLog::log('created_user', User::class, $user->id, ['name' => $user->name, 'role' => $user->role]);
+        ActivityLog::log('created_user', User::class, $user->id, ['name' => $user->name, 'role' => $role->display_name]);
 
         return redirect()
             ->route('admin.users.index')
@@ -84,8 +87,9 @@ class UserController extends Controller
     public function edit(User $user)
     {
         $branches = Branch::where('status', 'active')->orderBy('name')->get();
+        $roles = Role::orderBy('display_name')->get();
 
-        return view('admin.users.edit', compact('user', 'branches'));
+        return view('admin.users.edit', compact('user', 'branches', 'roles'));
     }
 
     public function update(Request $request, User $user)
@@ -94,13 +98,14 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
             'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
-            'role' => 'required|in:admin,branch_manager,analyst,viewer',
+            'role_id' => 'required|exists:roles,id',
             'branch_id' => 'nullable|exists:branches,id',
             'theme' => 'required|in:light,dark',
         ]);
 
-        // Validate branch assignment rules
-        if (in_array($validated['role'], ['branch_manager', 'viewer'])) {
+        $role = Role::find($validated['role_id']);
+
+        if (in_array($role->name, ['branch_manager', 'viewer'])) {
             if (!$validated['branch_id']) {
                 return back()
                     ->withErrors(['branch_id' => 'Branch is required for this role.'])
@@ -110,16 +115,16 @@ class UserController extends Controller
             $validated['branch_id'] = null;
         }
 
-        // Only update password if provided
         if (!empty($validated['password'])) {
             $validated['password'] = Hash::make($validated['password']);
         } else {
             unset($validated['password']);
         }
 
+        $validated['role'] = $role->name;
+
         $user->update($validated);
 
-        // Fixed: Pass model type, model ID, then changes array
         ActivityLog::log('updated_user', User::class, $user->id, ['name' => $user->name]);
 
         return redirect()
@@ -129,12 +134,10 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
-        // Prevent deleting yourself
         if ($user->id === auth()->id()) {
             return back()->with('error', 'You cannot delete your own account!');
         }
 
-        // Prevent deleting the last admin
         if ($user->isAdmin() && User::where('role', 'admin')->count() <= 1) {
             return back()->with('error', 'Cannot delete the last admin user!');
         }
@@ -143,7 +146,6 @@ class UserController extends Controller
         $userId = $user->id;
         $user->delete();
 
-        // Fixed: Pass model type, model ID, then changes array
         ActivityLog::log('deleted_user', User::class, $userId, ['name' => $userName]);
 
         return redirect()
