@@ -1,5 +1,89 @@
 <x-app-layout>
     <div class="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+        {{-- ============================================================== --}}
+        {{-- 1. PAGE SKELETON (Visible on Load)                             --}}
+        {{-- ============================================================== --}}
+        <div id="PageSkeleton" class="animate-pulse space-y-6">
+
+            <div class="flex items-center gap-2 mb-4">
+                <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-24"></div>
+                <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-4"></div>
+                <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-16"></div>
+            </div>
+
+            <div class="mb-6">
+                <div class="h-8 bg-gray-200 rounded dark:bg-gray-800 w-48 mb-2"></div>
+                <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-96"></div>
+            </div>
+
+            <div class="space-y-6">
+
+                <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-6">
+                    <div class="h-6 bg-gray-200 rounded dark:bg-gray-800 w-48 mb-6"></div>
+                    <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                        @for($i=0; $i<4; $i++)
+                            <div>
+                                <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-32 mb-2"></div>
+                                <div class="h-10 bg-gray-200 rounded dark:bg-gray-800 w-full"></div>
+                            </div>
+                        @endfor
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-6">
+                    <div class="h-6 bg-gray-200 rounded dark:bg-gray-800 w-48 mb-6"></div>
+                    <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                        @for($i=0; $i<2; $i++)
+                            <div>
+                                <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-32 mb-2"></div>
+                                <div class="h-10 bg-gray-200 rounded dark:bg-gray-800 w-full"></div>
+                            </div>
+                        @endfor
+                    </div>
+                    <div class="mt-4 h-12 bg-blue-50 dark:bg-blue-900/20 rounded-md w-full"></div>
+                </div>
+
+                <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-6">
+                    <div class="h-6 bg-gray-200 rounded dark:bg-gray-800 w-48 mb-6"></div>
+                    <div class="space-y-4">
+                        @for($i=0; $i<3; $i++)
+                            <div class="flex items-center justify-between">
+                                <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-40"></div>
+                                <div class="h-6 bg-gray-200 rounded-full dark:bg-gray-800 w-12"></div>
+                            </div>
+                        @endfor
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-3 sm:flex-row sm:justify-between pt-2">
+                    <div class="flex gap-3">
+                        <div class="h-10 bg-gray-200 rounded dark:bg-gray-800 w-32"></div>
+                        <div class="h-10 bg-gray-200 rounded dark:bg-gray-800 w-32"></div>
+                    </div>
+                    <div class="h-10 bg-gray-200 rounded dark:bg-gray-800 w-48"></div>
+                </div>
+            </div>
+        </div>
+
+        {{-- ============================================================== --}}
+        {{-- 2. REAL CONTENT (Hidden Initially)                             --}}
+        {{-- ============================================================== --}}
+        <div id="RealPageContent" class="hidden opacity-0 transition-opacity duration-500 ease-in-out">
+            <nav class="mb-4 flex" aria-label="Breadcrumb">
+                <ol class="inline-flex items-center space-x-1 md:space-x-3">
+                    <li class="inline-flex items-center">
+                        <a href="{{ route('dashboard') }}" class="text-sm text-gray-700 hover:text-purple-600 dark:text-gray-400">Dashboard</a>
+                    </li>
+                    <li>
+                        <div class="flex items-center">
+                            <svg class="w-3 h-3 mx-1 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"></path>
+                            </svg>
+                            <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Settings</span>
+                        </div>
+                    </li>
+                </ol>
+            </nav>
         <!-- Page Header -->
         <div class="mb-6">
             <h1 class="text-2xl font-bold text-gray-900 sm:text-3xl dark:text-gray-100">
@@ -150,7 +234,28 @@
         </form>
     </div>
 
+        </div>
+
+
     <script>
+
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const skeleton = document.getElementById('PageSkeleton');
+                const content = document.getElementById('RealPageContent');
+
+                if (skeleton) skeleton.style.display = 'none';
+
+                if (content) {
+                    content.classList.remove('hidden');
+                    // Small delay to allow 'hidden' class removal to paint before opacity transition
+                    setTimeout(() => {
+                        content.classList.remove('opacity-0');
+                    }, 50);
+                }
+            }, 600); // 600ms delay to prevent flicker
+        });
+
         async function clearCache() {
             if (!confirm('Clear all application caches?')) return;
 
