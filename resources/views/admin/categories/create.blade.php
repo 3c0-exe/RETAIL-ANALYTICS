@@ -4,47 +4,47 @@
         {{-- ============================================================== --}}
         {{-- 1. FORM SKELETON (Visible on Load)                             --}}
         {{-- ============================================================== --}}
-        <div id="FormSkeleton" class="animate-pulse space-y-6">
+        <div id="FormSkeleton" class="space-y-6 animate-pulse">
 
             <div class="mb-6">
-                <div class="h-8 bg-gray-200 rounded dark:bg-gray-700 w-48 mb-2"></div>
-                <div class="h-4 bg-gray-200 rounded dark:bg-gray-700 w-32"></div>
+                <div class="w-48 h-8 mb-2 bg-gray-200 rounded dark:bg-gray-700"></div>
+                <div class="w-32 h-4 bg-gray-200 rounded dark:bg-gray-700"></div>
             </div>
 
             <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-6 space-y-6">
 
                 <div class="space-y-2">
-                    <div class="h-4 bg-gray-200 rounded dark:bg-gray-700 w-32"></div>
-                    <div class="h-10 bg-gray-200 rounded dark:bg-gray-700 w-full"></div>
+                    <div class="w-32 h-4 bg-gray-200 rounded dark:bg-gray-700"></div>
+                    <div class="w-full h-10 bg-gray-200 rounded dark:bg-gray-700"></div>
                 </div>
 
                 <div class="space-y-2">
-                    <div class="h-4 bg-gray-200 rounded dark:bg-gray-700 w-24"></div>
-                    <div class="h-24 bg-gray-200 rounded dark:bg-gray-700 w-full"></div>
+                    <div class="w-24 h-4 bg-gray-200 rounded dark:bg-gray-700"></div>
+                    <div class="w-full h-24 bg-gray-200 rounded dark:bg-gray-700"></div>
                 </div>
 
                 <div class="space-y-2">
-                    <div class="h-4 bg-gray-200 rounded dark:bg-gray-700 w-16"></div>
-                    <div class="h-10 bg-gray-200 rounded dark:bg-gray-700 w-full"></div>
+                    <div class="w-16 h-4 bg-gray-200 rounded dark:bg-gray-700"></div>
+                    <div class="w-full h-10 bg-gray-200 rounded dark:bg-gray-700"></div>
                 </div>
             </div>
 
             <div class="flex justify-end gap-3">
-                <div class="h-10 bg-gray-200 rounded dark:bg-gray-700 w-24"></div>
-                <div class="h-10 bg-gray-200 rounded dark:bg-gray-700 w-40"></div>
+                <div class="w-24 h-10 bg-gray-200 rounded dark:bg-gray-700"></div>
+                <div class="w-40 h-10 bg-gray-200 rounded dark:bg-gray-700"></div>
             </div>
         </div>
 
         {{-- ============================================================== --}}
         {{-- 2. REAL FORM CONTENT (Hidden Initially)                        --}}
         {{-- ============================================================== --}}
-        <div id="RealFormContent" class="hidden opacity-0 transition-opacity duration-500">
+        <div id="RealFormContent" class="hidden transition-opacity duration-500 opacity-0">
             <div class="mb-6">
                 <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Add New Category</h1>
                 <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Create a new product category</p>
             </div>
 
-            <form action="{{ route('admin.categories.store') }}"
+            <form action="{{ route('admin.categories.store') }}" method="POST" class="space-y-6">
                   method="POST"
                   class="space-y-6"
                   onsubmit="showFormLoading(this)">
