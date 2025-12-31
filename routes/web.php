@@ -147,6 +147,13 @@ Route::get('error-logs/download', [\App\Http\Controllers\Admin\ErrorLogControlle
 Route::post('error-logs/clear', [\App\Http\Controllers\Admin\ErrorLogController::class, 'clear'])
     ->name('error-logs.clear');
 
+    // Announcements
+Route::resource('announcements', \App\Http\Controllers\Admin\AnnouncementController::class);
+Route::post('announcements/{announcement}/toggle', [\App\Http\Controllers\Admin\AnnouncementController::class, 'toggle'])
+    ->name('announcements.toggle');
+Route::post('announcements/{announcement}/dismiss', [\App\Http\Controllers\Admin\AnnouncementController::class, 'dismiss'])
+    ->name('announcements.dismiss');
+
     });
 
     // Branch Manager Routes

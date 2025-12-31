@@ -237,6 +237,10 @@ use Illuminate\Support\Facades\Storage;
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
             Activity Logs
         </a>
+            <a href="{{ route('admin.announcements.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md {{ request()->routeIs('admin.announcements.*') ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800' }}">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path></svg>
+    Announcements
+</a>
     </div>
 </div>
                     @endif
@@ -334,19 +338,21 @@ use Illuminate\Support\Facades\Storage;
                     </div>
                 </header>
 
-                <main class="flex-1 overflow-y-auto bg-gray-50 dark:bg-[#0a0a0a] p-4 sm:p-6">
-                    @if (session('success'))
-                        <div class="p-4 mb-6 border border-green-200 rounded-md bg-green-50 dark:bg-green-900/20 dark:border-green-800">
-                            <p class="text-sm text-green-800 dark:text-green-200">{{ session('success') }}</p>
-                        </div>
-                    @endif
-                    @if (session('error'))
-                        <div class="p-4 mb-6 border border-red-200 rounded-md bg-red-50 dark:bg-red-900/20 dark:border-red-800">
-                            <p class="text-sm text-red-800 dark:text-red-200">{{ session('error') }}</p>
-                        </div>
-                    @endif
-                    {{ $slot }}
-                </main>
+<main class="flex-1 overflow-y-auto bg-gray-50 dark:bg-[#0a0a0a] p-4 sm:p-6">
+    <x-announcement-banner />
+
+    @if (session('success'))
+        <div class="p-4 mb-6 border border-green-200 rounded-md bg-green-50 dark:bg-green-900/20 dark:border-green-800">
+            <p class="text-sm text-green-800 dark:text-green-200">{{ session('success') }}</p>
+        </div>
+    @endif
+    @if (session('error'))
+        <div class="p-4 mb-6 border border-red-200 rounded-md bg-red-50 dark:bg-red-900/20 dark:border-red-800">
+            <p class="text-sm text-red-800 dark:text-red-200">{{ session('error') }}</p>
+        </div>
+    @endif
+    {{ $slot }}
+</main>
             </div>
         </div>
 
