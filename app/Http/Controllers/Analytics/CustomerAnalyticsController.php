@@ -6,24 +6,23 @@ use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\Transaction;
 use App\Models\Branch;
+use App\Traits\DateFilterTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class CustomerAnalyticsController extends Controller
 {
+    use DateFilterTrait;
+
     public function index(Request $request)
     {
         $user = auth()->user();
 
-        // Date range filter (default: all time)
-        $startDate = $request->start_date
-            ? Carbon::parse($request->start_date)
-            : Carbon::create(2020, 1, 1);
-
-        $endDate = $request->end_date
-            ? Carbon::parse($request->end_date)
-            : now();
+        // Get date range (defaults to actual data range)
+        $dateRange = $this->getDateRange($request);
+        $startDate = $dateRange['start'];
+        $endDate = $dateRange['end'];
 
         // Segment filter
         $segmentFilter = $request->segment;
@@ -179,6 +178,9 @@ class CustomerAnalyticsController extends Controller
             'dormant' => 'Dormant'
         ];
 
+        // Date range display
+        $dateDisplay = $this->getDateRangeDisplay($startDate, $endDate);
+
         return view('analytics.customers', compact(
             'segmentData',
             'topCustomers',
@@ -197,7 +199,8 @@ class CustomerAnalyticsController extends Controller
             'segments',
             'startDate',
             'endDate',
-            'segmentFilter'
+            'segmentFilter',
+            'dateDisplay'
         ));
     }
 
@@ -328,6 +331,7 @@ class CustomerAnalyticsController extends Controller
             'monthlyTrend'
         ));
     }
+
 
     /**
      * Get product combination analysis (Market Basket Analysis)

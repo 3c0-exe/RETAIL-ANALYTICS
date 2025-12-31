@@ -7,25 +7,24 @@ use App\Models\Transaction;
 use App\Models\Branch;
 use App\Models\User;
 use App\Models\Category;
+use App\Traits\DateFilterTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class SalesAnalyticsController extends Controller
 {
+    use DateFilterTrait;
+
     public function index(Request $request)
     {
         $user = auth()->user();
         $branchId = $user->isAdmin() ? $request->branch_id : $user->branch_id;
 
-        // Date range filter (default: last 30 days)
-        $startDate = $request->start_date
-            ? Carbon::parse($request->start_date)
-            : now()->subDays(30);
-
-        $endDate = $request->end_date
-            ? Carbon::parse($request->end_date)
-            : now();
+        // Get date range (defaults to actual data range)
+        $dateRange = $this->getDateRange($request);
+        $startDate = $dateRange['start'];
+        $endDate = $dateRange['end'];
 
         // Get filter options
         $branches = Branch::where('status', 'active')->get();
@@ -177,6 +176,9 @@ class SalesAnalyticsController extends Controller
         // Calculate max sales for heatmap intensity
         $maxSales = collect($heatmap)->flatten(1)->max('sales') ?: 1;
 
+        // Date range display
+        $dateDisplay = $this->getDateRangeDisplay($startDate, $endDate);
+
         return view('analytics.sales', compact(
             'branches',
             'categories',
@@ -189,12 +191,13 @@ class SalesAnalyticsController extends Controller
             'salesByCashier',
             'startDate',
             'endDate',
-            'branchId'
+            'branchId',
+            'dateDisplay'
         ));
     }
 
     /**
-     * NEW: Get heatmap cell details via AJAX
+     * Get heatmap cell details via AJAX
      */
     public function getHeatmapDetail(Request $request)
     {
@@ -204,12 +207,10 @@ class SalesAnalyticsController extends Controller
         $day = $request->day; // 1-7 (MySQL DAYOFWEEK)
         $hour = $request->hour; // 0-23
 
-        $startDate = $request->start_date
-            ? Carbon::parse($request->start_date)
-            : now()->subDays(30);
-        $endDate = $request->end_date
-            ? Carbon::parse($request->end_date)
-            : now();
+        // Get date range (defaults to actual data range)
+        $dateRange = $this->getDateRange($request);
+        $startDate = $dateRange['start'];
+        $endDate = $dateRange['end'];
 
         // Get transactions for this hour/day
         $transactions = Transaction::select('transactions.*')

@@ -6,12 +6,15 @@ use App\Models\Transaction;
 use App\Models\Product;
 use App\Models\Customer;
 use App\Models\Branch;
+use App\Traits\DateFilterTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
+    use DateFilterTrait;
+
     public function index(Request $request)
     {
         $user = auth()->user();
@@ -29,10 +32,17 @@ class DashboardController extends Controller
             $branchId = $user->branch_id;
         }
 
-        // Calculate date range
-        $dateFilter = $this->getDateFilter($dateRange);
-        $startDate = $dateFilter['start'];
-        $endDate = $dateFilter['end'];
+        // Calculate date range - USE TRAIT IF NO MANUAL FILTER
+        if ($request->has('start_date') && $request->has('end_date')) {
+            // User manually selected dates
+            $startDate = Carbon::parse($request->start_date);
+            $endDate = Carbon::parse($request->end_date);
+        } else {
+            // Use trait to get actual data range
+            $dateRangeData = $this->getDateRange($request);
+            $startDate = $dateRangeData['start'];
+            $endDate = $dateRangeData['end'];
+        }
 
         // Today's Sales
         $todaySales = Transaction::when($branchId, fn($q) => $q->where('branch_id', $branchId))
@@ -141,42 +151,5 @@ class DashboardController extends Controller
             'startDate',
             'endDate'
         ));
-    }
-
-    /**
-     * Calculate start and end dates based on selected range
-     */
-    private function getDateFilter($dateRange)
-    {
-        $end = now();
-
-        switch ($dateRange) {
-            case 'today':
-                $start = now()->startOfDay();
-                break;
-            case 'last_7_days':
-                $start = now()->subDays(7)->startOfDay();
-                break;
-            case 'last_30_days':
-                $start = now()->subDays(30)->startOfDay();
-                break;
-            case 'this_month':
-                $start = now()->startOfMonth();
-                break;
-            case 'last_month':
-                $start = now()->subMonth()->startOfMonth();
-                $end = now()->subMonth()->endOfMonth();
-                break;
-            case 'this_year':
-                $start = now()->startOfYear();
-                break;
-            default:
-                $start = now()->subDays(30)->startOfDay();
-        }
-
-        return [
-            'start' => $start,
-            'end' => $end,
-        ];
     }
 }
