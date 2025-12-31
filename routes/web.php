@@ -128,6 +128,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('activity-logs.export')
             ->middleware(['throttle:exports']);
 
+
+ // Settings Routes
+Route::get('settings', [\App\Http\Controllers\Admin\SettingsController::class, 'index'])
+    ->name('settings');
+Route::put('settings', [\App\Http\Controllers\Admin\SettingsController::class, 'update'])
+    ->name('settings.update');
+Route::post('settings/maintenance', [\App\Http\Controllers\Admin\SettingsController::class, 'maintenance'])
+    ->name('settings.maintenance');
+Route::post('settings/clear-cache', [\App\Http\Controllers\Admin\SettingsController::class, 'clearCache'])
+    ->name('settings.clear-cache');
+
     });
 
     // Branch Manager Routes
