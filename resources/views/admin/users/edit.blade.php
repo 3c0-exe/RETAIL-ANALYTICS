@@ -73,7 +73,7 @@
             </div>
 
             <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-6">
-                <form action="{{ route('admin.users.update', $user) }}" method="POST" onsubmit="showFormLoading(this)">
+                <form action="{{ route('admin.users.update', $user) }}" method="POST">
                     @csrf
                     @method('PUT')
 
