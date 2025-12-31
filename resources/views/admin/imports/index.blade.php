@@ -1,6 +1,76 @@
 <x-app-layout>
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-        <!-- Breadcrumb -->
+
+        {{-- ============================================================== --}}
+        {{-- 1. SKELETON LOADER (Visible Initially)                         --}}
+        {{-- ============================================================== --}}
+        <div id="PageSkeleton" class="animate-pulse space-y-6">
+
+            <div class="w-32 h-4 bg-gray-200 rounded dark:bg-gray-800 mb-6"></div>
+
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
+                <div class="space-y-2">
+                    <div class="h-8 w-48 bg-gray-200 rounded dark:bg-gray-800"></div>
+                    <div class="h-4 w-64 bg-gray-200 rounded dark:bg-gray-800"></div>
+                </div>
+                <div class="h-10 w-32 bg-gray-200 rounded dark:bg-gray-800 rounded-lg"></div>
+            </div>
+
+            <div class="hidden lg:block border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
+                <div class="bg-gray-50 dark:bg-[#0a0a0a] border-b border-gray-200 dark:border-gray-800 p-4 grid grid-cols-6 gap-4">
+                    @for($i=0; $i<6; $i++)
+                        <div class="h-3 bg-gray-200 rounded dark:bg-gray-800 w-full"></div>
+                    @endfor
+                </div>
+                <div class="bg-white dark:bg-[#171717] divide-y divide-gray-200 dark:divide-gray-800">
+                    @for($i=0; $i<5; $i++)
+                        <div class="p-4 grid grid-cols-6 gap-4 items-center">
+                            <div class="space-y-2">
+                                <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-3/4"></div>
+                                <div class="h-3 bg-gray-200 rounded dark:bg-gray-800 w-1/2"></div>
+                            </div>
+                            <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-1/2"></div>
+                            <div class="h-6 bg-gray-200 rounded-full dark:bg-gray-800 w-20"></div>
+                            <div class="space-y-2">
+                                <div class="h-2 bg-gray-200 rounded dark:bg-gray-800 w-full"></div>
+                            </div>
+                            <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-1/2"></div>
+                            <div class="h-8 bg-gray-200 rounded dark:bg-gray-800 w-24 ml-auto"></div>
+                        </div>
+                    @endfor
+                </div>
+            </div>
+
+            <div class="lg:hidden space-y-4">
+                @for($i=0; $i<3; $i++)
+                    <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-5 space-y-4">
+                        <div class="flex justify-between items-start">
+                            <div class="space-y-2 w-1/2">
+                                <div class="h-5 bg-gray-200 rounded dark:bg-gray-800 w-full"></div>
+                                <div class="h-3 bg-gray-200 rounded dark:bg-gray-800 w-2/3"></div>
+                            </div>
+                            <div class="h-6 bg-gray-200 rounded-full dark:bg-gray-800 w-16"></div>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex justify-between">
+                                <div class="h-3 bg-gray-200 rounded dark:bg-gray-800 w-16"></div>
+                                <div class="h-3 bg-gray-200 rounded dark:bg-gray-800 w-12"></div>
+                            </div>
+                            <div class="h-2 bg-gray-200 rounded dark:bg-gray-800 w-full"></div>
+                        </div>
+                        <div class="flex justify-end pt-2">
+                            <div class="h-8 bg-gray-200 rounded dark:bg-gray-800 w-full"></div>
+                        </div>
+                    </div>
+                @endfor
+            </div>
+        </div>
+
+        {{-- ============================================================== --}}
+        {{-- 2. REAL CONTENT (Hidden Initially)                             --}}
+        {{-- ============================================================== --}}
+        <div id="RealPageContent" class="hidden opacity-0 transition-opacity duration-500 ease-in-out">
+            <!-- Breadcrumb -->
         <nav class="mb-4 sm:mb-6" aria-label="Breadcrumb">
             <ol class="inline-flex items-center space-x-1 md:space-x-2">
                 <li class="inline-flex items-center">
@@ -307,8 +377,31 @@
             </div>
         </div>
     </div>
+        </div>
+
 
     <script>
+        // Transition from Skeleton to Real Content
+        document.addEventListener('DOMContentLoaded', () => {
+            const skeleton = document.getElementById('PageSkeleton');
+            const realContent = document.getElementById('RealPageContent');
+
+            // Simulate loading delay (optional, remove setTimeout to load instantly)
+            setTimeout(() => {
+                if(skeleton) {
+                    skeleton.style.display = 'none'; // Instant switch or use fading logic
+                }
+                if(realContent) {
+                    realContent.classList.remove('hidden');
+                    // Small delay to allow 'hidden' class removal to paint before opacity transition
+                    setTimeout(() => {
+                        realContent.classList.remove('opacity-0');
+                    }, 10);
+                }
+            }, 600); // 600ms delay for smoothness
+        });
+
+        // Modal Logic (Unchanged)
         function openDeleteModal(importId, fileName) {
             const modal = document.getElementById('deleteModal');
             const modalContent = document.getElementById('modalContent');

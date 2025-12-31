@@ -1,6 +1,50 @@
 <x-app-layout>
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-        <nav class="mb-4 sm:mb-6 flex items-center justify-between" aria-label="Breadcrumb">
+        {{-- ============================================================== --}}
+        {{-- 1. FULL PAGE SKELETON (Visible on Load)                        --}}
+        {{-- ============================================================== --}}
+        <div id="PageSkeleton" class="animate-pulse space-y-6">
+
+            <div class="flex justify-between items-center mb-6">
+                <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-48"></div>
+                <div class="h-8 bg-gray-200 rounded dark:bg-gray-800 w-20"></div>
+            </div>
+
+            <div class="mb-8">
+                <div class="h-8 bg-gray-200 rounded dark:bg-gray-800 w-64 mb-2"></div>
+                <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-48"></div>
+            </div>
+
+            <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    @for($i=0; $i<4; $i++)
+                        <div class="space-y-3">
+                            <div class="flex items-center gap-2">
+                                <div class="w-4 h-4 bg-gray-200 rounded-full dark:bg-gray-800"></div>
+                                <div class="h-3 bg-gray-200 rounded dark:bg-gray-800 w-20"></div>
+                            </div>
+                            <div class="h-5 bg-gray-200 rounded dark:bg-gray-800 w-32"></div>
+                        </div>
+                    @endfor
+                </div>
+                <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-800">
+                    <div class="h-10 bg-gray-200 rounded dark:bg-gray-800 w-40"></div>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-6 space-y-4">
+                <div class="h-6 bg-gray-200 rounded dark:bg-gray-800 w-40 mb-4"></div>
+                @for($j=0; $j<5; $j++)
+                    <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-full"></div>
+                @endfor
+            </div>
+        </div>
+
+        {{-- ============================================================== --}}
+        {{-- 2. REAL CONTENT (Hidden Initially)                             --}}
+        {{-- ============================================================== --}}
+        <div id="RealPageContent" class="hidden opacity-0 transition-opacity duration-500 ease-in-out">
+            <nav class="mb-4 sm:mb-6 flex items-center justify-between" aria-label="Breadcrumb">
             <ol class="inline-flex items-center space-x-1 md:space-x-2">
                 <li class="inline-flex items-center">
                     <a href="{{ route('dashboard') }}" class="inline-flex items-center text-xs sm:text-sm text-gray-700 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400 transition-colors">
@@ -310,7 +354,27 @@
         </div>
     </div>
 
+        </div>
+
     <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const skeleton = document.getElementById('PageSkeleton');
+                const content = document.getElementById('RealPageContent');
+
+                if (skeleton) skeleton.style.display = 'none';
+
+                if (content) {
+                    content.classList.remove('hidden');
+                    // Small delay to allow display change to register before starting opacity transition
+                    setTimeout(() => {
+                        content.classList.remove('opacity-0');
+                    }, 50);
+                }
+            }, 600); // 600ms simulated delay
+        });
+
+        // ... Existing modal functions ...
         document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => {
                 const skeleton = document.getElementById('DetailSkeleton');
