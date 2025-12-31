@@ -1,6 +1,72 @@
 <x-app-layout>
     <div class="max-w-4xl mx-auto space-y-6">
-        <!-- Header -->
+        {{-- ============================================================== --}}
+        {{-- 1. PAGE SKELETON (Visible on Load)                             --}}
+        {{-- ============================================================== --}}
+        <div id="PageSkeleton" class="animate-pulse space-y-6">
+
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 bg-gray-200 rounded-md dark:bg-gray-800"></div>
+                <div>
+                    <div class="h-8 bg-gray-200 rounded dark:bg-gray-800 w-64 mb-2"></div>
+                    <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-48"></div>
+                </div>
+            </div>
+
+            <div class="p-6 bg-white border border-gray-200 rounded-lg dark:bg-[#171717] dark:border-gray-800 space-y-6">
+                <div class="h-6 bg-gray-200 rounded dark:bg-gray-800 w-40 mb-4"></div>
+
+                <div class="space-y-4">
+                    <div>
+                        <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-32 mb-2"></div>
+                        <div class="h-10 bg-gray-200 rounded dark:bg-gray-800 w-full"></div>
+                    </div>
+                    <div>
+                        <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-32 mb-2"></div>
+                        <div class="h-10 bg-gray-200 rounded dark:bg-gray-800 w-full"></div>
+                    </div>
+                    <div>
+                        <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-24 mb-2"></div>
+                        <div class="h-24 bg-gray-200 rounded dark:bg-gray-800 w-full"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-6 bg-white border border-gray-200 rounded-lg dark:bg-[#171717] dark:border-gray-800">
+                <div class="flex justify-between mb-6">
+                    <div class="h-6 bg-gray-200 rounded dark:bg-gray-800 w-32"></div>
+                    <div class="flex gap-2">
+                        <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-16"></div>
+                        <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-16"></div>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    @for($i=0; $i<5; $i++)
+                        <div class="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
+                            <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-1/4"></div>
+                            <div class="flex gap-8">
+                                <div class="w-4 h-4 bg-gray-200 rounded dark:bg-gray-800"></div>
+                                <div class="w-4 h-4 bg-gray-200 rounded dark:bg-gray-800"></div>
+                                <div class="w-4 h-4 bg-gray-200 rounded dark:bg-gray-800"></div>
+                                <div class="w-4 h-4 bg-gray-200 rounded dark:bg-gray-800"></div>
+                            </div>
+                        </div>
+                    @endfor
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-2">
+                <div class="h-10 bg-gray-200 rounded dark:bg-gray-800 w-24"></div>
+                <div class="h-10 bg-gray-200 rounded dark:bg-gray-800 w-32"></div>
+            </div>
+        </div>
+
+        {{-- ============================================================== --}}
+        {{-- 2. REAL CONTENT (Hidden Initially)                             --}}
+        {{-- ============================================================== --}}
+        <div id="RealPageContent" class="hidden opacity-0 transition-opacity duration-500 ease-in-out space-y-6">
+            <!-- Header -->
         <div class="flex items-center gap-4">
             <a href="{{ route('admin.roles.index') }}" class="p-2 text-gray-500 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
@@ -125,8 +191,26 @@
             </div>
         </form>
     </div>
+        </div>
+
 
     <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const skeleton = document.getElementById('PageSkeleton');
+                const content = document.getElementById('RealPageContent');
+
+                if (skeleton) skeleton.style.display = 'none';
+
+                if (content) {
+                    content.classList.remove('hidden');
+                    setTimeout(() => {
+                        content.classList.remove('opacity-0');
+                    }, 50);
+                }
+            }, 500); // 500ms delay to prevent flicker
+        });
+        
         function selectAll() {
             document.querySelectorAll('.permission-checkbox').forEach(checkbox => {
                 checkbox.checked = true;
