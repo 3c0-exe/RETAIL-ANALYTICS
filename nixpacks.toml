@@ -1,5 +1,23 @@
 [phases.setup]
-nixPkgs = ["...", "php82Extensions.gd", "php82Extensions.zip"]
+# We must explicitly list the base PHP and the extensions we need
+nixPkgs = [
+    "php82",
+    "php82Extensions.zip",
+    "php82Extensions.gd",
+    "php82Extensions.pdo_mysql",
+    "php82Extensions.mbstring",
+    "php82Extensions.bcmath",
+    "php82Extensions.xml",
+    "php82Extensions.curl",
+    "php82Extensions.ctype",
+    "php82Extensions.dom",
+    "php82Extensions.fileinfo",
+    "php82Extensions.tokenizer"
+]
 
 [phases.install]
 cmds = ["composer install --optimize-autoloader --no-scripts --no-interaction --ignore-platform-reqs", "npm ci"]
+
+[phases.build]
+# NOTICE: We removed 'php artisan config:cache' to prevent the crash during build
+cmds = ["npm run build", "php artisan migrate --force"]
