@@ -139,6 +139,14 @@ Route::post('settings/maintenance', [\App\Http\Controllers\Admin\SettingsControl
 Route::post('settings/clear-cache', [\App\Http\Controllers\Admin\SettingsController::class, 'clearCache'])
     ->name('settings.clear-cache');
 
+    // Error Logs
+Route::get('error-logs', [\App\Http\Controllers\Admin\ErrorLogController::class, 'index'])
+    ->name('error-logs.index');
+Route::get('error-logs/download', [\App\Http\Controllers\Admin\ErrorLogController::class, 'download'])
+    ->name('error-logs.download');
+Route::post('error-logs/clear', [\App\Http\Controllers\Admin\ErrorLogController::class, 'clear'])
+    ->name('error-logs.clear');
+
     });
 
     // Branch Manager Routes
