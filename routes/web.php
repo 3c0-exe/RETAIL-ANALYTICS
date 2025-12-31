@@ -216,6 +216,23 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
             ->name('send-now');
     });
 
+    // ============================================================================
+// ROUTE ALIASES (For backwards compatibility with views)
+// ============================================================================
+Route::middleware(['auth', 'verified'])->group(function () {
+    // Alias admin routes without 'admin.' prefix for views
+    Route::get('/imports/create', function() {
+        return redirect()->route('admin.imports.create');
+    })->name('imports.create');
+
+    Route::get('/products', function() {
+        return redirect()->route('admin.products.index');
+    })->name('products.index');
+
+    Route::get('/categories', function() {
+        return redirect()->route('admin.categories.index');
+    })->name('categories.index');
+});
 
 });
 

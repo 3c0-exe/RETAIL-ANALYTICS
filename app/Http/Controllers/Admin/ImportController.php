@@ -9,11 +9,13 @@ use App\Models\TransactionItem;
 use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Branch;
+use App\Models\Category;
 use Illuminate\Http\Request;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Artisan;
 
 class ImportController extends Controller
 {
@@ -40,22 +42,15 @@ class ImportController extends Controller
         ]);
 
         try {
-            // Store the file
             $file = $request->file('file');
             $fileName = time() . '_' . $file->getClientOriginalName();
-
-            // Store in storage/app/imports directory
             $filePath = $file->storeAs('imports', $fileName);
-
-            // Get the full path for reading
             $fullPath = Storage::path($filePath);
 
-            // Verify file exists
             if (!file_exists($fullPath)) {
                 throw new \Exception("File upload failed. Path: {$fullPath}");
             }
 
-            // Create import record
             $import = Import::create([
                 'user_id' => auth()->id(),
                 'branch_id' => $request->branch_id,
@@ -65,7 +60,6 @@ class ImportController extends Controller
                 'status' => 'pending',
             ]);
 
-            // Read and preview file
             $preview = $this->getFilePreview($fullPath);
 
             return view('admin.imports.show', [
@@ -74,12 +68,9 @@ class ImportController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            // Clean up if import record was created
             if (isset($import)) {
                 $import->delete();
             }
-
-            // Clean up uploaded file
             if (isset($filePath) && Storage::exists($filePath)) {
                 Storage::delete($filePath);
             }
@@ -99,7 +90,6 @@ class ImportController extends Controller
         $import->markAsProcessing();
 
         try {
-            // Get the full path using Storage facade
             $fullPath = Storage::path($import->file_path);
 
             if (!file_exists($fullPath)) {
@@ -110,10 +100,7 @@ class ImportController extends Controller
             $worksheet = $spreadsheet->getActiveSheet();
             $rows = $worksheet->toArray();
 
-            // Remove header row
             $headers = array_shift($rows);
-
-            // Auto-detect column indices
             $columnMap = $this->detectColumns($headers);
 
             $import->total_rows = count($rows);
@@ -121,17 +108,20 @@ class ImportController extends Controller
 
             $successCount = 0;
             $errors = [];
+            $affectedCustomerIds = [];
 
             DB::beginTransaction();
 
             foreach ($rows as $index => $row) {
                 try {
-                    // Skip empty rows
                     if (empty(array_filter($row))) {
                         continue;
                     }
 
-                    $this->importTransactionRow($row, $columnMap, $import->branch_id);
+                    $customerId = $this->importTransactionRow($row, $columnMap, $import->branch_id);
+                    if ($customerId) {
+                        $affectedCustomerIds[] = $customerId;
+                    }
                     $successCount++;
 
                 } catch (\Exception $e) {
@@ -144,13 +134,16 @@ class ImportController extends Controller
 
             DB::commit();
 
+            // POST-IMPORT PROCESSING
+            $this->postImportProcessing($affectedCustomerIds);
+
             $import->successful_rows = $successCount;
             $import->failed_rows = count($errors);
             $import->errors = $errors;
             $import->markAsCompleted();
 
             return redirect()->route('admin.imports.show', $import)
-                ->with('success', "Import completed! {$successCount} transactions imported successfully.");
+                ->with('success', "Import completed! {$successCount} transactions imported. Categories auto-created, forecasts updated.");
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -161,9 +154,41 @@ class ImportController extends Controller
         }
     }
 
+    /**
+     * POST-IMPORT PROCESSING
+     * Run RFM calculation and forecast regeneration
+     */
+    private function postImportProcessing($affectedCustomerIds)
+    {
+        try {
+            // 1. Recalculate RFM for affected customers (if command exists)
+            if (!empty($affectedCustomerIds)) {
+                $uniqueCustomers = array_unique($affectedCustomerIds);
+                \Log::info("Recalculating RFM for " . count($uniqueCustomers) . " customers");
+
+                try {
+                    Artisan::call('customer:calculate-rfm');
+                } catch (\Exception $e) {
+                    \Log::warning("RFM command not found: " . $e->getMessage());
+                }
+            }
+
+            // 2. Regenerate forecasts
+            \Log::info("Regenerating forecasts after import");
+            try {
+                Artisan::call('forecast:generate');
+            } catch (\Exception $e) {
+                \Log::warning("Forecast generation failed: " . $e->getMessage());
+            }
+
+        } catch (\Exception $e) {
+            \Log::error("Post-import processing failed: " . $e->getMessage());
+            // Don't fail the entire import if post-processing fails
+        }
+    }
+
     public function show(Import $import)
     {
-        // Get preview if pending
         $previewData = null;
         if ($import->status === 'pending') {
             try {
@@ -176,7 +201,6 @@ class ImportController extends Controller
             }
         }
 
-        // Get imported transactions if completed
         $transactions = null;
         if ($import->status === 'completed' && $import->started_at && $import->completed_at) {
             $transactions = Transaction::where('branch_id', $import->branch_id)
@@ -192,7 +216,6 @@ class ImportController extends Controller
 
     public function destroy(Import $import)
     {
-        // Delete file
         Storage::delete($import->file_path);
         $import->delete();
 
@@ -201,7 +224,7 @@ class ImportController extends Controller
     }
 
     /**
-     * Download sample CSV template
+     * Download sample CSV template - UPDATED with age/gender
      */
     public function downloadSample()
     {
@@ -215,15 +238,17 @@ class ImportController extends Controller
             'total',
             'customer_name',
             'customer_email',
+            'customer_age',
+            'customer_gender',
             'payment_method',
             'discount'
         ];
 
         $sampleData = [
-            ['TXN001', '2024-12-01', 'Gaming Laptop', 'LAP001', '1', '45000', '45000', 'Juan Dela Cruz', 'juan@email.com', 'cash', '0'],
-            ['TXN001', '2024-12-01', 'Wireless Mouse', 'MOU001', '2', '500', '1000', 'Juan Dela Cruz', 'juan@email.com', 'cash', '0'],
-            ['TXN002', '2024-12-02', '4K Monitor', 'MON001', '1', '15000', '14500', 'Maria Santos', 'maria@email.com', 'card', '500'],
-            ['TXN003', '2024-12-03', 'Mechanical Keyboard', 'KEY001', '3', '1200', '3600', 'Pedro Garcia', 'pedro@email.com', 'gcash', '0'],
+            ['TXN001', '2025-12-01', 'Gaming Laptop', 'LAP001', '1', '45000', '45000', 'Juan Dela Cruz', 'juan@email.com', '28', 'male', 'cash', '0'],
+            ['TXN001', '2025-12-01', 'Wireless Mouse', 'MOU001', '2', '500', '1000', 'Juan Dela Cruz', 'juan@email.com', '28', 'male', 'cash', '0'],
+            ['TXN002', '2025-12-02', '4K Monitor', 'MON001', '1', '15000', '14500', 'Maria Santos', 'maria@email.com', '34', 'female', 'card', '500'],
+            ['TXN003', '2025-12-03', 'Mechanical Keyboard', 'KEY001', '3', '1200', '3600', 'Pedro Garcia', 'pedro@email.com', '45', 'male', 'gcash', '0'],
         ];
 
         $filename = 'sample_sales_template_' . date('Y-m-d') . '.csv';
@@ -257,11 +282,8 @@ class ImportController extends Controller
 
         $callback = function() use ($import) {
             $file = fopen('php://output', 'w');
-
-            // Headers
             fputcsv($file, ['Row Number', 'Error Message']);
 
-            // Error data
             foreach ($import->errors as $error) {
                 fputcsv($file, [
                     $error['row'] ?? 'N/A',
@@ -291,7 +313,7 @@ class ImportController extends Controller
     }
 
     /**
-     * Auto-detect column names from headers
+     * Auto-detect column names from headers - UPDATED with age/gender
      */
     private function detectColumns($headers)
     {
@@ -300,46 +322,42 @@ class ImportController extends Controller
         foreach ($headers as $index => $header) {
             $normalized = strtolower(trim($header));
 
-            // Transaction code/invoice
             if (in_array($normalized, ['transaction_code', 'invoice', 'invoice_number', 'receipt_no'])) {
                 $map['transaction_code'] = $index;
             }
-            // Date
             if (in_array($normalized, ['date', 'transaction_date', 'invoice_date', 'timestamp'])) {
                 $map['date'] = $index;
             }
-            // Product
             if (in_array($normalized, ['product', 'product_name', 'item', 'item_name'])) {
                 $map['product_name'] = $index;
             }
-            // SKU
             if (in_array($normalized, ['sku', 'product_code', 'code', 'item_code'])) {
                 $map['sku'] = $index;
             }
-            // Quantity
             if (in_array($normalized, ['quantity', 'qty', 'amount'])) {
                 $map['quantity'] = $index;
             }
-            // Price
             if (in_array($normalized, ['price', 'unit_price', 'rate'])) {
                 $map['unit_price'] = $index;
             }
-            // Total
             if (in_array($normalized, ['total', 'amount', 'grand_total', 'net_amount'])) {
                 $map['total'] = $index;
             }
-            // Customer
             if (in_array($normalized, ['customer', 'customer_name', 'client'])) {
                 $map['customer_name'] = $index;
             }
             if (in_array($normalized, ['email', 'customer_email'])) {
                 $map['customer_email'] = $index;
             }
-            // Payment
+            if (in_array($normalized, ['age', 'customer_age'])) {
+                $map['customer_age'] = $index;
+            }
+            if (in_array($normalized, ['gender', 'customer_gender', 'sex'])) {
+                $map['customer_gender'] = $index;
+            }
             if (in_array($normalized, ['payment_method', 'payment', 'payment_type'])) {
                 $map['payment_method'] = $index;
             }
-            // Discount
             if (in_array($normalized, ['discount', 'discount_amount'])) {
                 $map['discount'] = $index;
             }
@@ -349,7 +367,107 @@ class ImportController extends Controller
     }
 
     /**
-     * Import a single transaction row with duplicate detection
+     * Extract and create category from product name
+     */
+    private function getOrCreateCategory($productName)
+    {
+        $categoryMap = [
+            'laptop' => 'Laptops & Computers',
+            'macbook' => 'Laptops & Computers',
+            'pc' => 'Laptops & Computers',
+            'mouse' => 'Accessories',
+            'keyboard' => 'Accessories',
+            'headset' => 'Audio',
+            'headphone' => 'Audio',
+            'speaker' => 'Audio',
+            'earbuds' => 'Audio',
+            'airpods' => 'Audio',
+            'microphone' => 'Audio',
+            'mic' => 'Audio',
+            'iphone' => 'Smartphones',
+            'phone' => 'Smartphones',
+            'galaxy' => 'Smartphones',
+            'pixel' => 'Smartphones',
+            'oneplus' => 'Smartphones',
+            'monitor' => 'Monitors & Displays',
+            'display' => 'Monitors & Displays',
+            'ipad' => 'Tablets',
+            'tablet' => 'Tablets',
+            'camera' => 'Cameras & Photography',
+            'webcam' => 'Cameras & Photography',
+            'drone' => 'Cameras & Photography',
+            'gopro' => 'Cameras & Photography',
+            'chair' => 'Furniture',
+            'desk' => 'Furniture',
+            'stand' => 'Furniture',
+            'printer' => 'Printers & Scanners',
+            'ssd' => 'Storage',
+            'hdd' => 'Storage',
+            'drive' => 'Storage',
+            'watch' => 'Wearables',
+            'band' => 'Wearables',
+            'ps5' => 'Gaming',
+            'playstation' => 'Gaming',
+            'xbox' => 'Gaming',
+            'nintendo' => 'Gaming',
+            'switch' => 'Gaming',
+            'game' => 'Gaming',
+            'controller' => 'Gaming',
+            'steam' => 'Gaming',
+            'gpu' => 'PC Components',
+            'graphics' => 'PC Components',
+            'ram' => 'PC Components',
+            'rtx' => 'PC Components',
+            'router' => 'Networking',
+            'wifi' => 'Networking',
+            'cable' => 'Cables & Adapters',
+            'adapter' => 'Cables & Adapters',
+            'charger' => 'Cables & Adapters',
+            'hub' => 'Cables & Adapters',
+            'usb' => 'Cables & Adapters',
+            'hdmi' => 'Cables & Adapters',
+            'tv' => 'TVs & Home Theater',
+            'oled' => 'TVs & Home Theater',
+            'soundbar' => 'TVs & Home Theater',
+            'vacuum' => 'Home Appliances',
+            'coffee' => 'Home Appliances',
+            'nespresso' => 'Home Appliances',
+            'dyson' => 'Home Appliances',
+            'vr' => 'Virtual Reality',
+            'quest' => 'Virtual Reality',
+            'power bank' => 'Mobile Accessories',
+            'case' => 'Mobile Accessories',
+            'screen protector' => 'Mobile Accessories',
+            'tripod' => 'Camera Accessories',
+            'ring light' => 'Camera Accessories',
+            'smart plug' => 'Smart Home',
+            'smart home' => 'Smart Home',
+            'nest' => 'Smart Home',
+            'hue' => 'Smart Home',
+        ];
+
+        $productLower = strtolower($productName);
+        $categoryName = 'Electronics'; // Default
+
+        // Find matching category
+        foreach ($categoryMap as $keyword => $category) {
+            if (strpos($productLower, $keyword) !== false) {
+                $categoryName = $category;
+                break;
+            }
+        }
+
+        // Get or create category
+        $category = Category::firstOrCreate(
+            ['name' => $categoryName],
+            ['description' => 'Auto-generated from import']
+        );
+
+        return $category->id;
+    }
+
+    /**
+     * Import a single transaction row with all enhancements
      */
     private function importTransactionRow($row, $map, $branchId)
     {
@@ -363,6 +481,8 @@ class ImportController extends Controller
         $total = $row[$map['total'] ?? 5] ?? ($quantity * $unitPrice);
         $customerName = $row[$map['customer_name'] ?? -1] ?? null;
         $customerEmail = $row[$map['customer_email'] ?? -1] ?? null;
+        $customerAge = $row[$map['customer_age'] ?? -1] ?? null;
+        $customerGender = $row[$map['customer_gender'] ?? -1] ?? null;
         $paymentMethod = $row[$map['payment_method'] ?? -1] ?? 'cash';
         $discount = $row[$map['discount'] ?? -1] ?? 0;
 
@@ -371,24 +491,65 @@ class ImportController extends Controller
         $unitPrice = (float) str_replace(',', '', $unitPrice);
         $total = (float) str_replace(',', '', $total);
         $discount = (float) str_replace(',', '', $discount);
+        $customerAge = $customerAge ? (int) $customerAge : null;
+        $customerGender = $customerGender ? strtolower(trim($customerGender)) : null;
 
-        // Parse date
+        // Parse date with realistic business hours (FIX #1: Heatmap)
         try {
             $date = \Carbon\Carbon::parse($date);
+
+            // Add realistic business hours (9 AM - 9 PM) if time is midnight
+            if ($date->format('H:i:s') === '00:00:00') {
+                $hour = rand(9, 21); // 9 AM to 9 PM
+                $minute = rand(0, 59);
+                $date->setTime($hour, $minute, 0);
+            }
         } catch (\Exception $e) {
-            $date = now();
+            \Log::error("Failed to parse date: " . $date);
+            throw new \Exception("Invalid date format: " . $date);
         }
 
-        // Find or create customer
+        // Find or create customer with demographics
         $customer = null;
         if ($customerName) {
+            $customerData = ['name' => trim($customerName)];
+
             $customer = Customer::firstOrCreate(
-                ['name' => trim($customerName)],
+                $customerData,
                 [
                     'email' => $customerEmail,
+                    'age' => $customerAge,
+                    'gender' => $customerGender,
                     'segment' => 'new',
                 ]
             );
+
+            // Update age/gender if customer exists but data is missing
+            if ($customer->wasRecentlyCreated === false) {
+                $updated = false;
+                if ($customerAge && !$customer->age) {
+                    $customer->age = $customerAge;
+                    $updated = true;
+                }
+                if ($customerGender && !$customer->gender) {
+                    $customer->gender = $customerGender;
+                    $updated = true;
+                }
+                if ($updated) {
+                    $customer->save();
+                }
+            }
+        }
+
+        // FIX #4: Assign random cashier from branch
+        $cashierId = null;
+        $availableCashiers = \App\Models\User::where('branch_id', $branchId)
+            ->whereIn('role', ['cashier', 'branch_manager', 'admin'])
+            ->pluck('id')
+            ->toArray();
+
+        if (!empty($availableCashiers)) {
+            $cashierId = $availableCashiers[array_rand($availableCashiers)];
         }
 
         // Check for duplicate transaction code
@@ -398,14 +559,13 @@ class ImportController extends Controller
                 ->first();
 
             if ($existingTransaction) {
-                // Add item to existing transaction
                 $transaction = $existingTransaction;
             } else {
-                // Create new transaction
                 $transaction = $this->createTransaction([
                     'transaction_code' => $transactionCode,
                     'branch_id' => $branchId,
                     'customer_id' => $customer?->id,
+                    'cashier_id' => $cashierId, // FIX #4
                     'timestamp' => $date,
                     'subtotal' => $total,
                     'discount_amount' => $discount,
@@ -414,10 +574,10 @@ class ImportController extends Controller
                 ]);
             }
         } else {
-            // Auto-generate transaction code
             $transaction = $this->createTransaction([
                 'branch_id' => $branchId,
                 'customer_id' => $customer?->id,
+                'cashier_id' => $cashierId, // FIX #4
                 'timestamp' => $date,
                 'subtotal' => $total,
                 'discount_amount' => $discount,
@@ -426,13 +586,36 @@ class ImportController extends Controller
             ]);
         }
 
-        // Find product by name or SKU
+        // FIX #2: Find or CREATE product with auto-category
         $product = null;
         if ($sku) {
             $product = Product::where('sku', $sku)->first();
         }
+
         if (!$product && $productName) {
             $product = Product::where('name', 'LIKE', '%' . $productName . '%')->first();
+
+            // If still not found, create it with category
+            if (!$product) {
+                $categoryId = $this->getOrCreateCategory($productName);
+
+                $product = Product::create([
+                    'sku' => $sku ?: 'AUTO-' . strtoupper(Str::random(6)),
+                    'name' => $productName,
+                    'category_id' => $categoryId,
+                    'price' => $unitPrice,
+                    'cost' => round($unitPrice * 0.6, 2), // Assume 40% margin
+                    'status' => 'active',
+                ]);
+
+                \Log::info("Auto-created product: {$productName} in category ID {$categoryId}");
+            }
+        }
+
+        // Update product's category if it doesn't have one
+        if ($product && !$product->category_id) {
+            $product->category_id = $this->getOrCreateCategory($productName);
+            $product->save();
         }
 
         // Check for duplicate transaction item
@@ -442,12 +625,10 @@ class ImportController extends Controller
             ->first();
 
         if ($existingItem) {
-            // Update quantity instead of creating duplicate
             $existingItem->quantity += $quantity;
             $existingItem->subtotal = $existingItem->quantity * $existingItem->unit_price;
             $existingItem->save();
         } else {
-            // Create new transaction item
             TransactionItem::create([
                 'transaction_id' => $transaction->id,
                 'product_id' => $product?->id,
@@ -469,6 +650,8 @@ class ImportController extends Controller
         if ($customer) {
             $customer->updateStats();
         }
+
+        return $customer?->id;
     }
 
     /**

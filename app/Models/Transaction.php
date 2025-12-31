@@ -9,25 +9,27 @@ class Transaction extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'transaction_code',
-        'branch_id',
-        'customer_id',
-        'cashier_id',
-        'subtotal',
-        'tax_amount',
-        'discount_amount',
-        'total_amount',
-        'payment_method',
-        'status',
-    ];
+protected $fillable = [
+    'transaction_code',
+    'branch_id',
+    'customer_id',
+    'cashier_id',
+    'timestamp',        // ← ADD THIS LINE
+    'subtotal',
+    'tax_amount',
+    'discount_amount',
+    'total_amount',
+    'payment_method',
+    'status',
+];
 
-    protected $casts = [
-        'subtotal' => 'decimal:2',
-        'tax_amount' => 'decimal:2',
-        'discount_amount' => 'decimal:2',
-        'total_amount' => 'decimal:2',
-    ];
+protected $casts = [
+    'timestamp' => 'datetime',  // ← ADD THIS LINE
+    'subtotal' => 'decimal:2',
+    'tax_amount' => 'decimal:2',
+    'discount_amount' => 'decimal:2',
+    'total_amount' => 'decimal:2',
+];
 
     // Relationships
     public function branch()
