@@ -21,3 +21,5 @@ cmds = ["composer install --optimize-autoloader --no-scripts --no-interaction --
 [phases.build]
 # NOTICE: We removed 'php artisan config:cache' to prevent the crash during build
 cmds = ["npm run build", "php artisan migrate --force"]
+
+# Triggering a new build 123
