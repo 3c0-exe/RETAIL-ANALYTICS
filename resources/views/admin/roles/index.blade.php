@@ -1,6 +1,63 @@
 <x-app-layout>
     <div class="space-y-6">
-        <!-- Header -->
+        {{-- ============================================================== --}}
+        {{-- 1. PAGE SKELETON (Visible on Load)                             --}}
+        {{-- ============================================================== --}}
+        <div id="PageSkeleton" class="animate-pulse space-y-6">
+
+            <div class="flex items-center justify-between">
+                <div>
+                    <div class="h-8 bg-gray-200 rounded dark:bg-gray-800 w-48 mb-2"></div>
+                    <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-64"></div>
+                </div>
+                <div class="h-10 bg-gray-200 rounded dark:bg-gray-800 w-32"></div>
+            </div>
+
+            <div class="p-4 bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-700">
+                <div class="flex gap-4">
+                    <div class="flex-1 h-10 bg-gray-200 rounded dark:bg-gray-800"></div>
+                    <div class="h-10 bg-gray-200 rounded dark:bg-gray-800 w-24"></div>
+                </div>
+            </div>
+
+            <div class="overflow-hidden bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-700">
+                <div class="bg-gray-50 dark:bg-gray-900 px-6 py-3 border-b border-gray-200 dark:border-gray-700 grid grid-cols-6 gap-4">
+                    @for($i=0; $i<6; $i++)
+                        <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-full"></div>
+                    @endfor
+                </div>
+                <div class="divide-y divide-gray-200 dark:divide-gray-700">
+                    @for($i=0; $i<5; $i++)
+                        <div class="px-6 py-4 grid grid-cols-6 gap-4 items-center">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-gray-200 rounded-full dark:bg-gray-800"></div>
+                                <div class="space-y-2">
+                                    <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-24"></div>
+                                    <div class="h-3 bg-gray-200 rounded dark:bg-gray-800 w-16"></div>
+                                </div>
+                            </div>
+
+                            <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-full"></div>
+
+                            <div class="flex justify-center"><div class="h-6 bg-gray-200 rounded-full dark:bg-gray-800 w-16"></div></div>
+                            <div class="flex justify-center"><div class="h-6 bg-gray-200 rounded-full dark:bg-gray-800 w-24"></div></div>
+                            <div class="flex justify-center"><div class="h-6 bg-gray-200 rounded-full dark:bg-gray-800 w-20"></div></div>
+
+                            <div class="flex justify-end gap-2">
+                                <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-12"></div>
+                                <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-12"></div>
+                            </div>
+                        </div>
+                    @endfor
+                </div>
+            </div>
+        </div>
+
+        {{-- ============================================================== --}}
+        {{-- 2. REAL CONTENT (Hidden Initially)                             --}}
+        {{-- ============================================================== --}}
+        <div id="RealPageContent" class="hidden opacity-0 transition-opacity duration-500 ease-in-out space-y-6">
+             <!-- Header -->
         <div class="flex items-center justify-between">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Roles & Permissions</h1>
@@ -124,4 +181,24 @@
             @endif
         </div>
     </div>
+        </div>
+
+        <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const skeleton = document.getElementById('PageSkeleton');
+                const content = document.getElementById('RealPageContent');
+
+                if (skeleton) skeleton.style.display = 'none';
+
+                if (content) {
+                    content.classList.remove('hidden');
+                    setTimeout(() => {
+                        content.classList.remove('opacity-0');
+                    }, 50);
+                }
+            }, 500); // 500ms delay to prevent flicker
+        });
+    </script>
+
 </x-app-layout>
