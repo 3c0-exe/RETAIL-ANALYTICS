@@ -1,6 +1,63 @@
 <x-app-layout>
     <div class="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
-        <nav class="mb-4 flex" aria-label="Breadcrumb">
+        {{-- ============================================================== --}}
+        {{-- 1. PAGE SKELETON (Visible on Load)                             --}}
+        {{-- ============================================================== --}}
+        <div id="PageSkeleton" class="animate-pulse space-y-6">
+
+            <div class="flex items-center gap-2 mb-4">
+                <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-24"></div>
+                <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-4"></div>
+                <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-28"></div>
+            </div>
+
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <div class="h-8 bg-gray-200 rounded dark:bg-gray-800 w-64 mb-2"></div>
+                    <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-96"></div>
+                </div>
+                <div class="h-10 bg-gray-200 rounded dark:bg-gray-800 w-48"></div>
+            </div>
+
+            <div class="space-y-4">
+                @for($i=0; $i<3; $i++)
+                    <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-6">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1 space-y-4">
+                                <div class="flex gap-2">
+                                    <div class="h-6 bg-gray-200 rounded-full dark:bg-gray-800 w-16"></div>
+                                    <div class="h-6 bg-gray-200 rounded-full dark:bg-gray-800 w-16"></div>
+                                    <div class="h-6 bg-gray-200 rounded dark:bg-gray-800 w-24"></div>
+                                </div>
+
+                                <div class="space-y-2">
+                                    <div class="h-6 bg-gray-200 rounded dark:bg-gray-800 w-1/3"></div>
+                                    <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-3/4"></div>
+                                    <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-1/2"></div>
+                                </div>
+
+                                <div class="flex gap-4">
+                                    <div class="h-3 bg-gray-200 rounded dark:bg-gray-800 w-32"></div>
+                                    <div class="h-3 bg-gray-200 rounded dark:bg-gray-800 w-24"></div>
+                                </div>
+                            </div>
+
+                            <div class="flex gap-2 ml-4">
+                                <div class="h-8 w-8 bg-gray-200 rounded dark:bg-gray-800"></div>
+                                <div class="h-8 w-8 bg-gray-200 rounded dark:bg-gray-800"></div>
+                                <div class="h-8 w-8 bg-gray-200 rounded dark:bg-gray-800"></div>
+                            </div>
+                        </div>
+                    </div>
+                @endfor
+            </div>
+        </div>
+
+        {{-- ============================================================== --}}
+        {{-- 2. REAL CONTENT (Hidden Initially)                             --}}
+        {{-- ============================================================== --}}
+        <div id="RealPageContent" class="hidden opacity-0 transition-opacity duration-500 ease-in-out">
+            <nav class="mb-4 flex" aria-label="Breadcrumb">
                 <ol class="inline-flex items-center space-x-1 md:space-x-3">
                     <li class="inline-flex items-center">
                         <a href="{{ route('dashboard') }}" class="text-sm text-gray-700 hover:text-purple-600 dark:text-gray-400">Dashboard</a>
@@ -137,4 +194,24 @@
         </div>
         @endif
     </div>
+        </div>
+
+        <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const skeleton = document.getElementById('PageSkeleton');
+                const content = document.getElementById('RealPageContent');
+
+                if (skeleton) skeleton.style.display = 'none';
+
+                if (content) {
+                    content.classList.remove('hidden');
+                    setTimeout(() => {
+                        content.classList.remove('opacity-0');
+                    }, 50);
+                }
+            }, 500); // 500ms delay to prevent flicker
+        });
+    </script>
+
 </x-app-layout>
