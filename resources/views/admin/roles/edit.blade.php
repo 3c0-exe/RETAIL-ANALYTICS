@@ -234,7 +234,22 @@
         </div>
 
     <script>
-        
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const skeleton = document.getElementById('PageSkeleton');
+                const content = document.getElementById('RealPageContent');
+
+                if (skeleton) skeleton.style.display = 'none';
+
+                if (content) {
+                    content.classList.remove('hidden');
+                    setTimeout(() => {
+                        content.classList.remove('opacity-0');
+                    }, 50);
+                }
+            }, 500); // 500ms delay to prevent flicker
+        });
+
         function selectAll() {
             document.querySelectorAll('.permission-checkbox').forEach(checkbox => {
                 checkbox.checked = true;
