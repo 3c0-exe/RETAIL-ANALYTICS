@@ -154,6 +154,22 @@ Route::post('announcements/{announcement}/toggle', [\App\Http\Controllers\Admin\
 Route::post('announcements/{announcement}/dismiss', [\App\Http\Controllers\Admin\AnnouncementController::class, 'dismiss'])
     ->name('announcements.dismiss');
 
+    // Backups
+Route::get('backups', [\App\Http\Controllers\Admin\BackupController::class, 'index'])
+    ->name('backups.index');
+Route::post('backups/create', [\App\Http\Controllers\Admin\BackupController::class, 'create'])
+    ->name('backups.create');
+Route::post('backups/create-full', [\App\Http\Controllers\Admin\BackupController::class, 'createFull'])
+    ->name('backups.create-full');
+Route::get('backups/download/{filename}', [\App\Http\Controllers\Admin\BackupController::class, 'download'])
+    ->name('backups.download');
+Route::delete('backups/{filename}', [\App\Http\Controllers\Admin\BackupController::class, 'destroy'])
+    ->name('backups.destroy');
+Route::post('backups/restore', [\App\Http\Controllers\Admin\BackupController::class, 'restore'])
+    ->name('backups.restore');
+Route::post('backups/clean', [\App\Http\Controllers\Admin\BackupController::class, 'clean'])
+    ->name('backups.clean');
+
     });
 
     // Branch Manager Routes
