@@ -1,6 +1,61 @@
 <x-app-layout>
     <div class="max-w-3xl px-4 mx-auto sm:px-6 lg:px-8">
-        <!-- Page Header -->
+        {{-- ============================================================== --}}
+        {{-- 1. PAGE SKELETON (Visible on Load)                             --}}
+        {{-- ============================================================== --}}
+        <div id="PageSkeleton" class="animate-pulse space-y-6">
+
+            <div class="mb-6">
+                <div class="h-8 bg-gray-200 rounded dark:bg-gray-800 w-64 mb-2"></div>
+                <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-96"></div>
+            </div>
+
+            <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-lg p-6 space-y-6">
+
+                <div>
+                    <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-16 mb-2"></div>
+                    <div class="h-10 bg-gray-200 rounded dark:bg-gray-800 w-full"></div>
+                </div>
+
+                <div>
+                    <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-24 mb-2"></div>
+                    <div class="h-32 bg-gray-200 rounded dark:bg-gray-800 w-full"></div>
+                </div>
+
+                <div>
+                    <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-16 mb-2"></div>
+                    <div class="h-10 bg-gray-200 rounded dark:bg-gray-800 w-full"></div>
+                </div>
+
+                <div>
+                    <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-32 mb-2"></div>
+                    <div class="h-10 bg-gray-200 rounded dark:bg-gray-800 w-full"></div>
+                    <div class="h-3 bg-gray-200 rounded dark:bg-gray-800 w-48 mt-1"></div>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-4 h-4 bg-gray-200 rounded dark:bg-gray-800"></div>
+                        <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-24"></div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-4 h-4 bg-gray-200 rounded dark:bg-gray-800"></div>
+                        <div class="h-4 bg-gray-200 rounded dark:bg-gray-800 w-64"></div>
+                    </div>
+                </div>
+
+                <div class="flex gap-3 pt-2">
+                    <div class="h-10 bg-gray-200 rounded dark:bg-gray-800 w-32"></div>
+                    <div class="h-10 bg-gray-200 rounded dark:bg-gray-800 w-24"></div>
+                </div>
+            </div>
+        </div>
+
+        {{-- ============================================================== --}}
+        {{-- 2. REAL CONTENT (Hidden Initially)                             --}}
+        {{-- ============================================================== --}}
+        <div id="RealPageContent" class="hidden opacity-0 transition-opacity duration-500 ease-in-out">
+                    <!-- Page Header -->
         <div class="mb-6">
             <h1 class="text-2xl font-bold text-gray-900 sm:text-3xl dark:text-gray-100">
                 {{ isset($announcement) ? 'Edit' : 'Create' }} Announcement
@@ -85,4 +140,24 @@
             </div>
         </form>
     </div>
+        </div>
+
+        <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const skeleton = document.getElementById('PageSkeleton');
+                const content = document.getElementById('RealPageContent');
+
+                if (skeleton) skeleton.style.display = 'none';
+
+                if (content) {
+                    content.classList.remove('hidden');
+                    setTimeout(() => {
+                        content.classList.remove('opacity-0');
+                    }, 50);
+                }
+            }, 500); // 500ms delay to prevent flicker
+        });
+    </script>
+
 </x-app-layout>
