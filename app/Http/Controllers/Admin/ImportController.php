@@ -214,14 +214,156 @@ class ImportController extends Controller
         return view('admin.imports.show', compact('import', 'previewData', 'transactions'));
     }
 
-    public function destroy(Import $import)
-    {
-        Storage::delete($import->file_path);
+/**
+ * Get import statistics for delete confirmation
+ */
+public function getDeleteStats(Import $import)
+{
+    try {
+        if ($import->status !== 'completed') {
+            return response()->json([
+                'transactions' => 0,
+                'sales' => '0.00',
+                'new_customers' => 0,
+                'repeat_customers' => 0,
+            ]);
+        }
+
+        // Get transactions from this import's timeframe
+        $transactions = Transaction::where('branch_id', $import->branch_id)
+            ->whereBetween('created_at', [$import->started_at, $import->completed_at])
+            ->get();
+
+        $totalTransactions = $transactions->count();
+        $totalSales = $transactions->sum('total_amount');
+
+        // Get unique customers from these transactions
+        $customerIds = $transactions->pluck('customer_id')->unique()->filter();
+
+        // Determine new vs repeat customers
+        $newCustomers = 0;
+        $repeatCustomers = 0;
+
+        foreach ($customerIds as $customerId) {
+            // Check if customer has transactions before this import
+            $hasEarlierTransactions = Transaction::where('customer_id', $customerId)
+                ->where('created_at', '<', $import->started_at)
+                ->exists();
+
+            if ($hasEarlierTransactions) {
+                $repeatCustomers++;
+            } else {
+                $newCustomers++;
+            }
+        }
+
+        return response()->json([
+            'transactions' => $totalTransactions,
+            'sales' => number_format($totalSales, 2, '.', ','),
+            'new_customers' => $newCustomers,
+            'repeat_customers' => $repeatCustomers,
+        ]);
+
+    } catch (\Exception $e) {
+        \Log::error('Failed to get import stats: ' . $e->getMessage());
+        return response()->json([
+            'transactions' => 0,
+            'sales' => '0.00',
+            'new_customers' => 0,
+            'repeat_customers' => 0,
+        ], 500);
+    }
+}
+
+/**
+ * Delete import - with options to delete data or just record
+ */
+public function destroy(Import $import, Request $request)
+{
+    $deleteData = $request->boolean('delete_data', false);
+
+    try {
+        DB::beginTransaction();
+
+        if ($deleteData && $import->status === 'completed') {
+            // DELETE ALL DATA ASSOCIATED WITH THIS IMPORT
+
+            // Get transactions from this import timeframe
+            $transactions = Transaction::where('branch_id', $import->branch_id)
+                ->whereBetween('created_at', [$import->started_at, $import->completed_at])
+                ->get();
+
+            $transactionIds = $transactions->pluck('id');
+            $customerIds = $transactions->pluck('customer_id')->unique()->filter();
+
+            // 1. Delete transaction items
+            TransactionItem::whereIn('transaction_id', $transactionIds)->delete();
+            \Log::info("Deleted transaction items for import {$import->id}");
+
+            // 2. Delete transactions
+            Transaction::whereIn('id', $transactionIds)->delete();
+            \Log::info("Deleted {$transactionIds->count()} transactions for import {$import->id}");
+
+            // 3. Handle customers
+            foreach ($customerIds as $customerId) {
+                $customer = Customer::find($customerId);
+                if ($customer) {
+                    // Check if customer has any remaining transactions
+                    $remainingTransactions = Transaction::where('customer_id', $customerId)->count();
+
+                    if ($remainingTransactions === 0) {
+                        // Customer has no more transactions, delete them
+                        $customer->delete();
+                        \Log::info("Deleted customer {$customerId} - no remaining transactions");
+                    } else {
+                        // Customer has other transactions, recalculate their stats
+                        $customer->updateStats();
+                        \Log::info("Recalculated stats for customer {$customerId}");
+                    }
+                }
+            }
+
+            // 4. Recalculate RFM for all remaining customers
+            try {
+                Artisan::call('customer:calculate-rfm');
+            } catch (\Exception $e) {
+                \Log::warning("RFM recalculation failed: " . $e->getMessage());
+            }
+
+            // 5. Regenerate forecasts
+            try {
+                Artisan::call('forecast:generate');
+            } catch (\Exception $e) {
+                \Log::warning("Forecast regeneration failed: " . $e->getMessage());
+            }
+
+            $message = "Import and all associated data deleted successfully! {$transactionIds->count()} transactions removed.";
+        } else {
+            // DELETE ONLY THE IMPORT RECORD
+            $message = "Import record deleted successfully!";
+        }
+
+        // Delete the file
+        if (Storage::exists($import->file_path)) {
+            Storage::delete($import->file_path);
+        }
+
+        // Delete the import record
         $import->delete();
 
+        DB::commit();
+
         return redirect()->route('admin.imports.index')
-            ->with('success', 'Import deleted successfully!');
+            ->with('success', $message);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        \Log::error("Import deletion failed: " . $e->getMessage());
+
+        return redirect()->route('admin.imports.index')
+            ->with('error', 'Failed to delete import: ' . $e->getMessage());
     }
+}
 
     /**
      * Download sample CSV template - UPDATED with age/gender
