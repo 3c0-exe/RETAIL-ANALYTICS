@@ -13,55 +13,55 @@
         {{-- ============================================================== --}}
         {{-- 1. FULL PAGE SKELETON (Visible on Load)                        --}}
         {{-- ============================================================== --}}
-        <div id="PageSkeleton" class="animate-pulse space-y-6">
+        <div id="PageSkeleton" class="space-y-6 animate-pulse">
 
                 <div class="space-y-4">
-                    <div class="h-3 bg-gray-200 rounded dark:bg-gray-700 w-24"></div>
+                    <div class="w-24 h-3 bg-gray-200 rounded dark:bg-gray-700"></div>
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div>
-                            <div class="h-8 bg-gray-200 rounded dark:bg-gray-700 w-48 mb-2"></div>
-                            <div class="h-4 bg-gray-200 rounded dark:bg-gray-700 w-64"></div>
+                            <div class="w-48 h-8 mb-2 bg-gray-200 rounded dark:bg-gray-700"></div>
+                            <div class="w-64 h-4 bg-gray-200 rounded dark:bg-gray-700"></div>
                         </div>
-                        <div class="h-10 bg-gray-200 rounded-lg dark:bg-gray-700 w-32"></div>
+                        <div class="w-32 h-10 bg-gray-200 rounded-lg dark:bg-gray-700"></div>
                     </div>
                 </div>
 
-                <div class="bg-white shadow-sm sm:mb-6 dark:bg-gray-800 rounded-xl p-5">
-                    <div class="h-10 bg-gray-200 rounded dark:bg-gray-700 w-full mb-4"></div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="p-5 bg-white shadow-sm sm:mb-6 dark:bg-gray-800 rounded-xl">
+                    <div class="w-full h-10 mb-4 bg-gray-200 rounded dark:bg-gray-700"></div>
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div class="h-10 bg-gray-200 rounded dark:bg-gray-700"></div>
                         <div class="h-10 bg-gray-200 rounded dark:bg-gray-700"></div>
                     </div>
-                    <div class="h-12 bg-gray-200 rounded dark:bg-gray-700 mt-4 w-full"></div>
+                    <div class="w-full h-12 mt-4 bg-gray-200 rounded dark:bg-gray-700"></div>
                 </div>
 
                 <div class="grid grid-cols-1 gap-4 mb-4 sm:grid-cols-3 sm:mb-6">
                     @for($i=0; $i<3; $i++)
                     <div class="p-5 bg-white shadow-sm sm:p-6 dark:bg-gray-800 rounded-xl">
-                        <div class="h-4 bg-gray-200 rounded dark:bg-gray-700 w-24 mb-3"></div>
-                        <div class="h-8 bg-gray-200 rounded dark:bg-gray-700 w-32 mb-2"></div>
-                        <div class="h-3 bg-gray-200 rounded dark:bg-gray-700 w-16"></div>
+                        <div class="w-24 h-4 mb-3 bg-gray-200 rounded dark:bg-gray-700"></div>
+                        <div class="w-32 h-8 mb-2 bg-gray-200 rounded dark:bg-gray-700"></div>
+                        <div class="w-16 h-3 bg-gray-200 rounded dark:bg-gray-700"></div>
                     </div>
                     @endfor
                 </div>
 
-                <div class="bg-white shadow-sm sm:mb-6 dark:bg-gray-800 rounded-xl p-5 h-96">
-                    <div class="h-6 bg-gray-200 rounded dark:bg-gray-700 w-48 mb-6"></div>
-                    <div class="h-72 bg-gray-200 rounded dark:bg-gray-700 w-full"></div>
+                <div class="p-5 bg-white shadow-sm sm:mb-6 dark:bg-gray-800 rounded-xl h-96">
+                    <div class="w-48 h-6 mb-6 bg-gray-200 rounded dark:bg-gray-700"></div>
+                    <div class="w-full bg-gray-200 rounded h-72 dark:bg-gray-700"></div>
                 </div>
 
-                <div class="bg-white shadow-sm sm:mb-6 dark:bg-gray-800 rounded-xl p-5 h-96">
-                    <div class="h-6 bg-gray-200 rounded dark:bg-gray-700 w-48 mb-6"></div>
-                    <div class="h-72 bg-gray-200 rounded dark:bg-gray-700 w-full"></div>
+                <div class="p-5 bg-white shadow-sm sm:mb-6 dark:bg-gray-800 rounded-xl h-96">
+                    <div class="w-48 h-6 mb-6 bg-gray-200 rounded dark:bg-gray-700"></div>
+                    <div class="w-full bg-gray-200 rounded h-72 dark:bg-gray-700"></div>
                 </div>
             </div>
 
             {{-- ============================================================== --}}
             {{-- 2. REAL PAGE CONTENT (Hidden Initially)                        --}}
             {{-- ============================================================== --}}
-            <div id="RealPageContent" class="hidden opacity-0 transition-opacity duration-500">
+            <div id="RealPageContent" class="hidden transition-opacity duration-500 opacity-0">
 
-                <nav class="mb-4 flex" aria-label="Breadcrumb">
+                <nav class="flex mb-4" aria-label="Breadcrumb">
         <ol class="inline-flex items-center space-x-1 md:space-x-3">
             <li class="inline-flex items-center">
                 <a href="{{ route('dashboard') }}" class="text-sm text-gray-700 hover:text-purple-600 dark:text-gray-400">
@@ -200,14 +200,25 @@
             @else
             <div class="mb-4 overflow-hidden bg-white shadow-sm sm:mb-6 dark:bg-gray-800 rounded-xl">
                     <div class="p-5 sm:p-6">
-                        <x-empty-state
-                            icon="chart"
-                            title="No forecasts generated yet"
-                            description="Click the button below to generate sales predictions based on your historical data. You need at least 7 days of sales history."
-                            actionText="Generate Forecast"
-                            actionRoute="{{ route('forecasts.regenerate') }}"
-                            size="large"
-                        />
+                        <div class="flex flex-col items-center justify-center py-12 text-center">
+                            <svg class="w-16 h-16 mb-4 text-gray-400 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                            </svg>
+                            <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">No forecasts generated yet</h3>
+                            <p class="max-w-md mb-6 text-sm text-gray-600 dark:text-gray-400">
+                                Click the button below to generate sales predictions based on your historical data. You need at least 7 days of sales history.
+                            </p>
+                            <form method="POST" action="{{ route('forecasts.regenerate') }}" onsubmit="return confirm('Generate forecasts? This may take a moment.')">
+                                @csrf
+                                <button type="submit"
+                                        class="inline-flex items-center justify-center gap-2 px-6 py-3 text-base font-semibold text-white transition rounded-lg bg-primary-600 hover:bg-primary-700 active:bg-primary-800">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                    </svg>
+                                    Generate Forecast
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 </div>
             @endif
@@ -289,13 +300,25 @@
             @else
                 <div class="overflow-hidden bg-white shadow-sm dark:bg-gray-800 rounded-xl">
                     <div class="p-5 sm:p-6">
-                        <x-empty-state
-                            icon="trending-up"
-                            title="No product forecasts available"
-                            description="Generate forecasts to see AI-powered predictions for your top-selling products."
-                            actionText="Generate Forecast"
-                            actionRoute="{{ route('forecasts.regenerate') }}"
-                        />
+                            <div class="flex flex-col items-center justify-center py-12 text-center">
+                                <svg class="w-16 h-16 mb-4 text-gray-400 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                                </svg>
+                                <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">No product forecasts available</h3>
+                                <p class="max-w-md mb-6 text-sm text-gray-600 dark:text-gray-400">
+                                    Generate forecasts to see AI-powered predictions for your top-selling products.
+                                </p>
+                                <form method="POST" action="{{ route('forecasts.regenerate') }}" onsubmit="return confirm('Generate forecasts? This may take a moment.')">
+                                    @csrf
+                                    <button type="submit"
+                                            class="inline-flex items-center justify-center gap-2 px-6 py-3 text-base font-semibold text-white transition rounded-lg bg-primary-600 hover:bg-primary-700 active:bg-primary-800">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                        </svg>
+                                        Generate Forecast
+                                    </button>
+                                </form>
+                            </div>
                     </div>
                 </div>
             @endif

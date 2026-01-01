@@ -53,12 +53,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('export.customers.csv');
     });
 
-    // Forecast Routes (Rate Limited - 5 regenerations per hour)
-    Route::get('/forecasts', [ForecastController::class, 'index'])->name('forecasts.index');
-    Route::post('/forecasts/regenerate', function() {
-        \Artisan::call('forecast:generate');
-        return back()->with('success', 'Forecasts regenerated successfully!');
-    })->name('forecasts.regenerate')->middleware(['throttle:forecast']);
+// Forecast Routes (Rate Limited - 5 regenerations per hour)
+Route::get('/forecasts', [ForecastController::class, 'index'])->name('forecasts.index');
+
+// Forecast regeneration - POST only (this gets the named route)
+Route::post('/forecasts/regenerate', function() {
+    \Artisan::call('forecast:generate');
+    return back()->with('success', 'Forecasts regenerated successfully!');
+})->name('forecasts.regenerate')->middleware(['throttle:forecast']);
+
+// Handle accidental GET requests gracefully (no name needed)
+Route::get('/forecasts/regenerate', function() {
+    return redirect()->route('forecasts.index')
+        ->with('info', 'Please use the "Generate Forecast" button to regenerate predictions.');
+});
 
     // Alert routes
     Route::prefix('alerts')->name('alerts.')->group(function () {
