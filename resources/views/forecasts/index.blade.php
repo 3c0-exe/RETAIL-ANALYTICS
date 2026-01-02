@@ -84,7 +84,7 @@
                         Forecasting
                     </h1>
                     <p class="mt-1 text-sm text-gray-600 sm:text-base dark:text-gray-400">
-                        AI-powered sales predictions
+                        Holt-Winters powered sales predictions
                     </p>
                 </div>
                 <button onclick="window.print()"
@@ -242,7 +242,7 @@
             </div>
             @endif
 
-            <!-- Top Products Table - Card View on Mobile -->
+            {{-- <!-- Top Products Table - Card View on Mobile -->
             @if($topProductsForecasts->count() > 0)
             <div class="overflow-hidden bg-white shadow-sm dark:bg-gray-800 rounded-xl">
                 <div class="p-5 sm:p-6">
@@ -321,7 +321,7 @@
                             </div>
                     </div>
                 </div>
-            @endif
+            @endif --}}
 
         </div>
 

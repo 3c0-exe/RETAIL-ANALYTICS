@@ -1,168 +1,168 @@
 <?php
 
-namespace Database\Seeders;
+// namespace Database\Seeders;
 
-use App\Models\Transaction;
-use App\Models\TransactionItem;
-use App\Models\Product;
-use App\Models\Branch;
-use App\Models\User;
-use App\Models\Customer;
-use Illuminate\Database\Seeder;
-use Carbon\Carbon;
+// use App\Models\Transaction;
+// use App\Models\TransactionItem;
+// use App\Models\Product;
+// use App\Models\Branch;
+// use App\Models\User;
+// use App\Models\Customer;
+// use Illuminate\Database\Seeder;
+// use Carbon\Carbon;
 
-class TransactionSeeder extends Seeder
-{
-    public function run(): void
-    {
-        $branches = Branch::all();
-        $products = Product::all();
-        $cashiers = User::whereIn('role', ['admin', 'branch_manager'])->get();
+// class TransactionSeeder extends Seeder
+// {
+//     public function run(): void
+//     {
+//         $branches = Branch::all();
+//         $products = Product::all();
+//         $cashiers = User::whereIn('role', ['admin', 'branch_manager'])->get();
 
-        if ($branches->isEmpty() || $products->isEmpty()) {
-            $this->command->error('Please seed branches and products first!');
-            return;
-        }
+//         if ($branches->isEmpty() || $products->isEmpty()) {
+//             $this->command->error('Please seed branches and products first!');
+//             return;
+//         }
 
-        // CREATE CUSTOMERS FIRST (150 customers)
-        $this->command->info('Creating 150 customers...');
-        $customers = collect();
+//         // CREATE CUSTOMERS FIRST (150 customers)
+//         $this->command->info('Creating 150 customers...');
+//         $customers = collect();
 
-        for ($i = 0; $i < 150; $i++) {
-            $customers->push(Customer::create([
-                'name' => fake()->name(),
-                'email' => fake()->unique()->safeEmail(),
-                'phone' => fake()->phoneNumber(),
-                'loyalty_id' => 'CUST' . str_pad($i + 1, 6, '0', STR_PAD_LEFT),
-                'total_spend' => 0,
-                'visit_count' => 0,
-                'segment' => 'new',
-            ]));
-        }
+//         for ($i = 0; $i < 150; $i++) {
+//             $customers->push(Customer::create([
+//                 'name' => fake()->name(),
+//                 'email' => fake()->unique()->safeEmail(),
+//                 'phone' => fake()->phoneNumber(),
+//                 'loyalty_id' => 'CUST' . str_pad($i + 1, 6, '0', STR_PAD_LEFT),
+//                 'total_spend' => 0,
+//                 'visit_count' => 0,
+//                 'segment' => 'new',
+//             ]));
+//         }
 
-        $this->command->info('✅ Created 150 customers!');
-        $this->command->info('Generating 500 transactions over 90 days...');
+//         $this->command->info('✅ Created 150 customers!');
+//         $this->command->info('Generating 500 transactions over 90 days...');
 
-        // Payment methods distribution
-        $paymentMethods = [
-            'cash' => 50,
-            'credit_card' => 30,
-            'debit_card' => 15,
-            'gcash' => 5,
-        ];
+//         // Payment methods distribution
+//         $paymentMethods = [
+//             'cash' => 50,
+//             'credit_card' => 30,
+//             'debit_card' => 15,
+//             'gcash' => 5,
+//         ];
 
-        // Generate 500 transactions
-        for ($i = 0; $i < 500; $i++) {
-            // Random date in last 90 days
-            $date = Carbon::now()->subDays(rand(0, 90))
-                ->setHour(rand(8, 20))
-                ->setMinute(rand(0, 59));
+//         // Generate 500 transactions
+//         for ($i = 0; $i < 500; $i++) {
+//             // Random date in last 90 days
+//             $date = Carbon::now()->subDays(rand(0, 90))
+//                 ->setHour(rand(8, 20))
+//                 ->setMinute(rand(0, 59));
 
-            // Pick random branch
-            $branch = $branches->random();
+//             // Pick random branch
+//             $branch = $branches->random();
 
-            // Pick cashier from that branch or admin
-            $cashier = $cashiers->where('branch_id', $branch->id)->first()
-                ?? $cashiers->where('role', 'admin')->first();
+//             // Pick cashier from that branch or admin
+//             $cashier = $cashiers->where('branch_id', $branch->id)->first()
+//                 ?? $cashiers->where('role', 'admin')->first();
 
-            // Random payment method
-            $paymentMethod = $this->weightedRandom($paymentMethods);
+//             // Random payment method
+//             $paymentMethod = $this->weightedRandom($paymentMethods);
 
-            // Get random customer (80% have customers)
-            $customer = null;
-            if (rand(1, 100) <= 80) {
-                $customer = $customers->random();
-            }
+//             // Get random customer (80% have customers)
+//             $customer = null;
+//             if (rand(1, 100) <= 80) {
+//                 $customer = $customers->random();
+//             }
 
-            // Create transaction
-            $transaction = Transaction::create([
-                'transaction_code' => 'TXN' . $date->format('Ymd') . str_pad($i + 1, 6, '0', STR_PAD_LEFT),
-                'branch_id' => $branch->id,
-                'customer_id' => $customer?->id,
-                'cashier_id' => $cashier?->id,
-                'timestamp' => $date,
-                'payment_method' => $paymentMethod,
-                'status' => 'completed',
-                'subtotal' => 0,
-                'tax_amount' => 0,
-                'discount_amount' => 0,
-                'total_amount' => 0,
-            ]);
+//             // Create transaction
+//             $transaction = Transaction::create([
+//                 'transaction_code' => 'TXN' . $date->format('Ymd') . str_pad($i + 1, 6, '0', STR_PAD_LEFT),
+//                 'branch_id' => $branch->id,
+//                 'customer_id' => $customer?->id,
+//                 'cashier_id' => $cashier?->id,
+//                 'timestamp' => $date,
+//                 'payment_method' => $paymentMethod,
+//                 'status' => 'completed',
+//                 'subtotal' => 0,
+//                 'tax_amount' => 0,
+//                 'discount_amount' => 0,
+//                 'total_amount' => 0,
+//             ]);
 
-            // Add 1-5 random products
-            $itemCount = rand(1, 5);
-            $subtotal = 0;
+//             // Add 1-5 random products
+//             $itemCount = rand(1, 5);
+//             $subtotal = 0;
 
-            for ($j = 0; $j < $itemCount; $j++) {
-                $product = $products->random();
-                $quantity = rand(1, 3);
-                $unitPrice = $product->price;
-                $discount = rand(0, 1) ? rand(0, 50) : 0;
-                $itemSubtotal = ($quantity * $unitPrice) - $discount;
+//             for ($j = 0; $j < $itemCount; $j++) {
+//                 $product = $products->random();
+//                 $quantity = rand(1, 3);
+//                 $unitPrice = $product->price;
+//                 $discount = rand(0, 1) ? rand(0, 50) : 0;
+//                 $itemSubtotal = ($quantity * $unitPrice) - $discount;
 
-                TransactionItem::create([
-                    'transaction_id' => $transaction->id,
-                    'product_id' => $product->id,
-                    'product_name' => $product->name,
-                    'sku' => $product->sku,
-                    'quantity' => $quantity,
-                    'unit_price' => $unitPrice,
-                    'discount' => $discount,
-                    'subtotal' => $itemSubtotal,
-                ]);
+//                 TransactionItem::create([
+//                     'transaction_id' => $transaction->id,
+//                     'product_id' => $product->id,
+//                     'product_name' => $product->name,
+//                     'sku' => $product->sku,
+//                     'quantity' => $quantity,
+//                     'unit_price' => $unitPrice,
+//                     'discount' => $discount,
+//                     'subtotal' => $itemSubtotal,
+//                 ]);
 
-                $subtotal += $itemSubtotal;
-            }
+//                 $subtotal += $itemSubtotal;
+//             }
 
-            // Calculate tax and total
-            $tax = $subtotal * 0.12;
-            $total = $subtotal + $tax;
+//             // Calculate tax and total
+//             $tax = $subtotal * 0.12;
+//             $total = $subtotal + $tax;
 
-            // Update transaction totals
-            $transaction->update([
-                'subtotal' => $subtotal,
-                'tax_amount' => $tax,
-                'total_amount' => $total,
-            ]);
+//             // Update transaction totals
+//             $transaction->update([
+//                 'subtotal' => $subtotal,
+//                 'tax_amount' => $tax,
+//                 'total_amount' => $total,
+//             ]);
 
-            if ($i % 50 == 0) {
-                $this->command->info("Generated {$i} transactions...");
-            }
-        }
+//             if ($i % 50 == 0) {
+//                 $this->command->info("Generated {$i} transactions...");
+//             }
+//         }
 
-        $this->command->info('✅ Successfully generated 500 transactions!');
+//         $this->command->info('✅ Successfully generated 500 transactions!');
 
-        // Update customer stats
-        $this->updateCustomerStats();
-    }
+//         // Update customer stats
+//         $this->updateCustomerStats();
+//     }
 
-    private function weightedRandom(array $weights): string
-    {
-        $rand = rand(1, array_sum($weights));
-        foreach ($weights as $key => $weight) {
-            $rand -= $weight;
-            if ($rand <= 0) return $key;
-        }
-        return array_key_first($weights);
-    }
+//     private function weightedRandom(array $weights): string
+//     {
+//         $rand = rand(1, array_sum($weights));
+//         foreach ($weights as $key => $weight) {
+//             $rand -= $weight;
+//             if ($rand <= 0) return $key;
+//         }
+//         return array_key_first($weights);
+//     }
 
-    private function updateCustomerStats(): void
-    {
-        $this->command->info('Updating customer statistics...');
+//     private function updateCustomerStats(): void
+//     {
+//         $this->command->info('Updating customer statistics...');
 
-        $customers = Customer::all();
-        foreach ($customers as $customer) {
-            $transactions = Transaction::where('customer_id', $customer->id)
-                ->where('status', 'completed')
-                ->get();
+//         $customers = Customer::all();
+//         foreach ($customers as $customer) {
+//             $transactions = Transaction::where('customer_id', $customer->id)
+//                 ->where('status', 'completed')
+//                 ->get();
 
-            $customer->update([
-                'total_spend' => $transactions->sum('total_amount'),
-                'visit_count' => $transactions->count(),
-                'last_purchase_at' => $transactions->max('timestamp'),
-            ]);
-        }
+//             $customer->update([
+//                 'total_spend' => $transactions->sum('total_amount'),
+//                 'visit_count' => $transactions->count(),
+//                 'last_purchase_at' => $transactions->max('timestamp'),
+//             ]);
+//         }
 
-        $this->command->info('✅ Customer stats updated!');
-    }
-}
+//         $this->command->info('✅ Customer stats updated!');
+//     }
+// }

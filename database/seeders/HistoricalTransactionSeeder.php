@@ -1,164 +1,164 @@
 <?php
 
-namespace Database\Seeders;
+// namespace Database\Seeders;
 
-use App\Models\Branch;
-use App\Models\Customer;
-use App\Models\Product;
-use App\Models\Transaction;
-use App\Models\TransactionItem;
-use App\Models\User;
-use Carbon\Carbon;
-use Illuminate\Database\Seeder;
+// use App\Models\Branch;
+// use App\Models\Customer;
+// use App\Models\Product;
+// use App\Models\Transaction;
+// use App\Models\TransactionItem;
+// use App\Models\User;
+// use Carbon\Carbon;
+// use Illuminate\Database\Seeder;
 
-class HistoricalTransactionSeeder extends Seeder
-{
-    public function run(): void
-    {
-        $branches = Branch::where('status', 'active')->get();
-        $products = Product::where('status', 'active')->get();
+// class HistoricalTransactionSeeder extends Seeder
+// {
+//     public function run(): void
+//     {
+//         $branches = Branch::where('status', 'active')->get();
+//         $products = Product::where('status', 'active')->get();
 
-        if ($branches->isEmpty() || $products->isEmpty()) {
-            $this->command->error('Please seed branches and products first!');
-            return;
-        }
+//         if ($branches->isEmpty() || $products->isEmpty()) {
+//             $this->command->error('Please seed branches and products first!');
+//             return;
+//         }
 
-        // Generate 60 days of historical data INCLUDING TODAY
-        $startDate = Carbon::now()->subDays(60);
-        $endDate = Carbon::now(); // CHANGED: Include today!
+//         // Generate 60 days of historical data INCLUDING TODAY
+//         $startDate = Carbon::now()->subDays(60);
+//         $endDate = Carbon::now(); // CHANGED: Include today!
 
-        $this->command->info('Generating 60 days of historical transactions (including today)...');
+//         $this->command->info('Generating 60 days of historical transactions (including today)...');
 
-        $transactionCount = 0;
+//         $transactionCount = 0;
 
-        foreach ($branches as $branch) {
-            // Get cashiers for this branch (or use admin if none)
-            $cashiers = User::where('branch_id', $branch->id)
-                ->whereIn('role', ['branch_manager', 'cashier'])
-                ->get();
+//         foreach ($branches as $branch) {
+//             // Get cashiers for this branch (or use admin if none)
+//             $cashiers = User::where('branch_id', $branch->id)
+//                 ->whereIn('role', ['branch_manager', 'cashier'])
+//                 ->get();
 
-            if ($cashiers->isEmpty()) {
-                $cashiers = User::where('role', 'admin')->get();
-            }
+//             if ($cashiers->isEmpty()) {
+//                 $cashiers = User::where('role', 'admin')->get();
+//             }
 
-            // Get or create customers
-            $customers = Customer::inRandomOrder()->limit(50)->get();
-            if ($customers->isEmpty()) {
-                // Create some customers
-                for ($i = 0; $i < 50; $i++) {
-                    $customers[] = Customer::create([
-                        'name' => fake()->name(),
-                        'email' => fake()->unique()->safeEmail(),
-                        'phone' => fake()->phoneNumber(),
-                        'loyalty_id' => 'CUST' . str_pad($i + 1, 6, '0', STR_PAD_LEFT),
-                        'total_spend' => 0,
-                        'visit_count' => 0,
-                        'segment' => 'new',
-                    ]);
-                }
-                $customers = collect($customers);
-            }
+//             // Get or create customers
+//             $customers = Customer::inRandomOrder()->limit(50)->get();
+//             if ($customers->isEmpty()) {
+//                 // Create some customers
+//                 for ($i = 0; $i < 50; $i++) {
+//                     $customers[] = Customer::create([
+//                         'name' => fake()->name(),
+//                         'email' => fake()->unique()->safeEmail(),
+//                         'phone' => fake()->phoneNumber(),
+//                         'loyalty_id' => 'CUST' . str_pad($i + 1, 6, '0', STR_PAD_LEFT),
+//                         'total_spend' => 0,
+//                         'visit_count' => 0,
+//                         'segment' => 'new',
+//                     ]);
+//                 }
+//                 $customers = collect($customers);
+//             }
 
-            // Generate transactions for each day
-            $currentDate = $startDate->copy();
-            while ($currentDate->lte($endDate)) {
-                // Vary transactions by day of week
-                $dayOfWeek = $currentDate->dayOfWeek;
-                $isWeekend = in_array($dayOfWeek, [0, 6]); // Sunday = 0, Saturday = 6
+//             // Generate transactions for each day
+//             $currentDate = $startDate->copy();
+//             while ($currentDate->lte($endDate)) {
+//                 // Vary transactions by day of week
+//                 $dayOfWeek = $currentDate->dayOfWeek;
+//                 $isWeekend = in_array($dayOfWeek, [0, 6]); // Sunday = 0, Saturday = 6
 
-                // More transactions on weekends
-                $transactionsPerDay = $isWeekend
-                    ? rand(30, 50)
-                    : rand(15, 35);
+//                 // More transactions on weekends
+//                 $transactionsPerDay = $isWeekend
+//                     ? rand(30, 50)
+//                     : rand(15, 35);
 
-                // For today, only generate transactions up to current hour
-                $maxHour = $currentDate->isToday() ? Carbon::now()->hour : 21;
+//                 // For today, only generate transactions up to current hour
+//                 $maxHour = $currentDate->isToday() ? Carbon::now()->hour : 21;
 
-                for ($i = 0; $i < $transactionsPerDay; $i++) {
-                    // Random time during business hours (8 AM - 9 PM, or current time if today)
-                    $hour = rand(8, $maxHour);
-                    $minute = rand(0, 59);
+//                 for ($i = 0; $i < $transactionsPerDay; $i++) {
+//                     // Random time during business hours (8 AM - 9 PM, or current time if today)
+//                     $hour = rand(8, $maxHour);
+//                     $minute = rand(0, 59);
 
-                    $timestamp = $currentDate->copy()
-                        ->setHour($hour)
-                        ->setMinute($minute)
-                        ->setSecond(rand(0, 59));
+//                     $timestamp = $currentDate->copy()
+//                         ->setHour($hour)
+//                         ->setMinute($minute)
+//                         ->setSecond(rand(0, 59));
 
-                    // Skip if timestamp is in the future
-                    if ($timestamp->isFuture()) {
-                        continue;
-                    }
+//                     // Skip if timestamp is in the future
+//                     if ($timestamp->isFuture()) {
+//                         continue;
+//                     }
 
-                    // Create transaction
-                    $cashier = $cashiers->random();
-                    $customer = rand(0, 100) > 30 ? $customers->random() : null; // 70% have customer
+//                     // Create transaction
+//                     $cashier = $cashiers->random();
+//                     $customer = rand(0, 100) > 30 ? $customers->random() : null; // 70% have customer
 
-                    $transaction = Transaction::create([
-                        'transaction_code' => 'TXN' . $branch->code . $timestamp->format('YmdHis') . rand(100, 999),
-                        'branch_id' => $branch->id,
-                        'timestamp' => $timestamp,
-                        'cashier_id' => $cashier->id,
-                        'customer_id' => $customer?->id,
-                        'payment_method' => ['cash', 'card', 'gcash', 'paymaya'][rand(0, 3)],
-                        'status' => rand(0, 100) > 5 ? 'completed' : 'refunded', // 95% completed
-                        'subtotal' => 0,
-                        'tax_amount' => 0,
-                        'discount_amount' => 0,
-                        'total_amount' => 0,
-                    ]);
+//                     $transaction = Transaction::create([
+//                         'transaction_code' => 'TXN' . $branch->code . $timestamp->format('YmdHis') . rand(100, 999),
+//                         'branch_id' => $branch->id,
+//                         'timestamp' => $timestamp,
+//                         'cashier_id' => $cashier->id,
+//                         'customer_id' => $customer?->id,
+//                         'payment_method' => ['cash', 'card', 'gcash', 'paymaya'][rand(0, 3)],
+//                         'status' => rand(0, 100) > 5 ? 'completed' : 'refunded', // 95% completed
+//                         'subtotal' => 0,
+//                         'tax_amount' => 0,
+//                         'discount_amount' => 0,
+//                         'total_amount' => 0,
+//                     ]);
 
-                    // Add 1-5 items per transaction
-                    $itemCount = rand(1, 5);
-                    $subtotal = 0;
+//                     // Add 1-5 items per transaction
+//                     $itemCount = rand(1, 5);
+//                     $subtotal = 0;
 
-                    for ($j = 0; $j < $itemCount; $j++) {
-                        $product = $products->random();
-                        $quantity = rand(1, 3);
-                        $unitPrice = $product->price;
-                        $discount = rand(0, 100) > 80 ? rand(5, 15) : 0; // 20% chance of discount
-                        $itemSubtotal = ($unitPrice * $quantity) - $discount;
+//                     for ($j = 0; $j < $itemCount; $j++) {
+//                         $product = $products->random();
+//                         $quantity = rand(1, 3);
+//                         $unitPrice = $product->price;
+//                         $discount = rand(0, 100) > 80 ? rand(5, 15) : 0; // 20% chance of discount
+//                         $itemSubtotal = ($unitPrice * $quantity) - $discount;
 
-                        TransactionItem::create([
-                            'transaction_id' => $transaction->id,
-                            'product_id' => $product->id,
-                            'sku' => $product->sku,
-                            'product_name' => $product->name,
-                            'quantity' => $quantity,
-                            'unit_price' => $unitPrice,
-                            'discount' => $discount,
-                            'subtotal' => $itemSubtotal,
-                        ]);
+//                         TransactionItem::create([
+//                             'transaction_id' => $transaction->id,
+//                             'product_id' => $product->id,
+//                             'sku' => $product->sku,
+//                             'product_name' => $product->name,
+//                             'quantity' => $quantity,
+//                             'unit_price' => $unitPrice,
+//                             'discount' => $discount,
+//                             'subtotal' => $itemSubtotal,
+//                         ]);
 
-                        $subtotal += $itemSubtotal;
-                    }
+//                         $subtotal += $itemSubtotal;
+//                     }
 
-                    // Calculate totals
-                    $taxRate = $branch->tax_rate ?? 0.12; // Default 12% VAT
-                    $taxAmount = $subtotal * $taxRate;
-                    $total = $subtotal + $taxAmount;
+//                     // Calculate totals
+//                     $taxRate = $branch->tax_rate ?? 0.12; // Default 12% VAT
+//                     $taxAmount = $subtotal * $taxRate;
+//                     $total = $subtotal + $taxAmount;
 
-                    $transaction->update([
-                        'subtotal' => $subtotal,
-                        'tax_amount' => $taxAmount,
-                        'total_amount' => $total,
-                    ]);
+//                     $transaction->update([
+//                         'subtotal' => $subtotal,
+//                         'tax_amount' => $taxAmount,
+//                         'total_amount' => $total,
+//                     ]);
 
-                    // Update customer stats
-                    if ($customer && $transaction->status === 'completed') {
-                        $customer->increment('visit_count');
-                        $customer->increment('total_spend', $total);
-                        $customer->update(['last_purchase_at' => $timestamp]);
-                    }
+//                     // Update customer stats
+//                     if ($customer && $transaction->status === 'completed') {
+//                         $customer->increment('visit_count');
+//                         $customer->increment('total_spend', $total);
+//                         $customer->update(['last_purchase_at' => $timestamp]);
+//                     }
 
-                    $transactionCount++;
-                }
+//                     $transactionCount++;
+//                 }
 
-                $currentDate->addDay();
-            }
+//                 $currentDate->addDay();
+//             }
 
-            $this->command->info("✓ Generated transactions for {$branch->name}");
-        }
+//             $this->command->info("✓ Generated transactions for {$branch->name}");
+//         }
 
-        $this->command->info("✅ Total transactions generated: {$transactionCount}");
-    }
-}
+//         $this->command->info("✅ Total transactions generated: {$transactionCount}");
+//     }
+// }

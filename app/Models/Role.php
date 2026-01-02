@@ -26,9 +26,15 @@ class Role extends Model
         return $this->belongsToMany(Permission::class, 'role_permissions');
     }
 
+    /**
+     * Get users with this role (based on string 'role' column in users table)
+     */
     public function users()
     {
-        return $this->hasMany(User::class);
+        return $this->hasMany(User::class, 'role', 'name');
+        // This tells Laravel:
+        // - Foreign key in users table is 'role' (the string column)
+        // - Local key in roles table is 'name' (e.g., 'admin', 'analyst')
     }
 
     // Helper methods
