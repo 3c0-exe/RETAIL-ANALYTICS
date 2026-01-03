@@ -25,5 +25,7 @@ class AppServiceProvider extends ServiceProvider
         // Register observers
         Transaction::observe(TransactionObserver::class);
         Import::observe(ImportObserver::class);
+        \App\Models\Forecast::observe(\App\Observers\ForecastObserver::class);
+        \App\Models\User::observe(\App\Observers\UserObserver::class);
     }
 }

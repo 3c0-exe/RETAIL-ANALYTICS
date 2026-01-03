@@ -27,7 +27,7 @@ class ImportObserver
             $emoji = $import->status === 'completed' ? '✅' : '❌';
 
             $message = $import->status === 'completed'
-                ? "{$emoji} Import '{$import->file_name}' completed successfully. Processed {$import->processed_rows} rows."
+                ? "{$emoji} Import '{$import->file_name}' completed successfully. Processed {$import->successful_rows} rows."
                 : "{$emoji} Import '{$import->file_name}' failed. {$import->failed_rows} rows failed.";
 
             $this->notificationService->notify(
@@ -41,7 +41,7 @@ class ImportObserver
                     'file_name' => $import->file_name,
                     'status' => $import->status,
                     'total_rows' => $import->total_rows,
-                    'processed_rows' => $import->processed_rows,
+                    'successful_rows' => $import->successful_rows,
                     'failed_rows' => $import->failed_rows,
                 ]
             );
