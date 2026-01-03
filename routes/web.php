@@ -6,6 +6,7 @@ use App\Http\Controllers\ForecastController;
 use App\Http\Controllers\AlertController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\ActivityLogController;
+use App\Http\Controllers\NotificationController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -241,6 +242,33 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/categories', function() {
         return redirect()->route('admin.categories.index');
     })->name('categories.index');
+});
+
+
+  // Notifications
+    Route::get('/notifications', [NotificationController::class, 'index'])
+        ->name('notifications.index');
+
+    Route::get('/notifications/preferences', [NotificationController::class, 'preferences'])
+        ->name('notifications.preferences');
+
+    Route::put('/notifications/preferences', [NotificationController::class, 'updatePreferences'])
+        ->name('notifications.preferences.update');
+
+    Route::post('/notifications/{id}/mark-read', function ($id) {
+        $alert = auth()->user()->alerts()->findOrFail($id);
+        $alert->markAsRead();
+        return back()->with('success', 'Notification marked as read');
+    })->name('notifications.mark-read');
+
+    Route::delete('/notifications/clear-read', [NotificationController::class, 'clearRead'])
+        ->name('notifications.clear-read');
+
+    // Notification API endpoints (using web routes)
+    Route::prefix('notifications/api')->group(function () {
+    Route::get('/recent', [App\Http\Controllers\Api\NotificationApiController::class, 'recent']);
+    Route::post('/{id}/read', [App\Http\Controllers\Api\NotificationApiController::class, 'markAsRead']);
+    Route::post('/mark-all-read', [App\Http\Controllers\Api\NotificationApiController::class, 'markAllAsRead']);
 });
 
 });

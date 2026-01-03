@@ -185,5 +185,93 @@ class User extends Authenticatable implements MustVerifyEmail
         }
 
         return false;
+
+
+    }
+
+    // Add to relationships section:
+    public function notificationPreferences()
+    {
+        return $this->hasMany(NotificationPreference::class);
+    }
+
+    public function alerts()
+    {
+        return $this->hasMany(Alert::class)->latest();
+    }
+
+    // Add these helper methods at the end of the class:
+
+    /**
+     * Get user's preference for a notification type
+     */
+    public function getNotificationPreference(string $type, string $channel = 'email'): bool
+    {
+        $preference = $this->notificationPreferences()
+            ->where('notification_type', $type)
+            ->first();
+
+        if (!$preference) {
+            // Return default
+            $defaults = NotificationPreference::defaults();
+            return $defaults[$type][$channel] ?? true;
+        }
+
+        return $channel === 'email' ? $preference->email_enabled : $preference->in_app_enabled;
+    }
+
+    /**
+     * Should this user receive this notification type?
+     */
+    public function shouldReceiveNotification(string $type): array
+    {
+        return [
+            'email' => $this->getNotificationPreference($type, 'email'),
+            'in_app' => $this->getNotificationPreference($type, 'in_app'),
+        ];
+    }
+
+    /**
+     * Get unread alert count
+     */
+    public function unreadAlertsCount(): int
+    {
+        return $this->alerts()->unread()->count();
+    }
+
+    /**
+     * Which notification types should this role receive?
+     */
+    public function getAllowedNotificationTypes(): array
+    {
+        if ($this->isAdmin()) {
+            return array_keys(NotificationPreference::types());
+        }
+
+        if ($this->isBranchManager()) {
+            return [
+                'low_stock',
+                'out_of_stock',
+                'overstock',
+                'sales_drop',
+                'high_value_transaction',
+                'daily_summary',
+                'import_completion',
+            ];
+        }
+
+        if ($this->isAnalyst()) {
+            return [
+                'sales_drop',
+                'forecast_deviation',
+                'customer_segment_change',
+                'daily_summary',
+            ];
+        }
+
+        // Viewer
+        return [
+            'daily_summary',
+        ];
     }
 }
