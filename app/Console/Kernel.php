@@ -22,6 +22,12 @@ class Kernel extends ConsoleKernel
 
         // Daily summary at 11 PM
         $schedule->command('alerts:check')->dailyAt('23:00');
+
+        // Check forecast deviations daily at 6 AM
+        $schedule->command('forecast:check-deviation')
+            ->dailyAt('06:00')
+            ->withoutOverlapping()
+            ->onOneServer();
     }
 
     /**

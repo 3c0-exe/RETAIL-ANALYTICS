@@ -271,6 +271,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/mark-all-read', [App\Http\Controllers\Api\NotificationApiController::class, 'markAllAsRead']);
 });
 
+ Route::middleware(['auth'])->group(function () {
+    // ... existing routes ...
+
+    // Notification Routes
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/preferences', [NotificationController::class, 'preferences'])->name('notifications.preferences');
+    Route::put('/notifications/preferences', [NotificationController::class, 'updatePreferences'])->name('notifications.preferences.update');
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
+    Route::delete('/notifications/clear-read', [NotificationController::class, 'clearRead'])->name('notifications.clear-read');
+
+    // API Routes for Notification Bell
+    Route::get('/notifications/api/recent', [NotificationController::class, 'apiRecent'])->name('notifications.api.recent');
+    Route::post('/notifications/api/{id}/read', [NotificationController::class, 'apiMarkAsRead'])->name('notifications.api.mark-read');
+    Route::post('/notifications/api/mark-all-read', [NotificationController::class, 'apiMarkAllAsRead'])->name('notifications.api.mark-all-read');
+});
 });
 
 require __DIR__.'/auth.php';

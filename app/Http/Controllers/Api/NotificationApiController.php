@@ -1,54 +1,56 @@
 <?php
 
-// app/Http/Controllers/Api/NotificationApiController.php
-
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Services\NotificationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class NotificationApiController extends Controller
 {
-    protected $notificationService;
-
-    public function __construct(NotificationService $notificationService)
-    {
-        $this->notificationService = $notificationService;
-    }
-
     /**
-     * Get recent notifications for current user
+     * Get recent notifications for the bell dropdown
      */
     public function recent(Request $request)
     {
-        $user = $request->user();
-        $notifications = $this->notificationService->getRecent($user, 10);
+        $user = Auth::user();
 
-        return response()->json([
-            'notifications' => $notifications->map(function ($alert) {
+        $notifications = $user->alerts()
+            ->latest()
+            ->take(5)
+            ->get()
+            ->map(function ($alert) {
                 return [
                     'id' => $alert->id,
                     'title' => $alert->title,
                     'message' => $alert->message,
-                    'type' => $alert->type,
                     'severity' => $alert->severity,
                     'is_read' => $alert->is_read,
                     'time_ago' => $alert->created_at->diffForHumans(),
                     'created_at' => $alert->created_at->toIso8601String(),
                 ];
-            }),
-            'unread_count' => $user->unreadAlertsCount(),
+            });
+
+        $unreadCount = $user->alerts()->where('is_read', false)->count();
+
+        return response()->json([
+            'notifications' => $notifications,
+            'unread_count' => $unreadCount,
         ]);
     }
 
     /**
-     * Mark notification as read
+     * Mark a single notification as read
      */
-    public function markAsRead(Request $request, $id)
+    public function markAsRead($id)
     {
-        $alert = $request->user()->alerts()->findOrFail($id);
-        $this->notificationService->markAsRead($alert);
+        $user = Auth::user();
+        $alert = $user->alerts()->findOrFail($id);
+
+        $alert->update([
+            'is_read' => true,
+            'read_at' => now(),
+        ]);
 
         return response()->json(['success' => true]);
     }
@@ -56,9 +58,14 @@ class NotificationApiController extends Controller
     /**
      * Mark all notifications as read
      */
-    public function markAllAsRead(Request $request)
+    public function markAllAsRead()
     {
-        $this->notificationService->markAllAsRead($request->user());
+        $user = Auth::user();
+
+        $user->alerts()->where('is_read', false)->update([
+            'is_read' => true,
+            'read_at' => now(),
+        ]);
 
         return response()->json(['success' => true]);
     }

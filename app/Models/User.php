@@ -36,6 +36,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'notification_preferences' => 'array', // Add this
         ];
     }
 
@@ -274,4 +275,25 @@ class User extends Authenticatable implements MustVerifyEmail
             'daily_summary',
         ];
     }
+
+    /**
+ * Check if user wants email notifications for a specific type
+ */
+    public function wantsEmailNotification(string $type): bool
+    {
+        if (!$this->notification_preferences) {
+            return true; // Default to sending
+        }
+
+        $preferences = is_string($this->notification_preferences)
+            ? json_decode($this->notification_preferences, true)
+            : $this->notification_preferences;
+
+        return $preferences["email_{$type}"] ?? true;
+    }
+
+    /**
+ * Get unread alerts count
+ */
+
 }
