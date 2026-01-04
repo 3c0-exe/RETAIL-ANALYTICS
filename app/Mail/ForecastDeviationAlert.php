@@ -18,13 +18,10 @@ class ForecastDeviationAlert extends Mailable
     public $forecastedAmount;
     public $actualAmount;
     public $deviationPercent;
-    public $deviationType; // 'over' or 'under'
-    public $severity; // 'warning' or 'critical'
+    public $deviationType;
+    public $severity;
     public $alertUrl;
 
-    /**
-     * Create a new message instance.
-     */
     public function __construct(
         string $userName,
         string $branchName,
@@ -47,9 +44,6 @@ class ForecastDeviationAlert extends Mailable
         $this->alertUrl = $alertUrl;
     }
 
-    /**
-     * Get the message envelope.
-     */
     public function envelope(): Envelope
     {
         $emoji = $this->severity === 'critical' ? '🚨' : '⚠️';
@@ -60,19 +54,25 @@ class ForecastDeviationAlert extends Mailable
         );
     }
 
-    /**
-     * Get the message content definition.
-     */
     public function content(): Content
     {
         return new Content(
             markdown: 'emails.forecast-deviation',
+            with: [
+                // Map property names to what the view expects
+                'userName' => $this->userName,
+                'branchName' => $this->branchName,
+                'date' => $this->date,
+                'forecastedSales' => $this->forecastedAmount,  // ✅ Fixed
+                'actualSales' => $this->actualAmount,          // ✅ Fixed
+                'deviationPercentage' => $this->deviationPercent, // ✅ Fixed
+                'deviationType' => $this->deviationType,
+                'severity' => $this->severity,
+                'dashboardUrl' => $this->alertUrl,  // ✅ Fixed
+            ],
         );
     }
 
-    /**
-     * Get the attachments for the message.
-     */
     public function attachments(): array
     {
         return [];
