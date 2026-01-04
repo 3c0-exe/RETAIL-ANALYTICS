@@ -23,23 +23,29 @@ class ImportObserver
     {
         // Only notify when status changes to completed or failed
         if ($import->wasChanged('status') && in_array($import->status, ['completed', 'failed'])) {
-            $severity = $import->status === 'completed' ? 'info' : 'warning';
-            $emoji = $import->status === 'completed' ? '✅' : '❌';
+            // Determine actual status based on success/failure ratio
+            $allFailed = $import->successful_rows === 0 && $import->failed_rows > 0;
+            $actualStatus = $allFailed ? 'failed' : $import->status;
 
-            $message = $import->status === 'completed'
-                ? "{$emoji} Import '{$import->file_name}' completed successfully. Processed {$import->successful_rows} rows."
-                : "{$emoji} Import '{$import->file_name}' failed. {$import->failed_rows} rows failed.";
+            $severity = $actualStatus === 'completed' ? 'info' : 'warning';
+            $emoji = $actualStatus === 'completed' ? '✅' : '❌';
+
+            if ($actualStatus === 'completed') {
+                $message = "{$emoji} Import '{$import->file_name}' completed successfully. Processed {$import->successful_rows} rows.";
+            } else {
+                $message = "{$emoji} Import '{$import->file_name}' failed. All {$import->failed_rows} rows failed to process.";
+            }
 
             $this->notificationService->notify(
                 type: 'import_completion',
-                title: ucfirst($import->status) . ' Import',
+                title: ucfirst($actualStatus) . ' Import',
                 message: $message,
                 severity: $severity,
                 related: $import,
                 targetUser: $import->user,
                 metadata: [
                     'file_name' => $import->file_name,
-                    'status' => $import->status,
+                    'status' => $actualStatus,
                     'total_rows' => $import->total_rows,
                     'successful_rows' => $import->successful_rows,
                     'failed_rows' => $import->failed_rows,

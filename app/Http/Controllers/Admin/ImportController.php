@@ -694,39 +694,72 @@ public function destroy(Import $import, Request $request)
             $cashierId = $availableCashiers[array_rand($availableCashiers)];
         }
 
-        // Check for duplicate transaction code
-        if ($transactionCode) {
-            $existingTransaction = Transaction::where('transaction_code', $transactionCode)
-                ->where('branch_id', $branchId)
-                ->first();
+       // Check for duplicate transaction code - ENHANCED
+if ($transactionCode) {
+    // First check if this exact transaction already exists in database
+    $existingTransaction = Transaction::where('transaction_code', $transactionCode)
+        ->where('branch_id', $branchId)
+        ->first();
 
-            if ($existingTransaction) {
-                $transaction = $existingTransaction;
-            } else {
-                $transaction = $this->createTransaction([
-                    'transaction_code' => $transactionCode,
-                    'branch_id' => $branchId,
-                    'customer_id' => $customer?->id,
-                    'cashier_id' => $cashierId, // FIX #4
-                    'timestamp' => $date,
-                    'subtotal' => $total,
-                    'discount_amount' => $discount,
-                    'total_amount' => $total - $discount,
-                    'payment_method' => $paymentMethod,
-                ]);
-            }
-        } else {
+    if ($existingTransaction) {
+        // Transaction exists - add items to existing transaction
+        $transaction = $existingTransaction;
+        \Log::info("Using existing transaction: {$transactionCode}");
+    } else {
+        // Transaction doesn't exist - try to create it
+        try {
             $transaction = $this->createTransaction([
+                'transaction_code' => $transactionCode,
                 'branch_id' => $branchId,
                 'customer_id' => $customer?->id,
-                'cashier_id' => $cashierId, // FIX #4
+                'cashier_id' => $cashierId,
                 'timestamp' => $date,
                 'subtotal' => $total,
                 'discount_amount' => $discount,
                 'total_amount' => $total - $discount,
                 'payment_method' => $paymentMethod,
             ]);
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Handle race condition: another process created it between check and create
+            if ($e->getCode() === '23000') { // Duplicate entry error
+                $transaction = Transaction::where('transaction_code', $transactionCode)
+                    ->where('branch_id', $branchId)
+                    ->first();
+
+                if (!$transaction) {
+                    // If still not found, make code unique
+                    $uniqueCode = $transactionCode . '-' . strtoupper(Str::random(4));
+                    $transaction = $this->createTransaction([
+                        'transaction_code' => $uniqueCode,
+                        'branch_id' => $branchId,
+                        'customer_id' => $customer?->id,
+                        'cashier_id' => $cashierId,
+                        'timestamp' => $date,
+                        'subtotal' => $total,
+                        'discount_amount' => $discount,
+                        'total_amount' => $total - $discount,
+                        'payment_method' => $paymentMethod,
+                    ]);
+                    \Log::info("Created transaction with unique code: {$uniqueCode}");
+                }
+            } else {
+                throw $e; // Re-throw if not a duplicate error
+            }
         }
+    }
+} else {
+    // No transaction code provided - generate unique one
+    $transaction = $this->createTransaction([
+        'branch_id' => $branchId,
+        'customer_id' => $customer?->id,
+        'cashier_id' => $cashierId,
+        'timestamp' => $date,
+        'subtotal' => $total,
+        'discount_amount' => $discount,
+        'total_amount' => $total - $discount,
+        'payment_method' => $paymentMethod,
+    ]);
+}
 
         // FIX #2: Find or CREATE product with auto-category
         $product = null;
@@ -770,18 +803,31 @@ public function destroy(Import $import, Request $request)
             $existingItem->quantity += $quantity;
             $existingItem->subtotal = $existingItem->quantity * $existingItem->unit_price;
             $existingItem->save();
-        } else {
+        }  else {
+            // FIX: Auto-fetch SKU if missing from CSV
+            $finalSku = $sku;
+
+            // If SKU is empty and we found a product, use the product's SKU
+            if (empty($finalSku) && $product) {
+                $finalSku = $product->sku;
+            }
+
+            // If still empty, generate a fallback SKU
+            if (empty($finalSku)) {
+                $finalSku = 'UNKNOWN-' . strtoupper(Str::random(6));
+            }
+
             TransactionItem::create([
                 'transaction_id' => $transaction->id,
                 'product_id' => $product?->id,
                 'product_name' => $productName,
-                'product_sku' => $sku,
+                'product_sku' => $finalSku,  // ✅ Now guaranteed to have a value
                 'quantity' => $quantity,
                 'unit_price' => $unitPrice,
                 'discount' => 0,
                 'subtotal' => $quantity * $unitPrice,
             ]);
-        }
+}
 
         // Recalculate transaction totals
         $transaction->subtotal = $transaction->items()->sum('subtotal');
