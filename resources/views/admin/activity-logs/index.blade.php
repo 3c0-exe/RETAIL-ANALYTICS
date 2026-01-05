@@ -46,11 +46,11 @@
 
             <div class="bg-white border border-gray-200 shadow-sm dark:bg-[#171717] rounded-lg dark:border-gray-800 overflow-hidden">
                 <div class="lg:hidden">
-                    <x-card-skeleton count="3" />
+                    <x-card-skeleton count="2" />
                 </div>
                 <div class="hidden lg:block">
                     <x-table-skeleton
-                        rows="5"
+                        rows="3"
                         :headers="true"
                         :colSizes="['w-1/6', 'w-1/6', 'w-1/6', 'w-1/6', 'w-1/6', 'w-1/6']"
                     />
@@ -87,15 +87,30 @@
                     <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Activity Logs</h1>
                     <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Monitor all user actions across the system</p>
                 </div>
-                {{-- Export Button (Spinner Added) --}}
-                <button type="button"
-                        onclick="handleExport(this)"
-                        class="inline-flex items-center justify-center w-full sm:w-auto px-4 py-2 text-sm font-medium text-white transition-colors bg-green-600 rounded-lg hover:bg-green-700">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                    Export CSV
-                </button>
+                <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                    {{-- Per Page Selector --}}
+                    <div class="relative">
+                        <select id="perPageSelect"
+                                onchange="handlePerPageChange(this)"
+                                class="appearance-none w-full sm:w-auto min-w-[140px] pl-3 pr-10 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm dark:bg-[#0a0a0a] dark:border-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors cursor-pointer">
+                            <option value="10" {{ request('per_page', 15) == 10 ? 'selected' : '' }}>10 per page</option>
+                            <option value="15" {{ request('per_page', 15) == 15 ? 'selected' : '' }}>15 per page</option>
+                            <option value="25" {{ request('per_page', 15) == 25 ? 'selected' : '' }}>25 per page</option>
+                            <option value="50" {{ request('per_page', 15) == 50 ? 'selected' : '' }}>50 per page</option>
+                            <option value="100" {{ request('per_page', 15) == 100 ? 'selected' : '' }}>100 per page</option>
+                        </select>
+                        
+                    </div>
+                    {{-- Export Button --}}
+                    <button type="button"
+                            onclick="handleExport(this)"
+                            class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white transition-colors bg-green-600 rounded-lg hover:bg-green-700 whitespace-nowrap">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        Export CSV
+                    </button>
+                </div>
             </div>
 
             {{-- Filters --}}
@@ -331,7 +346,7 @@
             {{-- Pagination --}}
             @if($logs->hasPages())
                 <div class="mt-6">
-                    {{ $logs->links() }}
+                    {{ $logs->appends(request()->except('page'))->links() }}
                 </div>
             @endif
         </div>
@@ -354,7 +369,15 @@
             }, 500);
         });
 
-        // 2. Handle Export Button
+        // 2. Handle Per Page Change
+        window.handlePerPageChange = (select) => {
+            const url = new URL(window.location.href);
+            url.searchParams.set('per_page', select.value);
+            url.searchParams.delete('page'); // Reset to first page
+            window.location.href = url.toString();
+        };
+
+        // 3. Handle Export Button
         window.handleExport = (btn) => {
             // Show spinner
             showButtonLoading(btn, 'Exporting...');
@@ -368,13 +391,13 @@
             }, 3000);
         };
 
-        // 3. Handle Filter Submission
+        // 4. Handle Filter Submission
         window.handleFilter = (form) => {
             const btn = form.querySelector('button[type="submit"]');
             showButtonLoading(btn, 'Filtering...');
         };
 
-        // 4. Existing Export Logic
+        // 5. Existing Export Logic
         function exportCSV() {
             const form = document.createElement('form');
             form.method = 'POST';
@@ -387,7 +410,7 @@
             csrfInput.value = '{{ csrf_token() }}';
             form.appendChild(csrfInput);
 
-            const params = new URLSearchParams(window.location.search);
+             const params = new URLSearchParams(window.location.search);
             for (const [key, value] of params) {
                 const input = document.createElement('input');
                 input.type = 'hidden';

@@ -41,7 +41,9 @@ class ActivityLogController extends Controller
             $query->whereDate('created_at', '<=', $request->date_to);
         }
 
-        $logs = $query->paginate(50);
+        // ✅ NEW: Per page with default of 15
+        $perPage = $request->input('per_page', 15);
+        $logs = $query->paginate($perPage)->appends($request->except('page'));
 
         // Get unique model_types and actions for filters
         $modelTypes = ActivityLog::distinct()->whereNotNull('model_type')->pluck('model_type');
