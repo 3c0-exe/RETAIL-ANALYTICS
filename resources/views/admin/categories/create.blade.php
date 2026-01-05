@@ -45,7 +45,7 @@
             </div>
 
             <form action="{{ route('admin.categories.store') }}" method="POST" class="space-y-6">
-                  method="POST"
+                  <method="POST"
                   class="space-y-6"
                   onsubmit="showFormLoading(this)">
                 @csrf
