@@ -25,7 +25,7 @@ class TestNotificationEmail extends Command
             'user_id' => $user->id,
             'type' => 'test',
             'title' => '✅ Test Email Notification',
-            'message' => 'This is a test email from Prisma Retail Analytics. If you receive this, your notification email system is working perfectly!',
+            'message' => 'This is a test email from Litiks Retail Analytics. If you receive this, your notification email system is working perfectly!',
             'severity' => 'info',
             'is_read' => false,
             'metadata' => [

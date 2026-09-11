@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full" x-data="{
+    darkMode: localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches),
+    sidebarOpen: false,
+    activeTab: 'dashboard',
+    dateRange: 'last_7_days',
+    selectedBranch: 'Makati Flagship',
+    isLoggedIn: true,
+    
+    // User profile state (100% bypassable, editable)
+    currentUser: {
+        name: 'Juan Dela Cruz',
+        email: 'juan@litiks.io',
+        role: 'Store Manager',
+        branch: 'Makati Flagship',
+        avatar: null
+    },
+    
+    // Form fields for login
+    loginEmail: 'admin@litiks.io',
+    loginPassword: '••••••••••••',
+    
+    // Loader overlay state
+    loaderVisible: false,
+    loaderText: 'Loading...',
+    loaderPercent: 0,
+    
+    // Toast notification state
+    toastVisible: false,
+    toastMessage: '',
+    
+    showToast(msg) {
+        this.toastMessage = msg;
+        this.toastVisible = true;
+        setTimeout(() => { this.toastVisible = false; }, 3200);
+    },
+    
+    triggerLoader(text, callback) {
+        this.loaderText = text;
+        this.loaderPercent = 15;
+        this.loaderVisible = true;
+        setTimeout(() => { this.loaderPercent = 65; }, 150);
+        setTimeout(() => {
+            this.loaderPercent = 100;
+            setTimeout(() => {
+                this.loaderVisible = false;
+                this.loaderPercent = 0;
+                if (callback) callback();
+            }, 300);
+        }, 500);
+    },
+    
+    login(name = 'Juan Dela Cruz', email = 'juan@litiks.io', role = 'Store Manager', branch = 'Makati Flagship') {
+        this.triggerLoader('Logging In...', () => {
+            this.currentUser = { name, email, role, branch, avatar: null };
+            this.selectedBranch = branch;
+            this.isLoggedIn = true;
+            this.activeTab = 'dashboard';
+            this.showToast(`Welcome back, ${name}! Signed in as ${role}.`);
+            this.$nextTick(() => { if (window.renderCharts) window.renderCharts(); });
+        });
+    },
+    
+    logout() {
+        this.triggerLoader('Logging Out...', () => {
+            this.isLoggedIn = false;
+            this.showToast('You have been logged out.');
+        });
+    },
+    
+    saveProfile() {
+        this.triggerLoader('Saving Profile...', () => {
+            this.showToast('Profile information updated successfully!');
+        });
+    },
+    
+    savePassword() {
+        this.triggerLoader('Updating Security...', () => {
+            this.showToast('Password changed successfully!');
+        });
+    },
+    
+    toggleTheme() {
+        this.darkMode = !this.darkMode;
+        localStorage.setItem('theme', this.darkMode ? 'dark' : 'light');
+        if (this.darkMode) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+        this.$nextTick(() => { 
+            if (window.renderCharts) window.renderCharts(); 
+            if (window.renderSalesCharts) window.renderSalesCharts();
+            if (window.renderForecastCharts) window.renderForecastCharts();
+        });
+    }
+}" :class="{ 'dark': darkMode }" x-init="
+    if (darkMode) document.documentElement.classList.add('dark');
+    else document.documentElement.classList.remove('dark');
+    $nextTick(() => { if (window.renderCharts) window.renderCharts(); });
+">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LITIKS — Retail Analytics Platform</title>
+    <link rel="icon" type="image/png" href="/public/img/Litiks Logo (3).png">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" />
+
+    <!-- Tailwind CSS -->
+    <link rel="stylesheet" href="/public/css/app.css">
+
+    <!-- Chart.js & Alpine.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+
+    <style>
+        [x-cloak] { display: none !important; }
+        body { font-family: 'Figtree', sans-serif; }
+
+        @media (min-width: 1024px) {
+            aside {
+                transform: none !important;
+                transition: none !important;
+                position: static !important;
+                display: flex !important;
+                visibility: visible !important;
+            }
+        }
+
+        /* --- AUTHENTIC LITIKS GLOBAL LOADER STYLES --- */
+        #global-loader-overlay {
+            position: fixed;
+            z-index: 99999;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.3s ease-out, visibility 0.3s ease-out;
+        }
+
+        .loader-logo-anim {
+            width: 80px;
+            height: auto;
+            margin-bottom: 20px;
+            display: inline-block;
+            animation: breathe 2s infinite ease-in-out;
+        }
+
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.85; }
+        }
+
+        /* Scrollbar customization */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .dark ::-webkit-scrollbar-thumb { background: #374151; }
+    </style>
+</head>
+<body class="h-full antialiased bg-gray-50 dark:bg-[#0a0a0a] text-gray-900 dark:text-gray-100 transition-colors duration-200">
+
+    <!-- ========================================== -->
+    <!-- AUTHENTIC LITIKS GLOBAL LOADER OVERLAY     -->
+    <!-- ========================================== -->
+    <div id="global-loader-overlay" x-show="loaderVisible" x-cloak class="bg-white/95 dark:bg-[#0a0a0a]/95 backdrop-blur-sm">
+        <div class="text-center w-72">
+            <img src="/public/img/Litiks Logo (3).png" alt="LITIKS Logo" class="loader-logo-anim mx-auto">
+            <div class="text-sm font-medium text-gray-600 dark:text-gray-300 mb-3 h-5" x-text="loaderText"></div>
+            <div class="w-full h-1.5 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
+                <div class="h-full bg-primary-600 transition-all duration-300 ease-out" :style="`width: ${loaderPercent}%`"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- FLOATING TOAST NOTIFICATION CONTAINER      -->
+    <!-- ========================================== -->
+    <div class="fixed bottom-5 right-5 z-50 pointer-events-none">
+        <div x-show="toastVisible"
+             x-cloak
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 translate-y-3"
+             x-transition:enter-end="opacity-100 translate-y-0"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 translate-y-0"
+             x-transition:leave-end="opacity-0 translate-y-3"
+             class="pointer-events-auto flex items-center gap-3 px-4 py-3 bg-gray-900 text-white dark:bg-white dark:text-gray-900 rounded-xl shadow-2xl border border-gray-800 dark:border-gray-200">
+            <div class="w-5 h-5 rounded-full bg-green-500 text-white flex items-center justify-center flex-shrink-0">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+            </div>
+            <span class="text-sm font-medium" x-text="toastMessage"></span>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- VIEW A: AUTHENTIC LITIKS LOGIN (BYPASSABLE)-->
+    <!-- ========================================== -->
+    <div x-show="!isLoggedIn" x-cloak class="min-h-screen flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50 dark:bg-[#0a0a0a]">
+        
+        <!-- Top Controls: Theme & Quick Enter -->
+        <div class="w-full max-w-md mb-4 flex justify-between items-center">
+            <span class="text-xs text-gray-500 dark:text-gray-400 font-mono">LITIKS Auth Gateway (View-Only Mode)</span>
+            <button @click="toggleTheme()" class="text-xs px-2.5 py-1 rounded-md border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                <span x-text="darkMode ? '☀️ Light' : '🌙 Dark'"></span>
+            </button>
+        </div>
+
+        <div class="w-full max-w-md bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-2xl p-8 shadow-xl">
+            <!-- Centered Litiks Logo -->
+            <div class="flex justify-center mb-6">
+                <img src="/public/img/Litiks Logo (2).png" alt="LITIKS Logo" class="h-16 w-auto object-contain">
+            </div>
+
+            <div class="mb-6 text-center">
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Welcome Back</h1>
+                <p class="text-sm text-gray-500 mt-1 dark:text-gray-400">Please sign in to your LITIKS analytics account</p>
+            </div>
+
+            <!-- Login Form (Any password/email works, 100% bypassable) -->
+            <form @submit.prevent="login(currentUser.name, loginEmail, currentUser.role, currentUser.branch)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+                    <input type="email" x-model="loginEmail" required class="block w-full py-2.5 px-3.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Password</label>
+                    <input type="password" x-model="loginPassword" required class="block w-full py-2.5 px-3.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none">
+                </div>
+
+                <div class="flex items-center justify-between text-sm">
+                    <label class="flex items-center gap-2 text-gray-600 dark:text-gray-400 cursor-pointer">
+                        <input type="checkbox" checked class="rounded border-gray-300 text-primary-600 focus:ring-primary-500">
+                        Remember me
+                    </label>
+                    <a href="#" @click.prevent="showToast('Password reset link simulated!')" class="text-primary-600 dark:text-primary-400 hover:underline">Forgot password?</a>
+                </div>
+
+                <button type="submit" class="w-full py-3 px-4 rounded-xl bg-primary-600 hover:bg-primary-700 text-white font-bold text-sm shadow-md transition-all">
+                    Sign in to LITIKS
+                </button>
+            </form>
+
+            <!-- 1-Click Bypass Demo Roles -->
+            <div class="mt-6 pt-6 border-t border-gray-100 dark:border-gray-800">
+                <p class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider text-center mb-3">
+                    ⚡ 1-Click Quick Access (Bypass)
+                </p>
+                <div class="grid grid-cols-1 gap-2">
+                    <button @click="login('Juan Dela Cruz', 'juan@litiks.io', 'Store Manager', 'Makati Flagship')"
+                            class="flex items-center justify-between px-3.5 py-2 text-xs font-medium rounded-lg border border-purple-200 dark:border-purple-900/50 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 hover:bg-purple-100 transition-colors">
+                        <span><strong>Juan Dela Cruz</strong> (Store Manager)</span>
+                        <span class="text-purple-500">Makati →</span>
+                    </button>
+                    <button @click="login('Alex Rivera', 'admin@litiks.io', 'System Admin', 'All Branches')"
+                            class="flex items-center justify-between px-3.5 py-2 text-xs font-medium rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 text-gray-700 dark:text-gray-300 hover:bg-gray-100 transition-colors">
+                        <span><strong>Alex Rivera</strong> (System Admin)</span>
+                        <span class="text-gray-500">Global →</span>
+                    </button>
+                    <button @click="login('Maria Santos', 'maria@litiks.io', 'Cashier Lead', 'BGC High Street')"
+                            class="flex items-center justify-between px-3.5 py-2 text-xs font-medium rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 text-gray-700 dark:text-gray-300 hover:bg-gray-100 transition-colors">
+                        <span><strong>Maria Santos</strong> (Cashier Lead)</span>
+                        <span class="text-gray-500">BGC →</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- VIEW B: MAIN APPLICATION SHELL (LOGGED IN) -->
+    <!-- ========================================== -->
+    <div x-show="isLoggedIn" class="flex h-screen overflow-hidden" x-cloak>
+
+        <!-- Mobile sidebar backdrop -->
+        <div x-show="sidebarOpen"
+             @click="sidebarOpen = false"
+             x-transition:enter="transition-opacity ease-linear duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition-opacity ease-linear duration-300"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-40 bg-gray-900/60 lg:hidden"></div>
+
+        <!-- Sidebar Navigation -->
+        <aside class="fixed inset-y-0 left-0 z-50 flex flex-col w-64 border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-[#171717] lg:static lg:z-auto transition-transform duration-300"
+               :class="{ 'translate-x-0': sidebarOpen, '-translate-x-full': !sidebarOpen && window.innerWidth < 1024 }">
+
+            <!-- Sidebar Header: LITIKS Logo -->
+            <div class="flex items-center justify-between flex-shrink-0 h-16 px-6 border-b border-gray-200 dark:border-gray-800">
+                <div class="flex items-center gap-3">
+                    <img src="/public/img/Litiks Logo (3).png" alt="LITIKS Icon" class="w-8 h-8 object-contain">
+                    <span class="text-xl font-bold tracking-tight text-primary-600 dark:text-primary-400">LITIKS</span>
+                </div>
+                <button @click="sidebarOpen = false" class="p-2 text-gray-500 rounded-md lg:hidden hover:bg-gray-100 dark:hover:bg-gray-800">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+                <!-- Main Dashboard -->
+                <button @click="activeTab = 'dashboard'; $nextTick(() => window.renderCharts && window.renderCharts()); sidebarOpen = false;"
+                        :class="activeTab === 'dashboard' ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 font-semibold' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'"
+                        class="flex items-center w-full gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                    <span>Dashboard</span>
+                </button>
+
+                <!-- ADMIN SECTION -->
+                <div class="pt-3">
+                    <p class="px-3 text-xs font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-500">Admin</p>
+                    <div class="mt-1 space-y-0.5">
+                        <button @click="activeTab = 'branches'; sidebarOpen = false;"
+                                :class="activeTab === 'branches' ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 font-semibold' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'"
+                                class="flex items-center w-full gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors">
+                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                            <span>Branches</span>
+                        </button>
+                        <button @click="activeTab = 'users'; sidebarOpen = false;"
+                                :class="activeTab === 'users' ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 font-semibold' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'"
+                                class="flex items-center w-full gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors">
+                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                            <span>Users & Roles</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- INVENTORY SECTION -->
+                <div class="pt-3">
+                    <p class="px-3 text-xs font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-500">Inventory</p>
+                    <div class="mt-1 space-y-0.5">
+                        <button @click="activeTab = 'products'; sidebarOpen = false;"
+                                :class="activeTab === 'products' ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 font-semibold' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'"
+                                class="flex items-center w-full gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors">
+                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                            <span>Products</span>
+                        </button>
+                        <button @click="activeTab = 'transactions'; sidebarOpen = false;"
+                                :class="activeTab === 'transactions' ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 font-semibold' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'"
+                                class="flex items-center w-full gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors">
+                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+                            <span>Transactions</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ANALYTICS SECTION -->
+                <div class="pt-3">
+                    <p class="px-3 text-xs font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-500">Analytics</p>
+                    <div class="mt-1 space-y-0.5">
+                        <button @click="activeTab = 'sales'; $nextTick(() => window.renderSalesCharts && window.renderSalesCharts()); sidebarOpen = false;"
+                                :class="activeTab === 'sales' ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 font-semibold' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'"
+                                class="flex items-center w-full gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors">
+                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                            <span>Sales Analytics</span>
+                        </button>
+                        <button @click="activeTab = 'forecasts'; $nextTick(() => window.renderForecastCharts && window.renderForecastCharts()); sidebarOpen = false;"
+                                :class="activeTab === 'forecasts' ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 font-semibold' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'"
+                                class="flex items-center w-full gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors">
+                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                            <span>Forecasting (AI)</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- SYSTEM SECTION -->
+                <div class="pt-3">
+                    <p class="px-3 text-xs font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-500">System</p>
+                    <div class="mt-1 space-y-0.5">
+                        <button @click="activeTab = 'profile'; sidebarOpen = false;"
+                                :class="activeTab === 'profile' ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 font-semibold' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'"
+                                class="flex items-center w-full gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors">
+                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                            <span>Profile Settings</span>
+                        </button>
+                        <button @click="activeTab = 'settings'; sidebarOpen = false;"
+                                :class="activeTab === 'settings' ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 font-semibold' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'"
+                                class="flex items-center w-full gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors">
+                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                            <span>Platform Settings</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- QUICK LOGOUT -->
+                <div class="pt-4 mt-3 border-t border-gray-200 dark:border-gray-800">
+                    <button @click="logout()"
+                            class="flex items-center w-full gap-3 px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                        <span>Sign Out / Lock</span>
+                    </button>
+                </div>
+            </nav>
+
+            <!-- Sidebar Footer User Card -->
+            <div @click="activeTab = 'profile'" class="p-4 border-t border-gray-200 dark:border-gray-800 flex items-center justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" title="Open Profile Settings">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-300 font-bold flex items-center justify-center text-sm" x-text="currentUser.name.split(' ').map(n=>n[0]).join('')">
+                    </div>
+                    <div class="text-left">
+                        <div class="text-sm font-semibold leading-tight truncate w-32" x-text="currentUser.name"></div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400" x-text="currentUser.role"></div>
+                    </div>
+                </div>
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <div class="flex flex-col flex-1 min-w-0 overflow-hidden">
+
+            <!-- Top Header Bar -->
+            <header class="flex items-center justify-between h-16 px-6 bg-white border-b border-gray-200 dark:border-gray-800 dark:bg-[#171717]">
+                <div class="flex items-center gap-4">
+                    <button @click="sidebarOpen = true" class="p-2 text-gray-500 rounded-md lg:hidden hover:bg-gray-100 dark:hover:bg-gray-800">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                    </button>
+                    
+                    <!-- Page Breadcrumb -->
+                    <span class="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        <span class="text-primary-600 dark:text-primary-400 font-semibold">LITIKS</span> /
+                        <span class="capitalize" x-text="activeTab === 'profile' ? 'Profile Settings' : activeTab"></span>
+                    </span>
+
+                    <!-- Assigned Branch Indicator Pill -->
+                    <div class="hidden sm:flex items-center gap-2 px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-full text-xs font-medium text-gray-700 dark:text-gray-300">
+                        <svg class="w-3.5 h-3.5 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        <span x-text="currentUser.branch"></span>
+                    </div>
+                </div>
+
+                <!-- Header Actions -->
+                <div class="flex items-center gap-3">
+                    <!-- Dark Mode Toggle -->
+                    <button @click="toggleTheme()" class="p-2 text-gray-500 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" title="Toggle theme">
+                        <template x-if="!darkMode">
+                            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+                        </template>
+                        <template x-if="darkMode">
+                            <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 9H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                        </template>
+                    </button>
+
+                    <!-- Status Pill -->
+                    <span class="hidden md:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800">
+                        <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                        Live System
+                    </span>
+
+                    <!-- USER AVATAR & DROPDOWN MENU -->
+                    <div class="relative" x-data="{ userMenuOpen: false }">
+                        <button @click="userMenuOpen = !userMenuOpen" class="flex items-center gap-2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none">
+                            <div class="flex items-center justify-center w-8 h-8 text-xs font-bold text-white rounded-full bg-primary-600 dark:bg-primary-500 shadow-sm" x-text="currentUser.name.split(' ').map(n=>n[0]).join('')">
+                            </div>
+                            <span class="hidden sm:inline-block text-sm font-semibold text-gray-700 dark:text-gray-300" x-text="currentUser.name"></span>
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+
+                        <!-- Dropdown Menu -->
+                        <div x-show="userMenuOpen"
+                             @click.outside="userMenuOpen = false"
+                             x-transition:enter="transition ease-out duration-150"
+                             x-transition:enter-start="transform opacity-0 scale-95"
+                             x-transition:enter-end="transform opacity-100 scale-100"
+                             x-transition:leave="transition ease-in duration-100"
+                             x-transition:leave-start="transform opacity-100 scale-100"
+                             x-transition:leave-end="transform opacity-0 scale-95"
+                             class="absolute right-0 mt-2 w-60 bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-xl shadow-xl py-2 z-50">
+                            
+                            <div class="px-4 py-2 border-b border-gray-100 dark:border-gray-800">
+                                <p class="text-xs text-gray-400">Signed in as</p>
+                                <p class="text-sm font-bold text-gray-900 dark:text-white truncate" x-text="currentUser.name"></p>
+                                <span class="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300" x-text="currentUser.role"></span>
+                            </div>
+
+                            <a href="#" @click.prevent="activeTab = 'profile'; userMenuOpen = false;" class="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                Profile Settings
+                            </a>
+                            <a href="#" @click.prevent="activeTab = 'settings'; userMenuOpen = false;" class="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                Platform Settings
+                            </a>
+
+                            <div class="border-t border-gray-100 dark:border-gray-800 my-1"></div>
+                            
+                            <button @click="logout(); userMenuOpen = false;" class="flex items-center gap-2.5 w-full text-left px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                                Log Out
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Tab Content Scrollable Container -->
+            <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+
+                <!-- TAB 1: EXECUTIVE DASHBOARD -->
+                <div x-show="activeTab === 'dashboard'" x-cloak class="max-w-7xl mx-auto space-y-6">
+
+                    <!-- Title & Period Filter Bar -->
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div>
+                            <h1 class="text-2xl font-bold tracking-tight sm:text-3xl text-gray-900 dark:text-gray-100">
+                                Welcome back, <span x-text="currentUser.name.split(' ')[0]"></span>! 👋
+                            </h1>
+                            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                                Here's what's happening across your LITIKS retail points today.
+                            </p>
+                        </div>
+
+                        <!-- Filter Controls -->
+                        <div class="flex flex-wrap items-center gap-3">
+                            <select x-model="selectedBranch" class="px-3 py-2 text-sm font-medium border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-[#171717] text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-primary-500">
+                                <option value="all">All Branches (Global)</option>
+                                <option value="Makati Flagship">Makati Flagship</option>
+                                <option value="BGC High Street">BGC High Street</option>
+                                <option value="Ortigas Center">Ortigas Center</option>
+                            </select>
+
+                            <div class="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#171717] p-1">
+                                <button @click="dateRange = 'today'; $nextTick(() => window.renderCharts && window.renderCharts());"
+                                        :class="dateRange === 'today' ? 'bg-primary-600 text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900'"
+                                        class="px-3 py-1.5 text-xs font-semibold rounded-md transition-all">Today</button>
+                                <button @click="dateRange = 'last_7_days'; $nextTick(() => window.renderCharts && window.renderCharts());"
+                                        :class="dateRange === 'last_7_days' ? 'bg-primary-600 text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900'"
+                                        class="px-3 py-1.5 text-xs font-semibold rounded-md transition-all">7 Days</button>
+                                <button @click="dateRange = 'last_30_days'; $nextTick(() => window.renderCharts && window.renderCharts());"
+                                        :class="dateRange === 'last_30_days' ? 'bg-primary-600 text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900'"
+                                        class="px-3 py-1.5 text-xs font-semibold rounded-md transition-all">30 Days</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4 Metric Cards -->
+                    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                        <div class="p-5 bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm hover:shadow transition-shadow">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Gross Revenue</span>
+                                <div class="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold text-sm">₱</div>
+                            </div>
+                            <div class="mt-4 flex items-baseline justify-between">
+                                <span class="text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white">₱1,248,600</span>
+                                <span class="inline-flex items-center text-xs font-bold text-green-600 dark:text-green-400">↑ 14.2%</span>
+                            </div>
+                            <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">vs. previous period</span>
+                        </div>
+
+                        <div class="p-5 bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm hover:shadow transition-shadow">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total Orders</span>
+                                <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex items-baseline justify-between">
+                                <span class="text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white">4,892</span>
+                                <span class="inline-flex items-center text-xs font-bold text-green-600 dark:text-green-400">↑ 8.5%</span>
+                            </div>
+                            <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">POS checkouts completed</span>
+                        </div>
+
+                        <div class="p-5 bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm hover:shadow transition-shadow">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Avg. Basket Value</span>
+                                <div class="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex items-baseline justify-between">
+                                <span class="text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white">₱255.23</span>
+                                <span class="inline-flex items-center text-xs font-bold text-green-600 dark:text-green-400">↑ 5.1%</span>
+                            </div>
+                            <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">Per transaction average</span>
+                        </div>
+
+                        <div class="p-5 bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm hover:shadow transition-shadow">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Active Terminals</span>
+                                <div class="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex items-baseline justify-between">
+                                <span class="text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white">12 / 12</span>
+                                <span class="inline-flex items-center text-xs font-bold text-green-600 dark:text-green-400">100% Online</span>
+                            </div>
+                            <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">Across 3 physical branches</span>
+                        </div>
+                    </div>
+
+                    <!-- Charts Grid -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 p-6 bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <h3 class="text-base font-semibold text-gray-900 dark:text-white">Sales & Revenue Trend</h3>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Daily breakdown with 7-day moving performance</p>
+                                </div>
+                                <span class="text-xs px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 font-semibold">₱ Revenue (PHP)</span>
+                            </div>
+                            <div class="relative h-72">
+                                <canvas id="salesTrendChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="p-6 bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <h3 class="text-base font-semibold text-gray-900 dark:text-white">Payment Distribution</h3>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Tender breakdown across POS registers</p>
+                                </div>
+                            </div>
+                            <div class="relative h-72 flex items-center justify-center">
+                                <canvas id="paymentMethodsChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Products Bar Chart & Table -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="p-6 bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <h3 class="text-base font-semibold text-gray-900 dark:text-white">Top 5 Best-Selling Products</h3>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">By total sales value this period</p>
+                                </div>
+                            </div>
+                            <div class="relative h-72">
+                                <canvas id="topProductsChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="p-6 bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <h3 class="text-base font-semibold text-gray-900 dark:text-white">Top Products Breakdown</h3>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Units sold and margins</p>
+                                </div>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm text-left">
+                                    <thead class="text-xs uppercase bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+                                        <tr>
+                                            <th class="px-4 py-2.5">Item</th>
+                                            <th class="px-4 py-2.5 text-center">Units</th>
+                                            <th class="px-4 py-2.5 text-right">Revenue</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                                        <tr>
+                                            <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">Iced Americano (16oz)</td>
+                                            <td class="px-4 py-3 text-center text-gray-600 dark:text-gray-300">620</td>
+                                            <td class="px-4 py-3 text-right font-bold text-gray-900 dark:text-white">₱86,760</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">Caramel Macchiato</td>
+                                            <td class="px-4 py-3 text-center text-gray-600 dark:text-gray-300">421</td>
+                                            <td class="px-4 py-3 text-right font-bold text-gray-900 dark:text-white">₱82,110</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">Blueberry Crumb Muffin</td>
+                                            <td class="px-4 py-3 text-center text-gray-600 dark:text-gray-300">318</td>
+                                            <td class="px-4 py-3 text-right font-bold text-gray-900 dark:text-white">₱39,750</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">Matcha Green Tea Latte</td>
+                                            <td class="px-4 py-3 text-center text-gray-600 dark:text-gray-300">188</td>
+                                            <td class="px-4 py-3 text-right font-bold text-gray-900 dark:text-white">₱35,720</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 2: SALES ANALYTICS -->
+                <div x-show="activeTab === 'sales'" x-cloak class="max-w-7xl mx-auto space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div>
+                            <h1 class="text-2xl font-bold tracking-tight sm:text-3xl text-gray-900 dark:text-gray-100">
+                                Sales Analytics & Traffic
+                            </h1>
+                            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                                Realtime hourly footfall and category distribution patterns.
+                            </p>
+                        </div>
+                        <button class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 shadow-sm transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                            Export Sales CSV
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 p-6 bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-base font-semibold text-gray-900 dark:text-white">Hourly Customer Volume & Orders</h3>
+                                <span class="text-xs text-gray-400">Peak hours: 12:00 PM – 2:00 PM</span>
+                            </div>
+                            <div class="relative h-72">
+                                <canvas id="hourlySalesChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="p-6 bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-base font-semibold text-gray-900 dark:text-white">Category Share</h3>
+                            </div>
+                            <div class="relative h-72 flex items-center justify-center">
+                                <canvas id="categoryShareChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 3: FORECASTS (AI) -->
+                <div x-show="activeTab === 'forecasts'" x-cloak class="max-w-7xl mx-auto space-y-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h1 class="text-2xl font-bold tracking-tight sm:text-3xl text-gray-900 dark:text-gray-100">
+                                AI Demand & Inventory Forecasting
+                            </h1>
+                            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                                Machine learning projected sales curves with stock restock alerts.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                        <div class="p-5 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl">
+                            <span class="text-xs font-semibold text-purple-700 dark:text-purple-300 uppercase">Projected 7-Day Revenue</span>
+                            <div class="text-2xl font-extrabold text-purple-900 dark:text-purple-100 mt-2">₱1,420,000</div>
+                            <p class="text-xs text-purple-600 dark:text-purple-400 mt-1">+13.7% projected growth</p>
+                        </div>
+                        <div class="p-5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl">
+                            <span class="text-xs font-semibold text-amber-700 dark:text-amber-300 uppercase">Inventory Restock Trigger</span>
+                            <div class="text-2xl font-extrabold text-amber-900 dark:text-amber-100 mt-2">2 Items Low</div>
+                            <p class="text-xs text-amber-600 dark:text-amber-400 mt-1">Order Beans & Cups by Friday</p>
+                        </div>
+                        <div class="p-5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+                            <span class="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase">Forecast Model Accuracy</span>
+                            <div class="text-2xl font-extrabold text-blue-900 dark:text-blue-100 mt-2">96.4%</div>
+                            <p class="text-xs text-blue-600 dark:text-blue-400 mt-1">Calibrated on 180 days POS data</p>
+                        </div>
+                    </div>
+
+                    <div class="p-6 bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-base font-semibold text-gray-900 dark:text-white">Next 14-Day Demand Curve vs. Actuals</h3>
+                            <span class="text-xs px-2.5 py-1 rounded bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 font-semibold">
+                                95% Confidence Interval
+                            </span>
+                        </div>
+                        <div class="relative h-72">
+                            <canvas id="forecastTrendChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 4: TRANSACTIONS -->
+                <div x-show="activeTab === 'transactions'" x-cloak class="max-w-7xl mx-auto space-y-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h1 class="text-2xl font-bold tracking-tight sm:text-3xl text-gray-900 dark:text-gray-100">
+                                Realtime Transactions Ledger
+                            </h1>
+                            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                                Complete record of POS transactions synced to LITIKS.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm overflow-hidden">
+                        <table class="w-full text-sm text-left">
+                            <thead class="text-xs uppercase bg-gray-50 dark:bg-gray-800/50 text-gray-500 border-b border-gray-200 dark:border-gray-800">
+                                <tr>
+                                    <th class="px-5 py-3">Receipt #</th>
+                                    <th class="px-5 py-3">Timestamp</th>
+                                    <th class="px-5 py-3">Branch</th>
+                                    <th class="px-5 py-3">Method</th>
+                                    <th class="px-5 py-3 text-right">Amount</th>
+                                    <th class="px-5 py-3 text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/40">
+                                    <td class="px-5 py-3.5 font-mono font-semibold text-purple-600 dark:text-purple-400">TXN-2026-9042</td>
+                                    <td class="px-5 py-3.5 text-gray-500">Today, 2:14 PM</td>
+                                    <td class="px-5 py-3.5">Makati Flagship</td>
+                                    <td class="px-5 py-3.5"><span class="px-2 py-0.5 rounded bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 text-xs font-semibold">GCash</span></td>
+                                    <td class="px-5 py-3.5 text-right font-bold text-gray-900 dark:text-white">₱1,250.00</td>
+                                    <td class="px-5 py-3.5 text-center"><span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Paid</span></td>
+                                </tr>
+                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/40">
+                                    <td class="px-5 py-3.5 font-mono font-semibold text-purple-600 dark:text-purple-400">TXN-2026-9041</td>
+                                    <td class="px-5 py-3.5 text-gray-500">Today, 1:58 PM</td>
+                                    <td class="px-5 py-3.5">BGC High Street</td>
+                                    <td class="px-5 py-3.5"><span class="px-2 py-0.5 rounded bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 text-xs font-semibold">Visa/Mastercard</span></td>
+                                    <td class="px-5 py-3.5 text-right font-bold text-gray-900 dark:text-white">₱680.00</td>
+                                    <td class="px-5 py-3.5 text-center"><span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Paid</span></td>
+                                </tr>
+                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/40">
+                                    <td class="px-5 py-3.5 font-mono font-semibold text-purple-600 dark:text-purple-400">TXN-2026-9040</td>
+                                    <td class="px-5 py-3.5 text-gray-500">Today, 1:45 PM</td>
+                                    <td class="px-5 py-3.5">Ortigas Center</td>
+                                    <td class="px-5 py-3.5"><span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 text-xs font-semibold">Cash</span></td>
+                                    <td class="px-5 py-3.5 text-right font-bold text-gray-900 dark:text-white">₱420.00</td>
+                                    <td class="px-5 py-3.5 text-center"><span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Paid</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- TAB 5: BRANCHES -->
+                <div x-show="activeTab === 'branches'" x-cloak class="max-w-7xl mx-auto space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div>
+                            <h1 class="text-2xl font-bold tracking-tight sm:text-3xl text-gray-900 dark:text-gray-100">
+                                Branch Management
+                            </h1>
+                            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                                Realtime status, sync health, and POS terminal connectivity.
+                            </p>
+                        </div>
+                        <button @click="showToast('Branch creation simulated!')" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 shadow-sm transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                            Add Branch
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="p-5 bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Online</span>
+                                <span class="text-xs text-gray-500">4 POS Terminals</span>
+                            </div>
+                            <h3 class="text-lg font-bold text-gray-900 dark:text-white mt-3">Makati Flagship</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Ayala Ave, Makati City</p>
+                            <div class="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 flex justify-between text-xs text-gray-500">
+                                <span>Today's Sales: <strong class="text-gray-900 dark:text-white">₱124,500</strong></span>
+                                <span class="text-green-600 font-semibold">● Synced</span>
+                            </div>
+                        </div>
+                        <div class="p-5 bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Online</span>
+                                <span class="text-xs text-gray-500">3 POS Terminals</span>
+                            </div>
+                            <h3 class="text-lg font-bold text-gray-900 dark:text-white mt-3">BGC High Street</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Bonifacio High St, Taguig</p>
+                            <div class="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 flex justify-between text-xs text-gray-500">
+                                <span>Today's Sales: <strong class="text-gray-900 dark:text-white">₱98,340</strong></span>
+                                <span class="text-green-600 font-semibold">● Synced</span>
+                            </div>
+                        </div>
+                        <div class="p-5 bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Online</span>
+                                <span class="text-xs text-gray-500">2 POS Terminals</span>
+                            </div>
+                            <h3 class="text-lg font-bold text-gray-900 dark:text-white mt-3">Ortigas Center</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">ADB Ave, Pasig City</p>
+                            <div class="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 flex justify-between text-xs text-gray-500">
+                                <span>Today's Sales: <strong class="text-gray-900 dark:text-white">₱61,480</strong></span>
+                                <span class="text-green-600 font-semibold">● Synced</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 6: USERS & ROLES -->
+                <div x-show="activeTab === 'users'" x-cloak class="max-w-7xl mx-auto space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div>
+                            <h1 class="text-2xl font-bold tracking-tight sm:text-3xl text-gray-900 dark:text-gray-100">
+                                Users & Access Control
+                            </h1>
+                            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                                Manage branch managers, cashiers, and administrative permissions.
+                            </p>
+                        </div>
+                        <button @click="showToast('Invitation modal simulated!')" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 shadow-sm transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                            Invite User
+                        </button>
+                    </div>
+
+                    <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm overflow-hidden">
+                        <table class="w-full text-sm text-left">
+                            <thead class="text-xs uppercase bg-gray-50 dark:bg-gray-800/50 text-gray-500 border-b border-gray-200 dark:border-gray-800">
+                                <tr>
+                                    <th class="px-5 py-3">User</th>
+                                    <th class="px-5 py-3">Role</th>
+                                    <th class="px-5 py-3">Assigned Branch</th>
+                                    <th class="px-5 py-3">Status</th>
+                                    <th class="px-5 py-3 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/40">
+                                    <td class="px-5 py-3.5 flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-full bg-primary-600 text-white font-bold flex items-center justify-center text-xs">JD</div>
+                                        <div>
+                                            <div class="font-semibold text-gray-900 dark:text-white" x-text="currentUser.name"></div>
+                                            <div class="text-xs text-gray-500" x-text="currentUser.email"></div>
+                                        </div>
+                                    </td>
+                                    <td class="px-5 py-3.5"><span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300" x-text="currentUser.role"></span></td>
+                                    <td class="px-5 py-3.5 text-gray-600 dark:text-gray-300" x-text="currentUser.branch"></td>
+                                    <td class="px-5 py-3.5"><span class="text-xs font-bold text-green-600">Active (Current)</span></td>
+                                    <td class="px-5 py-3.5 text-right">
+                                        <button @click="activeTab = 'profile'" class="text-xs font-semibold text-primary-600 hover:underline">Edit</button>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/40">
+                                    <td class="px-5 py-3.5 flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-xs">MS</div>
+                                        <div>
+                                            <div class="font-semibold text-gray-900 dark:text-white">Maria Santos</div>
+                                            <div class="text-xs text-gray-500">maria@litiks.io</div>
+                                        </div>
+                                    </td>
+                                    <td class="px-5 py-3.5"><span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">Cashier Lead</span></td>
+                                    <td class="px-5 py-3.5 text-gray-600 dark:text-gray-300">BGC High Street</td>
+                                    <td class="px-5 py-3.5"><span class="text-xs font-bold text-green-600">Active</span></td>
+                                    <td class="px-5 py-3.5 text-right">
+                                        <button @click="showToast('Permission editor simulated!')" class="text-xs font-semibold text-primary-600 hover:underline">Edit</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- TAB 7: PRODUCTS -->
+                <div x-show="activeTab === 'products'" x-cloak class="max-w-7xl mx-auto space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div>
+                            <h1 class="text-2xl font-bold tracking-tight sm:text-3xl text-gray-900 dark:text-gray-100">
+                                Inventory & Catalog
+                            </h1>
+                            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                                Realtime stock levels, SKU pricing, and low-inventory triggers.
+                            </p>
+                        </div>
+                        <button @click="showToast('Product catalog modal simulated!')" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 shadow-sm transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                            New Product
+                        </button>
+                    </div>
+
+                    <div class="bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm overflow-hidden">
+                        <table class="w-full text-sm text-left">
+                            <thead class="text-xs uppercase bg-gray-50 dark:bg-gray-800/50 text-gray-500 border-b border-gray-200 dark:border-gray-800">
+                                <tr>
+                                    <th class="px-5 py-3">Product Name</th>
+                                    <th class="px-5 py-3">SKU</th>
+                                    <th class="px-5 py-3">Category</th>
+                                    <th class="px-5 py-3 text-right">Price</th>
+                                    <th class="px-5 py-3 text-center">Stock</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/40">
+                                    <td class="px-5 py-3.5 font-semibold text-gray-900 dark:text-white">Iced Americano (16oz)</td>
+                                    <td class="px-5 py-3.5 font-mono text-xs text-gray-500">BEV-AME-16</td>
+                                    <td class="px-5 py-3.5 text-gray-600 dark:text-gray-300">Beverages</td>
+                                    <td class="px-5 py-3.5 text-right font-bold text-gray-900 dark:text-white">₱140.00</td>
+                                    <td class="px-5 py-3.5 text-center"><span class="px-2 py-0.5 rounded text-xs font-semibold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">In Stock (480)</span></td>
+                                </tr>
+                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/40">
+                                    <td class="px-5 py-3.5 font-semibold text-gray-900 dark:text-white">Caramel Macchiato (16oz)</td>
+                                    <td class="px-5 py-3.5 font-mono text-xs text-gray-500">BEV-MAC-16</td>
+                                    <td class="px-5 py-3.5 text-gray-600 dark:text-gray-300">Beverages</td>
+                                    <td class="px-5 py-3.5 text-right font-bold text-gray-900 dark:text-white">₱195.00</td>
+                                    <td class="px-5 py-3.5 text-center"><span class="px-2 py-0.5 rounded text-xs font-semibold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">In Stock (320)</span></td>
+                                </tr>
+                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/40">
+                                    <td class="px-5 py-3.5 font-semibold text-gray-900 dark:text-white">Blueberry Crumb Muffin</td>
+                                    <td class="px-5 py-3.5 font-mono text-xs text-gray-500">BAK-BLU-01</td>
+                                    <td class="px-5 py-3.5 text-gray-600 dark:text-gray-300">Bakery</td>
+                                    <td class="px-5 py-3.5 text-right font-bold text-gray-900 dark:text-white">₱125.00</td>
+                                    <td class="px-5 py-3.5 text-center"><span class="px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Low (18 left)</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- TAB 8: PROFILE SETTINGS (AUTHENTIC FROM profile/edit.blade.php) -->
+                <div x-show="activeTab === 'profile'" x-cloak class="max-w-4xl mx-auto space-y-6">
+                    <div>
+                        <h1 class="text-2xl font-bold tracking-tight sm:text-3xl text-gray-900 dark:text-gray-100">
+                            Profile Settings
+                        </h1>
+                        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                            Manage your personal account settings, role permissions, and branch affiliation.
+                        </p>
+                    </div>
+
+                    <!-- CARD 1: Profile Information -->
+                    <div class="bg-white dark:bg-[#171717] rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
+                        <div class="p-6 border-b border-gray-200 dark:border-gray-800">
+                            <h2 class="text-base font-semibold text-gray-900 dark:text-white">Profile Information</h2>
+                            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Update your account's profile information and display name.</p>
+                        </div>
+
+                        <form @submit.prevent="saveProfile()" class="p-6 space-y-5">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Full Name</label>
+                                <input type="text" x-model="currentUser.name" required
+                                       class="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Email Address</label>
+                                <input type="email" x-model="currentUser.email" required
+                                       class="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none">
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Assigned Role</label>
+                                    <select x-model="currentUser.role"
+                                            class="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-primary-500">
+                                        <option value="Store Manager">Store Manager</option>
+                                        <option value="System Admin">System Admin</option>
+                                        <option value="Cashier Lead">Cashier Lead</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Branch Location</label>
+                                    <select x-model="currentUser.branch"
+                                            class="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-primary-500">
+                                        <option value="Makati Flagship">Makati Flagship</option>
+                                        <option value="BGC High Street">BGC High Street</option>
+                                        <option value="Ortigas Center">Ortigas Center</option>
+                                        <option value="All Branches">All Branches (Global)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-end pt-2">
+                                <button type="submit" class="px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg text-sm shadow transition-colors">
+                                    Save Profile Changes
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- CARD 2: Security & Password -->
+                    <div class="bg-white dark:bg-[#171717] rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
+                        <div class="p-6 border-b border-gray-200 dark:border-gray-800">
+                            <h2 class="text-base font-semibold text-gray-900 dark:text-white">Security & Password</h2>
+                            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Ensure your account is using a secure password.</p>
+                        </div>
+
+                        <form @submit.prevent="savePassword()" class="p-6 space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Current Password</label>
+                                <input type="password" value="••••••••••••" placeholder="Current password"
+                                       class="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-primary-500">
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">New Password</label>
+                                    <input type="password" placeholder="New password"
+                                           class="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-primary-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Confirm Password</label>
+                                    <input type="password" placeholder="Confirm new password"
+                                           class="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-primary-500">
+                                </div>
+                            </div>
+                            <div class="flex justify-end pt-2">
+                                <button type="submit" class="px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg text-sm shadow transition-colors">
+                                    Update Password
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- CARD 3: Notification Preferences -->
+                    <div class="bg-white dark:bg-[#171717] rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
+                        <div class="p-6 border-b border-gray-200 dark:border-gray-800">
+                            <h2 class="text-base font-semibold text-gray-900 dark:text-white">Notification Preferences</h2>
+                            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Configure alert triggers for POS and store activity.</p>
+                        </div>
+                        <div class="p-6 space-y-4">
+                            <label class="flex items-center justify-between cursor-pointer">
+                                <div>
+                                    <div class="text-sm font-medium text-gray-900 dark:text-white">Low Stock Inventory Alerts</div>
+                                    <div class="text-xs text-gray-500">Receive alerts when branch stock drops below safety buffer</div>
+                                </div>
+                                <input type="checkbox" checked class="rounded border-gray-300 text-primary-600 focus:ring-primary-500 h-5 w-5">
+                            </label>
+                            <div class="border-t border-gray-100 dark:border-gray-800"></div>
+                            <label class="flex items-center justify-between cursor-pointer">
+                                <div>
+                                    <div class="text-sm font-medium text-gray-900 dark:text-white">Daily Sales Digest</div>
+                                    <div class="text-xs text-gray-500">Automated end-of-day summary email at store close</div>
+                                </div>
+                                <input type="checkbox" checked class="rounded border-gray-300 text-primary-600 focus:ring-primary-500 h-5 w-5">
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 9: PLATFORM SETTINGS -->
+                <div x-show="activeTab === 'settings'" x-cloak class="max-w-4xl mx-auto space-y-6">
+                    <div>
+                        <h1 class="text-2xl font-bold tracking-tight sm:text-3xl text-gray-900 dark:text-gray-100">
+                            Platform Settings
+                        </h1>
+                        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                            Configure system parameters, POS synchronization, and integrations.
+                        </p>
+                    </div>
+
+                    <div class="p-6 bg-white dark:bg-[#171717] border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm space-y-4">
+                        <h3 class="text-base font-semibold text-gray-900 dark:text-white">POS Integration & Synced Terminals</h3>
+                        <p class="text-sm text-gray-500">Realtime synchronization status with Qt C++ POS registers.</p>
+                        <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/40 rounded-lg">
+                            <div class="flex items-center gap-3">
+                                <span class="w-3 h-3 rounded-full bg-green-500 animate-ping"></span>
+                                <span class="text-sm font-medium">LITIKS Sync Engine: <strong>Active & Connected</strong></span>
+                            </div>
+                            <button @click="showToast('Connection verified successfully!')" class="px-3 py-1.5 text-xs font-semibold bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md">
+                                Test Ping
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- CHART.JS ORCHESTRATION SCRIPTS             -->
+    <!-- ========================================== -->
+    <script>
+        let salesTrendChart = null;
+        let topProductsChart = null;
+        let paymentMethodsChart = null;
+        let hourlySalesChart = null;
+        let categoryShareChart = null;
+        let forecastTrendChart = null;
+
+        function getChartColors() {
+            const isDark = document.documentElement.classList.contains('dark');
+            return {
+                text: isDark ? '#9ca3af' : '#6b7280',
+                grid: isDark ? '#262626' : '#f3f4f6',
+                accent: '#9333ea',
+                accentFill: isDark ? 'rgba(147, 51, 234, 0.18)' : 'rgba(147, 51, 234, 0.1)',
+                success: '#10b981',
+                info: '#3b82f6',
+                warning: '#f59e0b',
+                danger: '#ef4444'
+            };
+        }
+
+        window.renderCharts = function() {
+            const colors = getChartColors();
+
+            // 1. Sales Trend
+            const trendCtx = document.getElementById('salesTrendChart');
+            if (trendCtx) {
+                if (salesTrendChart) salesTrendChart.destroy();
+                salesTrendChart = new Chart(trendCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                        datasets: [{
+                            label: 'Sales (₱)',
+                            data: [142000, 168000, 154000, 189000, 235000, 290000, 215000],
+                            borderColor: colors.accent,
+                            backgroundColor: colors.accentFill,
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: {
+                                grid: { color: colors.grid },
+                                ticks: { color: colors.text, callback: v => '₱' + (v/1000) + 'k' }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: colors.text }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 2. Top 5 Products
+            const topCtx = document.getElementById('topProductsChart');
+            if (topCtx) {
+                if (topProductsChart) topProductsChart.destroy();
+                topProductsChart = new Chart(topCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Iced Americano', 'Caramel Macchiato', 'Blueberry Muffin', 'Croissant', 'Matcha Latte'],
+                        datasets: [{
+                            data: [86760, 82110, 39750, 31500, 35720],
+                            backgroundColor: [colors.accent, colors.success, colors.info, colors.warning, '#ec4899'],
+                            borderRadius: 8,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: {
+                                grid: { color: colors.grid },
+                                ticks: { color: colors.text, callback: v => '₱' + (v/1000) + 'k' }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: colors.text, font: { size: 11 } }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 3. Payment Methods
+            const payCtx = document.getElementById('paymentMethodsChart');
+            if (payCtx) {
+                if (paymentMethodsChart) paymentMethodsChart.destroy();
+                paymentMethodsChart = new Chart(payCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['GCash (45%)', 'Visa/Mastercard (30%)', 'Cash (20%)', 'Maya (5%)'],
+                        datasets: [{
+                            data: [45, 30, 20, 5],
+                            backgroundColor: ['#007DFE', colors.accent, colors.success, '#10b981'],
+                            borderWidth: 0,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { color: colors.text, usePointStyle: true, font: { size: 11 } }
+                            }
+                        }
+                    }
+                });
+            }
+        };
+
+        window.renderSalesCharts = function() {
+            const colors = getChartColors();
+            const hourlyCtx = document.getElementById('hourlySalesChart');
+            if (hourlyCtx) {
+                if (hourlySalesChart) hourlySalesChart.destroy();
+                hourlySalesChart = new Chart(hourlyCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['8 AM', '10 AM', '12 PM', '2 PM', '4 PM', '6 PM', '8 PM'],
+                        datasets: [{
+                            label: 'Hourly Orders',
+                            data: [35, 82, 145, 120, 95, 110, 68],
+                            backgroundColor: colors.accent,
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { grid: { color: colors.grid }, ticks: { color: colors.text } },
+                            x: { grid: { display: false }, ticks: { color: colors.text } }
+                        }
+                    }
+                });
+            }
+
+            const catCtx = document.getElementById('categoryShareChart');
+            if (catCtx) {
+                if (categoryShareChart) categoryShareChart.destroy();
+                categoryShareChart = new Chart(catCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Espresso & Coffee (58%)', 'Bakery & Pastries (24%)', 'Retail Beans & Mugs (18%)'],
+                        datasets: [{
+                            data: [58, 24, 18],
+                            backgroundColor: [colors.accent, colors.warning, colors.info],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'bottom', labels: { color: colors.text } } }
+                    }
+                });
+            }
+        };
+
+        window.renderForecastCharts = function() {
+            const colors = getChartColors();
+            const foreCtx = document.getElementById('forecastTrendChart');
+            if (foreCtx) {
+                if (forecastTrendChart) forecastTrendChart.destroy();
+                forecastTrendChart = new Chart(foreCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7', 'Day 8 (Est)', 'Day 9 (Est)', 'Day 10 (Est)', 'Day 11 (Est)', 'Day 12 (Est)', 'Day 13 (Est)', 'Day 14 (Est)'],
+                        datasets: [
+                            {
+                                label: 'Actual Sales',
+                                data: [142000, 155000, 161000, 148000, 172000, 195000, 210000, null, null, null, null, null, null, null],
+                                borderColor: colors.accent,
+                                borderWidth: 3,
+                                pointRadius: 4,
+                            },
+                            {
+                                label: 'AI Demand Forecast',
+                                data: [null, null, null, null, null, null, 210000, 215000, 228000, 239000, 251000, 280000, 295000, 275000],
+                                borderColor: '#10b981',
+                                borderDash: [6, 6],
+                                borderWidth: 3,
+                                backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                                fill: true,
+                                pointRadius: 4,
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'top', labels: { color: colors.text } } },
+                        scales: {
+                            y: {
+                                grid: { color: colors.grid },
+                                ticks: { color: colors.text, callback: v => '₱' + (v/1000) + 'k' }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: colors.text, font: { size: 10 } }
+                            }
+                        }
+                    }
+                });
+            }
+        };
+    </script>
+</body>
+</html>

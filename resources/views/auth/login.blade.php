@@ -6,8 +6,8 @@
         <div class="w-full sm:max-w-md px-6 py-8 bg-white overflow-hidden dark:bg-gray-800 ">
 
             <div class="flex justify-center mb-6">
-                <img src="{{ asset('img/Prisma Logo (2).png') }}"
-                     alt="Logo"
+                <img src="{{ asset('img/Litiks Logo (2).png') }}"
+                     alt="Litiks Logo"
                      class="h-20 w-auto object-contain">
             </div>
 

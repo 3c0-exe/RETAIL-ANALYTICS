@@ -161,7 +161,7 @@ use Illuminate\Support\Facades\Storage;
 
         <div id="global-loader">
             <div class="loader-content">
-                <img src="{{ asset('img/Prisma Logo (3).png') }}" alt="Logo" class="loader-logo">
+                <img src="{{ asset('img/Litiks Logo (3).png') }}" alt="Logo" class="loader-logo">
                 <div class="loader-text" id="loader-text">Loading...</div>
                 <div class="loader-bar-bg">
                     <div class="loader-bar-fill" id="loader-bar"></div>
@@ -204,7 +204,7 @@ use Illuminate\Support\Facades\Storage;
                    x-cloak>
 
                 <div class="flex items-center justify-between flex-shrink-0 h-16 px-6 border-b border-gray-200 dark:border-gray-800">
-                    <h1 class="text-xl font-bold text-primary-600 dark:text-primary-400">PRISMA</h1>
+                    <h1 class="text-xl font-bold text-primary-600 dark:text-primary-400">LITIKS</h1>
                     <button @click="sidebarOpen = false" class="p-2 text-gray-500 rounded-md lg:hidden hover:bg-gray-100 dark:hover:bg-gray-800">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>

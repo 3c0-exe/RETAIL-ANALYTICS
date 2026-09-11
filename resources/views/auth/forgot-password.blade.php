@@ -1,8 +1,8 @@
 <x-guest-layout>
 
     <div class="flex justify-center mb-6">
-                <img src="{{ asset('img/Prisma Logo (2).png') }}"
-                     alt="Logo"
+                <img src="{{ asset('img/Litiks Logo (2).png') }}"
+                     alt="Litiks Logo"
                      class="h-20 w-auto object-contain">
             </div>
 
